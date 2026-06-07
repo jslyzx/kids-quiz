@@ -91,6 +91,32 @@ scripts/
 npm i -g pnpm
 ```
 
+如果新电脑执行 `pnpm install` 时出现：
+
+```text
+ERR_PNPM_IGNORED_BUILDS Ignored build scripts
+```
+
+这是 pnpm 的依赖构建脚本安全提示。项目已在 `pnpm-workspace.yaml` 白名单中允许 Prisma、esbuild、bcrypt 等必要依赖。处理方式：
+
+```bash
+pnpm install
+pnpm db:generate
+```
+
+如果仍然提示需要审批，可以手动执行一次：
+
+```bash
+pnpm approve-builds
+```
+
+在交互列表里勾选 `@prisma/client`、`@prisma/engines`、`prisma`、`esbuild`、`bcrypt`、`@nestjs/core`，确认后再运行：
+
+```bash
+pnpm install
+pnpm db:generate
+```
+
 ## 配置数据库
 
 复制环境变量示例：
