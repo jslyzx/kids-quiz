@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listPapers } from '../api/papers';
-import { getWrongStats, listPaperStats, listPracticeAttempts, listRecentAttempts, listTagStats, listWrongAnswers } from '../api/submissions';
+import { useLocation } from 'react-router-dom';
+import { listPapers, listStudentPapers } from '../api/papers';
+import { getStudentWrongStats, getWrongStats, listPaperStats, listPracticeAttempts, listRecentAttempts, listStudentPaperStats, listStudentPracticeAttempts, listStudentRecentAttempts, listStudentTagStats, listStudentWrongAnswers, listTagStats, listWrongAnswers } from '../api/submissions';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   onBack: () => void;
@@ -32,6 +34,9 @@ function dayKey(value: unknown) {
 }
 
 export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPaper, onOpenRecords }: Props) {
+  const location = useLocation();
+  const isKidRoute = location.pathname.startsWith('/kid');
+  const selectedStudentId = useSelectedStudentId();
   const [papers, setPapers] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
   const [wrongAnswers, setWrongAnswers] = useState<any[]>([]);
@@ -45,7 +50,15 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
   const refresh = async () => {
     try {
       setLoading(true);
-      const [paperData, statData, wrongData, wrongStatData, tagStatData, recentData, attemptData] = await Promise.all([listPapers(), listPaperStats(), listWrongAnswers(), getWrongStats(), listTagStats(), listRecentAttempts(), listPracticeAttempts()]);
+      const [paperData, statData, wrongData, wrongStatData, tagStatData, recentData, attemptData] = await Promise.all([
+        isKidRoute ? listStudentPapers() : listPapers(),
+        isKidRoute ? listStudentPaperStats() : listPaperStats(),
+        isKidRoute ? listStudentWrongAnswers() : listWrongAnswers(),
+        isKidRoute ? getStudentWrongStats() : getWrongStats(),
+        isKidRoute ? listStudentTagStats() : listTagStats(),
+        isKidRoute ? listStudentRecentAttempts() : listRecentAttempts(),
+        isKidRoute ? listStudentPracticeAttempts() : listPracticeAttempts(),
+      ]);
       setPapers(paperData);
       setStats(statData);
       setWrongAnswers(wrongData);
@@ -61,7 +74,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); }, [selectedStudentId, isKidRoute]);
 
   const summary = useMemo(() => {
     const total = stats.reduce((sum, item) => sum + Number(item.total || 0), 0);
@@ -112,6 +125,8 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
   const weakest = paperRows.filter((item) => item.stat).sort((a, b) => a.accuracy - b.accuracy)[0];
   const weakTags = tagStats.filter((item) => Number(item.total || 0) >= 1).slice(0, 5);
   const strongTags = [...tagStats].filter((item) => Number(item.total || 0) >= 3).sort((a, b) => Number(b.accuracy || 0) - Number(a.accuracy || 0)).slice(0, 5);
+  const reportGeneratedAt = useMemo(() => new Date().toLocaleString(), [selectedStudentId, isKidRoute, practiceAttempts.length]);
+  const reportStudentLabel = isKidRoute ? '当前学生' : selectedStudentId ? `学生 ID ${selectedStudentId}` : '当前选中学生';
   const dailyAdvice = useMemo(() => {
     if (summary.wrong > 0) return `先重练 ${summary.wrong} 个当前错题，再做一套短练习。`;
     const weak = weakTags[0];
@@ -140,6 +155,12 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
 
       {/* 消息提示 */}
       {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
+
+      <section className="reportPrintMeta">
+        <span><b>报告对象</b>{reportStudentLabel}</span>
+        <span><b>统计范围</b>累计数据 + 最近 7 天趋势</span>
+        <span><b>生成时间</b>{reportGeneratedAt}</span>
+      </section>
 
       {/* 总体数据大卡片统计网格 */}
       <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-1" style={{ marginBottom: 'var(--space-5)' }}>

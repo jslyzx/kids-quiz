@@ -173,6 +173,16 @@
   gap: var(--space-3);
 }
 
+.studentSelect {
+  min-height: 34px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0 var(--space-3);
+  font-weight: 800;
+}
+
 .parent-content {
   padding: var(--space-6);
   max-width: var(--content-max-width);

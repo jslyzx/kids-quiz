@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useRef, type ReactNode } from 'react';
 import type { AnswerSlot, QuestionDraft } from '@kids-quiz/shared-types';
-import { getPaper } from '../api/papers';
-import { getQuestionGroup } from '../api/questionGroups';
-import { submitPaperAttempt } from '../api/submissions';
+import { getStudentPaper as getPaper } from '../api/papers';
+import { getStudentQuestionGroup as getQuestionGroup } from '../api/questionGroups';
+import { submitStudentPaperAttempt as submitPaperAttempt } from '../api/submissions';
 import { StudentDraftPad } from '../components/StudentDraftPad';
 import { dbGroupToPreviewDraft, dbQuestionToPreview } from '../utils/dbPreview';
 import { renderMathHtml, renderMathText } from '../utils/mathText';

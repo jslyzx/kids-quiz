@@ -1,8 +1,12 @@
-import { request } from './client';
+import { request, studentOrAdminRequest } from './client';
 
 export function listQuestionGroups(options?: { includeDisabled?: boolean }): Promise<any[]> {
   const qs = options?.includeDisabled ? '?includeDisabled=1' : '';
   return request<any[]>(`/admin/question-groups${qs}`);
+}
+
+export function listStudentQuestionGroups(): Promise<any[]> {
+  return studentOrAdminRequest<any[]>('/student/question-groups', '/admin/question-groups');
 }
 
 export function exportQuestionBank(): Promise<any> {
@@ -11,6 +15,10 @@ export function exportQuestionBank(): Promise<any> {
 
 export function getQuestionGroup(id: string): Promise<any> {
   return request<any>(`/admin/question-groups/${id}`);
+}
+
+export function getStudentQuestionGroup(id: string): Promise<any> {
+  return studentOrAdminRequest<any>(`/student/question-groups/${id}`, `/admin/question-groups/${id}`);
 }
 
 export function saveQuestionGroup(draft: unknown): Promise<any> {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listWrongAnswers } from '../api/submissions';
+import { listStudentWrongAnswers as listWrongAnswers } from '../api/submissions';
 import { renderMathText } from '../utils/mathText';
 
 type Props = {

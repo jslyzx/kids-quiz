@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { clearAdminSession, getAdminUser } from '../api/client';
+import { clearAdminSession, clearStudentSession, getAdminUser } from '../api/client';
+import { createStudentSessionFromAdmin, listManagedStudents, type ManagedStudent } from '../api/student';
+import { getSelectedStudentId, setSelectedStudentId, subscribeStudentsChange } from '../utils/selectedStudent';
 
 const NAV_ITEMS = [
   { label: '管理', section: true },
@@ -9,6 +11,7 @@ const NAV_ITEMS = [
   { to: '/parent/questions/audit', icon: '🩺', label: '题库体检' },
   { to: '/parent/papers', icon: '📝', label: '试卷管理' },
   { label: '教学', section: true },
+  { to: '/parent/students', icon: '👧', label: '学生管理' },
   { to: '/parent/tasks', icon: '📌', label: '任务设置' },
   { to: '/parent/report', icon: '📈', label: '学习报告' },
   { to: '/parent/records', icon: '⏱️', label: '练习记录' },
@@ -18,11 +21,47 @@ const NAV_ITEMS = [
 
 export function ParentLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [students, setStudents] = useState<ManagedStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentIdState] = useState(getSelectedStudentId);
+  const [studentLoadState, setStudentLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
   const navigate = useNavigate();
   const user = getAdminUser();
 
+  function loadStudents() {
+    setStudentLoadState('loading');
+    listManagedStudents().then((rows) => {
+      setStudents(rows);
+      const current = getSelectedStudentId();
+      const next = rows.some((student) => String(student.id) === String(current))
+        ? current
+        : String(rows[0]?.id ?? '');
+      setSelectedStudentIdState(next);
+      setSelectedStudentId(next);
+      if (next) void createStudentSessionFromAdmin(next).catch(() => undefined);
+      setStudentLoadState('idle');
+    }).catch(() => setStudentLoadState('error'));
+  }
+
+  useEffect(() => {
+    loadStudents();
+    const unsubscribe = subscribeStudentsChange(() => { loadStudents(); });
+    return unsubscribe;
+  }, []);
+
+  function changeStudent(studentId: string) {
+    setSelectedStudentIdState(studentId);
+    setSelectedStudentId(studentId);
+    void createStudentSessionFromAdmin(studentId).catch(() => undefined);
+  }
+
+  async function switchToKidHome() {
+    await createStudentSessionFromAdmin(selectedStudentId || undefined).catch(() => undefined);
+    navigate('/');
+  }
+
   function logout() {
     clearAdminSession();
+    clearStudentSession();
     navigate('/login', { replace: true });
   }
 
@@ -53,7 +92,7 @@ export function ParentLayout() {
           )}
         </nav>
         <div className="sidebar-footer">
-          <button className="sidebar-link" onClick={() => { setSidebarOpen(false); navigate('/'); }}>
+          <button className="sidebar-link" onClick={() => { setSidebarOpen(false); void switchToKidHome(); }}>
             <span className="sidebar-link-icon">👦</span>
             切换到孩子端
           </button>
@@ -66,8 +105,15 @@ export function ParentLayout() {
             <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
           </div>
           <div className="parent-topbar-right">
+            {!!students.length && (
+              <select className="studentSelect" value={selectedStudentId} onChange={(event) => changeStudent(event.target.value)} title="当前查看学生">
+                {students.map((student) => <option key={student.id} value={String(student.id)}>{student.name}</option>)}
+              </select>
+            )}
+            {studentLoadState === 'loading' && <span className="adminUserName">同步学生...</span>}
+            {studentLoadState === 'error' && <span className="adminUserName">学生加载失败</span>}
             <span className="adminUserName">{user?.displayName || user?.username || '管理员'}</span>
-            <button className="btn btn-soft btn-sm" onClick={() => navigate('/')}>孩子首页</button>
+            <button className="btn btn-soft btn-sm" onClick={switchToKidHome}>孩子首页</button>
             <button className="btn btn-secondary btn-sm" onClick={logout}>退出</button>
           </div>
         </header>

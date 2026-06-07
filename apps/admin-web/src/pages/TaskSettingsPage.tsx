@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { listPapers } from '../api/papers';
-import { getTaskSettings } from '../api/student';
+import { getTaskSettings, saveTaskSettings } from '../api/student';
 import { readTaskPlanSettings, saveTaskPlanSettings, type TaskPlanSettings } from '../utils/taskPlan';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   onBack: () => void;
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function TaskSettingsPage({ onBack, onOpenTaskCenter }: Props) {
+  const selectedStudentId = useSelectedStudentId();
   const [papers, setPapers] = useState<any[]>([]);
   const [settings, setSettings] = useState<TaskPlanSettings>(() => readTaskPlanSettings());
   const [message, setMessage] = useState('');
@@ -32,7 +34,7 @@ export function TaskSettingsPage({ onBack, onOpenTaskCenter }: Props) {
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); }, [selectedStudentId]);
 
   const selected = settings.paperIds.length ? settings.paperIds : papers.map((paper) => String(paper.id));
 
@@ -52,15 +54,23 @@ export function TaskSettingsPage({ onBack, onOpenTaskCenter }: Props) {
     setSettings((prev) => ({ ...prev, paperIds: next }));
   };
 
-  const save = () => {
+  const save = async () => {
     const normalized = {
       ...settings,
       targetAccuracy: Math.min(100, Math.max(50, Number(settings.targetAccuracy || 90))),
       dailyLimit: Math.min(20, Math.max(1, Number(settings.dailyLimit || 5))),
     };
-    saveTaskPlanSettings(normalized);
-    setSettings(normalized);
-    setMessage('已保存今日任务规则');
+    try {
+      setLoading(true);
+      await saveTaskSettings(normalized);
+      saveTaskPlanSettings(normalized);
+      setSettings(normalized);
+      setMessage('已保存当前学生的今日任务规则');
+    } catch (error) {
+      setMessage(`保存失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectAll = () => {

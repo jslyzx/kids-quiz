@@ -2,9 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { SubmitPaperAttemptDto } from './dto';
 
-const DEFAULT_OWNER_ID = 1n;
-const DEFAULT_STUDENT_ID = 1n;
-
 function jsonSafe<T>(value: T): T {
   return JSON.parse(JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? v.toString() : v));
 }
@@ -33,22 +30,24 @@ function jsonStringArray(value: unknown): string[] {
 export class SubmissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async submitPaperAttempt(dto: SubmitPaperAttemptDto) {
+  async submitPaperAttempt(ownerId: bigint, dto: SubmitPaperAttemptDto, studentId?: bigint) {
     const answers = dto?.answers ?? [];
     if (!Array.isArray(answers) || answers.length === 0) throw new BadRequestException('Answers are required');
     const source = dto.source === 'WRONG_RETRY' ? 'WRONG_RETRY' : 'PAPER';
     const paperId = toBigIntOrNull(dto?.paperId);
     if (!paperId && source !== 'WRONG_RETRY') throw new BadRequestException('Invalid paper id');
+    if (paperId) await this.ensurePaper(ownerId, paperId);
 
-    await this.ensureDefaultStudent(dto.studentName, dto.avatarUrl);
-
+    const student = studentId
+      ? await this.ensureStudent(ownerId, studentId)
+      : await this.ensureDefaultStudent(ownerId, dto.studentName, dto.avatarUrl);
     const totalCount = answers.length;
     const correctTotal = answers.filter((answer) => answer.isCorrect).length;
     const scoreTotal = answers.reduce((sum, answer) => sum + Number(answer.score ?? (answer.isCorrect ? answer.maxScore ?? 1 : 0)), 0);
     const maxScoreTotal = answers.reduce((sum, answer) => sum + Number(answer.maxScore ?? 1), 0);
     const attempt = await this.prisma.practiceAttempt.create({
       data: {
-        studentId: DEFAULT_STUDENT_ID,
+        studentId: student.id,
         paperId,
         source,
         totalCount,
@@ -65,14 +64,17 @@ export class SubmissionsService {
     for (const answer of answers) {
       const questionId = toBigIntOrNull(answer.questionId);
       if (!questionId) continue;
+      const question = await this.prisma.question.findFirst({ where: { id: questionId, ownerId }, select: { id: true } });
+      if (!question) continue;
       const groupId = toBigIntOrNull(answer.groupId);
       const answerPaperId = toBigIntOrNull(answer.paperId) ?? paperId;
+      if (answerPaperId) await this.ensurePaper(ownerId, answerPaperId);
       const maxScore = Number(answer.maxScore ?? 1);
       const score = Number(answer.score ?? (answer.isCorrect ? maxScore : 0));
       const row = await this.prisma.studentAnswer.create({
         data: {
           attemptId: attempt.id,
-          studentId: DEFAULT_STUDENT_ID,
+          studentId: student.id,
           questionId,
           groupId,
           paperId: answerPaperId,
@@ -101,7 +103,7 @@ export class SubmissionsService {
     const correctCount = created.filter((item) => item.isCorrect).length;
     const savedCount = created.length;
     const accuracy = savedCount ? Math.round((correctCount / savedCount) * 100) : 0;
-    const reward = await this.grantReward({
+    const reward = await this.grantReward(student.id, {
       attemptId: attempt.id,
       accuracy,
       correct: correctCount,
@@ -118,9 +120,9 @@ export class SubmissionsService {
     });
   }
 
-  async listPaperAttempts(paperId: number) {
+  async listPaperAttempts(ownerId: bigint, paperId: number, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { paperId: BigInt(paperId), source: { in: ['PAPER', 'WRONG_RETRY'] } },
+      where: { paperId: BigInt(paperId), source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 100,
       include: { details: true, question: true, student: true },
@@ -128,9 +130,9 @@ export class SubmissionsService {
     return jsonSafe(rows);
   }
 
-  async listWrongAnswers() {
+  async listWrongAnswers(ownerId: bigint, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { source: { in: ['PAPER', 'WRONG_RETRY'] } },
+      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 1000,
       include: { details: true, question: { include: { group: true } }, student: true, paper: true },
@@ -156,9 +158,9 @@ export class SubmissionsService {
     return jsonSafe(Array.from(unresolvedRows.values()).slice(0, 200));
   }
 
-  async listWrongStats() {
+  async listWrongStats(ownerId: bigint, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { source: { in: ['PAPER', 'WRONG_RETRY'] } },
+      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 5000,
       include: { details: true, paper: true },
@@ -192,7 +194,7 @@ export class SubmissionsService {
     const unresolvedSlots = Array.from(latest.values()).filter((item) => !item.isCorrect).length;
     const masteredSlots = Array.from(everWrong).filter((key) => latest.get(key)?.isCorrect).length;
     const retryAttempts = await this.prisma.practiceAttempt.findMany({
-      where: { source: 'WRONG_RETRY' },
+      where: { source: 'WRONG_RETRY', student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 5,
       select: { id: true, totalCount: true, correctCount: true, wrongCount: true, accuracy: true, rewardStars: true, submittedAt: true },
@@ -208,9 +210,9 @@ export class SubmissionsService {
     });
   }
 
-  async listPaperStats() {
+  async listPaperStats(ownerId: bigint, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { source: 'PAPER' },
+      where: { source: 'PAPER', student: this.studentWhere(ownerId, studentId) },
       select: { paperId: true, isCorrect: true, score: true, maxScore: true },
       take: 5000,
       orderBy: { submittedAt: 'desc' },
@@ -231,9 +233,9 @@ export class SubmissionsService {
     return Array.from(stats.values());
   }
 
-  async listTagStats() {
+  async listTagStats(ownerId: bigint, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { source: { in: ['PAPER', 'WRONG_RETRY'] } },
+      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 5000,
       include: {
@@ -275,9 +277,9 @@ export class SubmissionsService {
       }));
   }
 
-  async listRecentAttempts() {
+  async listRecentAttempts(ownerId: bigint, studentId?: bigint) {
     const rows = await this.prisma.studentAnswer.findMany({
-      where: { source: { in: ['PAPER', 'WRONG_RETRY'] } },
+      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId) },
       orderBy: { submittedAt: 'desc' },
       take: 20,
       include: { details: true, question: true, student: true, paper: true },
@@ -285,9 +287,9 @@ export class SubmissionsService {
     return jsonSafe(rows);
   }
 
-  async listPracticeAttempts(paperId?: number) {
+  async listPracticeAttempts(ownerId: bigint, paperId?: number, studentId?: bigint) {
     const rows = await this.prisma.practiceAttempt.findMany({
-      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, ...(paperId ? { paperId: BigInt(paperId) } : {}) },
+      where: { source: { in: ['PAPER', 'WRONG_RETRY'] }, student: this.studentWhere(ownerId, studentId), ...(paperId ? { paperId: BigInt(paperId) } : {}) },
       orderBy: { submittedAt: 'desc' },
       take: 100,
       include: { student: true, paper: true },
@@ -295,11 +297,11 @@ export class SubmissionsService {
     return jsonSafe(rows);
   }
 
-  async getPracticeAttempt(attemptId: number) {
+  async getPracticeAttempt(ownerId: bigint, attemptId: number, studentId?: bigint) {
     const id = toBigIntOrNull(attemptId);
     if (!id) throw new BadRequestException('Invalid attempt id');
-    const row = await this.prisma.practiceAttempt.findUnique({
-      where: { id },
+    const row = await this.prisma.practiceAttempt.findFirst({
+      where: { id, student: this.studentWhere(ownerId, studentId) },
       include: {
         student: true,
         paper: true,
@@ -313,24 +315,47 @@ export class SubmissionsService {
     return jsonSafe(row);
   }
 
-  private async ensureDefaultStudent(studentName?: string, avatarUrl?: string) {
+  private studentWhere(ownerId: bigint, studentId?: bigint) {
+    return studentId ? { ownerId, id: studentId } : { ownerId };
+  }
+
+  private async ensureStudent(ownerId: bigint, studentId: bigint) {
+    const student = await this.prisma.student.findFirst({
+      where: { id: studentId, ownerId, status: { not: 'DELETED' } },
+    });
+    if (!student) throw new BadRequestException('Student not found');
+    return student;
+  }
+
+  private async ensureDefaultStudent(ownerId: bigint, studentName?: string, avatarUrl?: string) {
     const name = studentName?.trim() || '小朋友';
     const avatar = avatarUrl?.trim() || null;
-    await this.prisma.user.upsert({
-      where: { id: DEFAULT_OWNER_ID },
-      update: {},
-      create: { id: DEFAULT_OWNER_ID, username: 'admin', passwordHash: 'dev-placeholder', displayName: '管理员' },
+    const existing = await this.prisma.student.findFirst({
+      where: { ownerId, status: { not: 'DELETED' } },
+      orderBy: { id: 'asc' },
     });
-    await this.prisma.student.upsert({
-      where: { id: DEFAULT_STUDENT_ID },
-      update: { name, avatarUrl: avatar },
-      create: { id: DEFAULT_STUDENT_ID, ownerId: DEFAULT_OWNER_ID, name, avatarUrl: avatar, grade: '二年级' },
+    if (existing) {
+      return this.prisma.student.update({
+        where: { id: existing.id },
+        data: { name, avatarUrl: avatar },
+      });
+    }
+    return this.prisma.student.create({
+      data: { ownerId, name, avatarUrl: avatar, grade: '二年级' },
     });
   }
 
-  private async grantReward(input: { attemptId: bigint; accuracy: number; correct: number; total: number }) {
+  private async ensurePaper(ownerId: bigint, paperId: bigint) {
+    const paper = await this.prisma.paper.findFirst({
+      where: { id: paperId, ownerId, status: { not: 'DELETED' } },
+      select: { id: true },
+    });
+    if (!paper) throw new BadRequestException('Paper not found');
+  }
+
+  private async grantReward(studentId: bigint, input: { attemptId: bigint; accuracy: number; correct: number; total: number }) {
     const student = await this.prisma.student.findUnique({
-      where: { id: DEFAULT_STUDENT_ID },
+      where: { id: studentId },
       select: {
         totalStars: true,
         streakDays: true,
@@ -357,7 +382,7 @@ export class SubmissionsService {
 
     const badgeList = Array.from(badges);
     const updated = await this.prisma.student.update({
-      where: { id: DEFAULT_STUDENT_ID },
+      where: { id: studentId },
       data: {
         totalStars: { increment: earned },
         streakDays: nextStreak,

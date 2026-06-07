@@ -1,4 +1,4 @@
-import { request } from './client';
+import { request, studentOrAdminRequest } from './client';
 
 export function listPapers(): Promise<any[]> {
   return request<any[]>('/admin/papers');
@@ -6,6 +6,14 @@ export function listPapers(): Promise<any[]> {
 
 export function getPaper(id: string): Promise<any> {
   return request<any>(`/admin/papers/${id}`);
+}
+
+export function listStudentPapers(): Promise<any[]> {
+  return studentOrAdminRequest<any[]>('/student/papers', '/admin/papers');
+}
+
+export function getStudentPaper(id: string): Promise<any> {
+  return studentOrAdminRequest<any>(`/student/papers/${id}`, `/admin/papers/${id}`);
 }
 
 export function createPaper(data: { title: string; description?: string }): Promise<any> {

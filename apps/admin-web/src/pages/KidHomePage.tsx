@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listPapers } from '../api/papers';
-import { listQuestionGroups } from '../api/questionGroups';
-import { listPaperStats, listRecentAttempts, listWrongAnswers } from '../api/submissions';
-import { getStudentProfile, saveStudentProfile as saveStudentProfileApi } from '../api/student';
+import { listStudentPapers as listPapers } from '../api/papers';
+import { listStudentQuestionGroups as listQuestionGroups } from '../api/questionGroups';
+import { listStudentPaperStats as listPaperStats, listStudentRecentAttempts as listRecentAttempts, listStudentWrongAnswers as listWrongAnswers } from '../api/submissions';
+import { getChildStudentProfile as getStudentProfile, saveChildStudentProfile as saveStudentProfileApi } from '../api/student';
 import { readRewardState } from '../utils/rewards';
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   onOpenRewards: () => void;
   onOpenRecords: () => void;
   onStartQuestionGroup: (groupId: string) => void;
+  onSwitchStudent: () => void;
 };
 
 type KidTab = 'home' | 'practice' | 'wrong' | 'reward' | 'mine';
@@ -108,7 +109,7 @@ function groupSearchText(group: any) {
   return `${group.title || ''}\u3001${group.commonStem || ''}\u3001${groupTags(group).join('\u3001')}`;
 }
 
-export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, onOpenWrongBook, onRetryWrong, onOpenTaskCenter, onOpenReport, onOpenRewards, onOpenRecords }: Props) {
+export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, onOpenWrongBook, onRetryWrong, onOpenTaskCenter, onOpenReport, onOpenRewards, onOpenRecords, onSwitchStudent }: Props) {
   const [activeTab, setActiveTab] = useState<KidTab>('home');
   const [papers, setPapers] = useState<any[]>([]);
   const [questionGroups, setQuestionGroups] = useState<any[]>([]);
@@ -336,7 +337,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           {recentAttempts.slice(0, 3).map((item) => <div className="card card-flat card-compact" key={item.id}><b>{item.paper?.title || TXT.practice}</b><span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{shortDate(item.submittedAt)} {'\u00b7'} {item.isCorrect ? TXT.correct : TXT.needReview}</span></div>)}
           {!recentAttempts.length && <div className="card card-flat card-compact"><b>{TXT.noRecords}</b><span style={{ color: 'var(--text-muted)' }}>{TXT.noRecordsTip}</span></div>}
         </div>
-        <div className="kid-quick-grid" style={{ gridColumn: '1 / -1' }}><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button></div>
+        <div className="kid-quick-grid" style={{ gridColumn: '1 / -1' }}><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button><button className="btn btn-secondary btn-lg btn-block" onClick={onSwitchStudent}>切换学生</button></div>
       </section>}
     </main>
 

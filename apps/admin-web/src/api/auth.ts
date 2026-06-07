@@ -1,4 +1,4 @@
-import { request, setAdminSession, type AdminUser } from './client';
+import { request, setAdminSession, setStudentSession, type AdminUser } from './client';
 
 type LoginResult = {
   accessToken: string;
@@ -12,5 +12,11 @@ export async function loginAdmin(username: string, password: string) {
     body: JSON.stringify({ username, password }),
   });
   setAdminSession(result.accessToken, result.user);
+  try {
+    const studentSession = await request<{ accessToken: string; student: unknown }>('/admin/student/session', { method: 'POST' });
+    setStudentSession(studentSession.accessToken, studentSession.student);
+  } catch {
+    // Student-facing pages can still fall back to admin endpoints during local setup.
+  }
   return result.user;
 }

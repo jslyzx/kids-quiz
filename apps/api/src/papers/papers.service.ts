@@ -2,9 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AddPaperQuestionGroupDto, CreatePaperDto, ReorderPaperItemsDto, SmartGeneratePaperDto, UpdatePaperDto } from './dto';
 
-const DEFAULT_OWNER_ID = 1n;
-const DEFAULT_SUBJECT_ID = 1n;
-
 function jsonSafe<T>(value: T): T {
   return JSON.parse(JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? v.toString() : v));
 }
@@ -13,9 +10,9 @@ function jsonSafe<T>(value: T): T {
 export class PapersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list() {
+  async list(ownerId: bigint) {
     const rows = await this.prisma.paper.findMany({
-      where: { status: { not: 'DELETED' } },
+      where: { ownerId, status: { not: 'DELETED' } },
       orderBy: { createdAt: 'desc' },
       include: { items: true },
       take: 50,
@@ -23,9 +20,9 @@ export class PapersService {
     return jsonSafe(rows.map((paper) => ({ ...paper, itemCount: paper.items.length })));
   }
 
-  async get(id: number) {
-    const row = await this.prisma.paper.findUnique({
-      where: { id: BigInt(id) },
+  async get(ownerId: bigint, id: number) {
+    const row = await this.prisma.paper.findFirst({
+      where: { id: BigInt(id), ownerId },
       include: {
         items: {
           orderBy: { sortOrder: 'asc' },
@@ -40,23 +37,23 @@ export class PapersService {
     return jsonSafe(row);
   }
 
-  async create(dto: CreatePaperDto) {
+  async create(ownerId: bigint, dto: CreatePaperDto) {
     if (!dto?.title?.trim()) throw new BadRequestException('Paper title is required');
-    await this.ensureDefaults();
+    const subjectId = await this.ensureDefaultSubject(ownerId);
     const paper = await this.prisma.paper.create({
       data: {
-        ownerId: DEFAULT_OWNER_ID,
-        subjectId: DEFAULT_SUBJECT_ID,
+        ownerId,
+        subjectId,
         title: dto.title.trim(),
         description: dto.description?.trim() || null,
       },
     });
-    return this.get(Number(paper.id));
+    return this.get(ownerId, Number(paper.id));
   }
 
-  async smartGenerate(dto: SmartGeneratePaperDto) {
+  async smartGenerate(ownerId: bigint, dto: SmartGeneratePaperDto) {
     if (!dto?.title?.trim()) throw new BadRequestException('Paper title is required');
-    await this.ensureDefaults();
+    const subjectId = await this.ensureDefaultSubject(ownerId);
     const count = Math.min(50, Math.max(1, Number(dto.count ?? 10)));
     const keyword = dto.keyword?.trim();
     const gradeLevel = dto.gradeLevel?.trim();
@@ -64,6 +61,7 @@ export class PapersService {
     const maxDifficulty = Number(dto.maxDifficulty || 5);
     const candidates = await this.prisma.questionGroup.findMany({
       where: {
+        ownerId,
         status: { not: 'DELETED' },
         difficulty: { lte: maxDifficulty },
         ...(gradeLevel ? { gradeLevel } : {}),
@@ -78,8 +76,8 @@ export class PapersService {
 
     const paper = await this.prisma.paper.create({
       data: {
-        ownerId: DEFAULT_OWNER_ID,
-        subjectId: DEFAULT_SUBJECT_ID,
+        ownerId,
+        subjectId,
         title: dto.title.trim(),
         description: dto.description?.trim() || `智能组卷：${keyword || '全部题目'}，${groups.length} 道大题`,
         items: {
@@ -91,35 +89,40 @@ export class PapersService {
         },
       },
     });
-    return this.get(Number(paper.id));
+    return this.get(ownerId, Number(paper.id));
   }
 
-  async update(id: number, dto: UpdatePaperDto) {
+  async update(ownerId: bigint, id: number, dto: UpdatePaperDto) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid paper id');
-    await this.prisma.paper.update({
-      where: { id: BigInt(id) },
+    const result = await this.prisma.paper.updateMany({
+      where: { id: BigInt(id), ownerId, status: { not: 'DELETED' } },
       data: {
         title: dto.title?.trim() || undefined,
         description: dto.description === undefined ? undefined : (dto.description?.trim() || null),
       },
     });
-    return this.get(id);
+    if (!result.count) throw new BadRequestException('Paper not found');
+    return this.get(ownerId, id);
   }
 
-  async remove(id: number) {
+  async remove(ownerId: bigint, id: number) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid paper id');
-    await this.prisma.paper.update({ where: { id: BigInt(id) }, data: { status: 'DELETED' } });
+    const result = await this.prisma.paper.updateMany({
+      where: { id: BigInt(id), ownerId, status: { not: 'DELETED' } },
+      data: { status: 'DELETED' },
+    });
+    if (!result.count) throw new BadRequestException('Paper not found');
     return { ok: true };
   }
 
-  async addQuestionGroup(id: number, dto: AddPaperQuestionGroupDto) {
+  async addQuestionGroup(ownerId: bigint, id: number, dto: AddPaperQuestionGroupDto) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid paper id');
     const groupId = Number(dto?.groupId);
     if (!groupId || Number.isNaN(groupId)) throw new BadRequestException('Invalid question group id');
 
     const [paper, group, lastItem] = await Promise.all([
-      this.prisma.paper.findUnique({ where: { id: BigInt(id) } }),
-      this.prisma.questionGroup.findUnique({ where: { id: BigInt(groupId) } }),
+      this.prisma.paper.findFirst({ where: { id: BigInt(id), ownerId } }),
+      this.prisma.questionGroup.findFirst({ where: { id: BigInt(groupId), ownerId } }),
       this.prisma.paperQuestion.findFirst({
         where: { paperId: BigInt(id) },
         orderBy: { sortOrder: 'desc' },
@@ -136,20 +139,20 @@ export class PapersService {
         score: group.score || 1,
       },
     });
-    return this.get(id);
+    return this.get(ownerId, id);
   }
 
-  async removeItem(id: number, itemId: number) {
+  async removeItem(ownerId: bigint, id: number, itemId: number) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid paper id');
     if (!itemId || Number.isNaN(itemId)) throw new BadRequestException('Invalid paper item id');
-    await this.prisma.paperQuestion.deleteMany({
-      where: { id: BigInt(itemId), paperId: BigInt(id) },
-    });
-    return this.get(id);
+    await this.ensurePaper(ownerId, id);
+    await this.prisma.paperQuestion.deleteMany({ where: { id: BigInt(itemId), paperId: BigInt(id) } });
+    return this.get(ownerId, id);
   }
 
-  async reorderItems(id: number, dto: ReorderPaperItemsDto) {
+  async reorderItems(ownerId: bigint, id: number, dto: ReorderPaperItemsDto) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid paper id');
+    await this.ensurePaper(ownerId, id);
     const itemIds = (dto?.itemIds ?? []).map((value) => Number(value)).filter((value) => value && !Number.isNaN(value));
     if (!itemIds.length) throw new BadRequestException('Paper item ids are required');
 
@@ -163,19 +166,28 @@ export class PapersService {
       where: { id: BigInt(itemId) },
       data: { sortOrder: index + 1 },
     })));
-    return this.get(id);
+    return this.get(ownerId, id);
   }
 
-  private async ensureDefaults() {
-    await this.prisma.user.upsert({
-      where: { id: DEFAULT_OWNER_ID },
-      update: {},
-      create: { id: DEFAULT_OWNER_ID, username: 'admin', passwordHash: 'dev-placeholder', displayName: '管理员' },
+  private async ensurePaper(ownerId: bigint, id: number) {
+    const paper = await this.prisma.paper.findFirst({
+      where: { id: BigInt(id), ownerId, status: { not: 'DELETED' } },
+      select: { id: true },
     });
-    await this.prisma.subject.upsert({
-      where: { id: DEFAULT_SUBJECT_ID },
-      update: {},
-      create: { id: DEFAULT_SUBJECT_ID, ownerId: DEFAULT_OWNER_ID, name: '数学', icon: '📐' },
+    if (!paper) throw new BadRequestException('Paper not found');
+  }
+
+  private async ensureDefaultSubject(ownerId: bigint) {
+    const existing = await this.prisma.subject.findFirst({
+      where: { ownerId, name: '数学', status: { not: 'DELETED' } },
+      orderBy: { id: 'asc' },
+      select: { id: true },
     });
+    if (existing) return existing.id;
+    const subject = await this.prisma.subject.create({
+      data: { ownerId, name: '数学', icon: '🔢' },
+      select: { id: true },
+    });
+    return subject.id;
   }
 }

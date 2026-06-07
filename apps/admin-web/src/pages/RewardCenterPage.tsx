@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getRewards } from '../api/student';
+import { useLocation } from 'react-router-dom';
+import { confirmRewardRedemption, getChildRewards, getRewards, requestRewardRedemption, saveRewardCatalog, type RewardCatalogItem } from '../api/student';
 import { badgeLabels, readRewardState, type RewardState } from '../utils/rewards';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   onBack: () => void;
@@ -10,20 +12,99 @@ type Props = {
 const allBadges = Object.entries(badgeLabels);
 
 export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
+  const location = useLocation();
+  const isKidRoute = location.pathname.startsWith('/kid');
+  const selectedStudentId = useSelectedStudentId();
   const [reward, setReward] = useState<RewardState>(() => readRewardState());
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [catalogDraft, setCatalogDraft] = useState({ title: '', cost: '20', description: '' });
 
   const refresh = () => {
     setReward(readRewardState());
-    void getRewards().then((data) => {
-      const next = { stars: Number(data.stars || 0), streakDays: Number(data.streakDays || 0), lastPracticeDate: data.lastPracticeDate, badges: Array.isArray(data.badges) ? data.badges : [] };
+    void (isKidRoute ? getChildRewards() : getRewards()).then((data) => {
+      const next = {
+        stars: Number(data.stars || 0),
+        streakDays: Number(data.streakDays || 0),
+        lastPracticeDate: data.lastPracticeDate,
+        badges: Array.isArray(data.badges) ? data.badges : [],
+        catalog: Array.isArray(data.catalog) ? data.catalog : [],
+        redemptions: Array.isArray(data.redemptions) ? data.redemptions : [],
+      };
       localStorage.setItem('kidsQuiz.rewardState', JSON.stringify(next));
       setReward(next);
     }).catch(() => undefined);
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [selectedStudentId, isKidRoute]);
 
   const nextStarTarget = reward.stars >= 100 ? 200 : 100;
   const starPercent = Math.min(100, Math.round((reward.stars / nextStarTarget) * 100));
+  const catalog = reward.catalog ?? [];
+  const redemptions = reward.redemptions ?? [];
+
+  const applyRewardData = (data: any) => {
+    const next = {
+      stars: Number(data.stars || 0),
+      streakDays: Number(data.streakDays || 0),
+      lastPracticeDate: data.lastPracticeDate,
+      badges: Array.isArray(data.badges) ? data.badges : [],
+      catalog: Array.isArray(data.catalog) ? data.catalog : [],
+      redemptions: Array.isArray(data.redemptions) ? data.redemptions : [],
+    };
+    localStorage.setItem('kidsQuiz.rewardState', JSON.stringify(next));
+    setReward(next);
+  };
+
+  const redeem = async (item: RewardCatalogItem) => {
+    if (!isKidRoute) return;
+    setSaving(true);
+    try {
+      applyRewardData(await requestRewardRedemption(item.id));
+      setMessage(`已提交兑换申请：${item.title}`);
+    } catch (error) {
+      setMessage(`兑换失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirm = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    setSaving(true);
+    try {
+      applyRewardData(await confirmRewardRedemption(id, status));
+      setMessage(status === 'APPROVED' ? '兑换已批准，星星已扣除' : '兑换已拒绝');
+    } catch (error) {
+      setMessage(`处理失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveCatalog = async (nextCatalog: RewardCatalogItem[]) => {
+    setSaving(true);
+    try {
+      applyRewardData(await saveRewardCatalog(nextCatalog));
+      setMessage('奖励目录已更新');
+    } catch (error) {
+      setMessage(`保存目录失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addCatalogItem = () => {
+    const title = catalogDraft.title.trim();
+    const cost = Math.max(1, Math.floor(Number(catalogDraft.cost || 1)));
+    if (!title) { setMessage('请先填写奖励名称'); return; }
+    void saveCatalog([...catalog, {
+      id: `custom_${Date.now()}`,
+      title,
+      cost,
+      description: catalogDraft.description.trim(),
+      enabled: true,
+    }]);
+    setCatalogDraft({ title: '', cost: '20', description: '' });
+  };
 
   return (
     <div className="reward-center-page animate-fadeIn">
@@ -39,6 +120,8 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
           <button className="btn btn-ghost btn-sm" onClick={refresh}>刷新成就</button>
         </div>
       </header>
+
+      {message && <div className="message-banner info" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
 
       {/* 黄金星空成就大卡片 */}
       <div 
@@ -78,6 +161,55 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="reward-redemption-grid animate-fadeInUp stagger-2">
+        <section className="card reward-redemption-card">
+          <h2 className="card-title">星星兑换</h2>
+          <div className="reward-catalog-list">
+            {catalog.filter((item) => item.enabled || !isKidRoute).map((item) => {
+              const disabled = saving || !item.enabled || reward.stars < item.cost;
+              return <div className="reward-catalog-item" key={item.id}>
+                <div>
+                  <b>{item.title}</b>
+                  <span>{item.description || '家长确认后完成兑换'}</span>
+                </div>
+                <strong>{item.cost} 星</strong>
+                {isKidRoute ? <button className="btn btn-primary btn-sm" disabled={disabled} onClick={() => void redeem(item)}>
+                  {reward.stars < item.cost ? '星星不足' : '申请兑换'}
+                </button> : <button className="btn btn-soft btn-sm" disabled={saving} onClick={() => void saveCatalog(catalog.map((row) => row.id === item.id ? { ...row, enabled: !row.enabled } : row))}>
+                  {item.enabled ? '停用' : '启用'}
+                </button>}
+              </div>;
+            })}
+            {!catalog.length && <p className="loginEmpty">还没有可兑换奖励</p>}
+          </div>
+        </section>
+
+        {!isKidRoute && <section className="card reward-redemption-card">
+          <h2 className="card-title">兑换审批</h2>
+          <div className="reward-redemption-list">
+            {redemptions.map((item) => <div className={`reward-redemption-item ${item.status.toLowerCase()}`} key={item.id}>
+              <div>
+                <b>{item.title}</b>
+                <span>{item.cost} 星 / {new Date(item.requestedAt).toLocaleString()}</span>
+              </div>
+              <em>{item.status === 'PENDING' ? '待审批' : item.status === 'APPROVED' ? '已批准' : '已拒绝'}</em>
+              {item.status === 'PENDING' && <div className="reward-redemption-actions">
+                <button className="btn btn-primary btn-sm" disabled={saving} onClick={() => void confirm(item.id, 'APPROVED')}>批准</button>
+                <button className="btn btn-secondary btn-sm" disabled={saving} onClick={() => void confirm(item.id, 'REJECTED')}>拒绝</button>
+              </div>}
+            </div>)}
+            {!redemptions.length && <p className="loginEmpty">暂无兑换申请</p>}
+          </div>
+
+          <div className="reward-catalog-form">
+            <input placeholder="奖励名称" value={catalogDraft.title} onChange={(event) => setCatalogDraft((draft) => ({ ...draft, title: event.target.value }))} />
+            <input placeholder="星星" type="number" min="1" value={catalogDraft.cost} onChange={(event) => setCatalogDraft((draft) => ({ ...draft, cost: event.target.value }))} />
+            <input placeholder="说明" value={catalogDraft.description} onChange={(event) => setCatalogDraft((draft) => ({ ...draft, description: event.target.value }))} />
+            <button className="btn btn-outline btn-sm" disabled={saving} onClick={addCatalogItem}>新增奖励</button>
+          </div>
+        </section>}
       </div>
 
       {/* 徽章墙 */}

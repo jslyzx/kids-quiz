@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { Public } from '../auth/public.decorator';
+import type { AuthUser } from '../auth/current-user';
+import { CurrentUser } from '../auth/current-user.decorator';
 import type { SubmitPaperAttemptDto } from './dto';
 import { SubmissionsService } from './submissions.service';
 
@@ -7,57 +8,53 @@ import { SubmissionsService } from './submissions.service';
 export class SubmissionsController {
   constructor(private readonly service: SubmissionsService) {}
 
+  private studentId(value?: string) {
+    const n = Number(value);
+    return n && !Number.isNaN(n) ? BigInt(n) : undefined;
+  }
+
   @Post('paper-attempts')
-  @Public()
-  submitPaperAttempt(@Body() dto: SubmitPaperAttemptDto) {
-    return this.service.submitPaperAttempt(dto);
+  submitPaperAttempt(@CurrentUser() user: AuthUser, @Body() dto: SubmitPaperAttemptDto) {
+    return this.service.submitPaperAttempt(user.id, dto);
   }
 
   @Get('wrong-answers')
-  @Public()
-  listWrongAnswers() {
-    return this.service.listWrongAnswers();
+  listWrongAnswers(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.listWrongAnswers(user.id, this.studentId(studentId));
   }
 
   @Get('wrong-stats')
-  @Public()
-  listWrongStats() {
-    return this.service.listWrongStats();
+  listWrongStats(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.listWrongStats(user.id, this.studentId(studentId));
   }
 
   @Get('paper-stats')
-  @Public()
-  listPaperStats() {
-    return this.service.listPaperStats();
+  listPaperStats(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.listPaperStats(user.id, this.studentId(studentId));
   }
 
   @Get('tag-stats')
-  @Public()
-  listTagStats() {
-    return this.service.listTagStats();
+  listTagStats(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.listTagStats(user.id, this.studentId(studentId));
   }
 
   @Get('recent-attempts')
-  @Public()
-  listRecentAttempts() {
-    return this.service.listRecentAttempts();
+  listRecentAttempts(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.listRecentAttempts(user.id, this.studentId(studentId));
   }
 
   @Get('practice-attempts')
-  @Public()
-  listPracticeAttempts(@Query('paperId') paperId?: string) {
-    return this.service.listPracticeAttempts(paperId ? Number(paperId) : undefined);
+  listPracticeAttempts(@CurrentUser() user: AuthUser, @Query('paperId') paperId?: string, @Query('studentId') studentId?: string) {
+    return this.service.listPracticeAttempts(user.id, paperId ? Number(paperId) : undefined, this.studentId(studentId));
   }
 
   @Get('practice-attempts/:attemptId')
-  @Public()
-  getPracticeAttempt(@Param('attemptId') attemptId: string) {
-    return this.service.getPracticeAttempt(Number(attemptId));
+  getPracticeAttempt(@CurrentUser() user: AuthUser, @Param('attemptId') attemptId: string, @Query('studentId') studentId?: string) {
+    return this.service.getPracticeAttempt(user.id, Number(attemptId), this.studentId(studentId));
   }
 
   @Get('paper-attempts/:paperId')
-  @Public()
-  listPaperAttempts(@Param('paperId') paperId: string) {
-    return this.service.listPaperAttempts(Number(paperId));
+  listPaperAttempts(@CurrentUser() user: AuthUser, @Param('paperId') paperId: string, @Query('studentId') studentId?: string) {
+    return this.service.listPaperAttempts(user.id, Number(paperId), this.studentId(studentId));
   }
 }

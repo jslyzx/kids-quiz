@@ -3,6 +3,8 @@ export type RewardState = {
   streakDays: number;
   lastPracticeDate?: string;
   badges: string[];
+  catalog?: Array<{ id: string; title: string; cost: number; description?: string; enabled: boolean }>;
+  redemptions?: Array<{ id: string; rewardId: string; title: string; cost: number; status: 'PENDING' | 'APPROVED' | 'REJECTED'; requestedAt: string; confirmedAt?: string }>;
 };
 
 export type RewardGrant = {
@@ -46,6 +48,8 @@ export function readRewardState(): RewardState {
       streakDays: Number(parsed.streakDays || 0),
       lastPracticeDate: parsed.lastPracticeDate,
       badges: Array.isArray(parsed.badges) ? parsed.badges : [],
+      catalog: Array.isArray(parsed.catalog) ? parsed.catalog : [],
+      redemptions: Array.isArray(parsed.redemptions) ? parsed.redemptions : [],
     };
   } catch {
     return { stars: 0, streakDays: 0, badges: [] };

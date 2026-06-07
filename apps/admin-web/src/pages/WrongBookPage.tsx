@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listWrongAnswers } from '../api/submissions';
+import { useLocation } from 'react-router-dom';
+import { listStudentWrongAnswers, listWrongAnswers } from '../api/submissions';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   onBack: () => void;
@@ -44,6 +46,9 @@ function plainExplanation(record: any): string {
 }
 
 export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onRetryWrong, onRetryTag, onPrintWrong }: Props) {
+  const location = useLocation();
+  const isKidRoute = location.pathname.startsWith('/kid');
+  const selectedStudentId = useSelectedStudentId();
   const [records, setRecords] = useState<any[]>([]);
   const [keyword, setKeyword] = useState('');
   const [message, setMessage] = useState('');
@@ -52,7 +57,7 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
   const refresh = async () => {
     try {
       setLoading(true);
-      const data = await listWrongAnswers();
+      const data = await (isKidRoute ? listStudentWrongAnswers() : listWrongAnswers());
       setRecords(data);
       setMessage(`已加载 ${data.length} 条错题`);
     } catch (error) {
@@ -62,7 +67,7 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); }, [selectedStudentId, isKidRoute]);
 
   const filtered = useMemo(() => {
     const value = keyword.trim();

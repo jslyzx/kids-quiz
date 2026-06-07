@@ -79,6 +79,8 @@ scripts/
   backup-db.ps1       备份 MySQL 数据库
 ```
 
+生产部署说明见 [docs/deployment.md](docs/deployment.md)。
+
 ## 环境要求
 
 - Node.js 18+
@@ -97,7 +99,7 @@ npm i -g pnpm
 ERR_PNPM_IGNORED_BUILDS Ignored build scripts
 ```
 
-这是 pnpm 的依赖构建脚本安全提示。项目已在 `pnpm-workspace.yaml` 白名单中允许 Prisma、esbuild、bcrypt 等必要依赖。处理方式：
+这是 pnpm 的依赖构建脚本安全提示。项目已在 `pnpm-workspace.yaml` 白名单中允许 Prisma、esbuild 等必要依赖。处理方式：
 
 ```bash
 pnpm install
@@ -110,7 +112,7 @@ pnpm db:generate
 pnpm approve-builds
 ```
 
-在交互列表里勾选 `@prisma/client`、`@prisma/engines`、`prisma`、`esbuild`、`bcrypt`、`@nestjs/core`，确认后再运行：
+在交互列表里勾选 `@prisma/client`、`@prisma/engines`、`prisma`、`esbuild`、`@nestjs/core`，确认后再运行：
 
 ```bash
 pnpm install

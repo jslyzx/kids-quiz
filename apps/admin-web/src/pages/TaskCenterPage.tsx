@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { listPapers } from '../api/papers';
-import { listPaperStats, listRecentAttempts, listTagStats, listWrongAnswers } from '../api/submissions';
-import { getTaskSettings } from '../api/student';
+import { listStudentPapers as listPapers } from '../api/papers';
+import { listStudentPaperStats as listPaperStats, listStudentRecentAttempts as listRecentAttempts, listStudentTagStats as listTagStats, listStudentWrongAnswers as listWrongAnswers } from '../api/submissions';
+import { getChildTaskSettings as getTaskSettings } from '../api/student';
 import { readTaskPlanSettings, type TaskPlanSettings } from '../utils/taskPlan';
 
 type Props = {

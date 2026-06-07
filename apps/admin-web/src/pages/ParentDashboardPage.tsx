@@ -5,6 +5,7 @@ import { getWrongStats, listPaperStats, listPracticeAttempts, listRecentAttempts
 import { badgeLabels, readRewardState } from '../utils/rewards';
 import { readTaskPlanSettings } from '../utils/taskPlan';
 import { renderMathText } from '../utils/mathText';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   onKidHome: () => void;
@@ -50,6 +51,7 @@ function displayStem(value: unknown, fallback: string) {
 }
 
 export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onTaskCenter, onReport, onWrongBook, onRewards, onStartPaper, onOpenRecords }: Props) {
+  const selectedStudentId = useSelectedStudentId();
   const [papers, setPapers] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
@@ -90,7 +92,7 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); }, [selectedStudentId]);
 
   const reward = readRewardState();
   const taskSettings = readTaskPlanSettings();

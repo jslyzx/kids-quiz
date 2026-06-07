@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getPracticeAttempt, listPaperPracticeAttempts, listPracticeAttempts } from '../api/submissions';
+import { useLocation } from 'react-router-dom';
+import { getPracticeAttempt, getStudentPracticeAttempt, listPaperPracticeAttempts, listPracticeAttempts, listStudentPaperPracticeAttempts, listStudentPracticeAttempts } from '../api/submissions';
+import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
 type Props = {
   paperId?: string;
@@ -30,6 +32,9 @@ function sourceLabel(source: string | undefined): string {
 }
 
 export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
+  const location = useLocation();
+  const isKidRoute = location.pathname.startsWith('/kid');
+  const selectedStudentId = useSelectedStudentId();
   const [attempts, setAttempts] = useState<any[]>([]);
   const [attemptDetails, setAttemptDetails] = useState<Record<string, any>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -41,7 +46,9 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
   const refresh = async () => {
     try {
       setLoading(true);
-      const attemptData = paperId ? await listPaperPracticeAttempts(paperId) : await listPracticeAttempts();
+      const attemptData = paperId
+        ? await (isKidRoute ? listStudentPaperPracticeAttempts(paperId) : listPaperPracticeAttempts(paperId))
+        : await (isKidRoute ? listStudentPracticeAttempts() : listPracticeAttempts());
       setAttempts(attemptData);
       setAttemptDetails({});
       setExpandedAttemptId(null);
@@ -53,7 +60,7 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
     }
   };
 
-  useEffect(() => { void refresh(); }, [paperId]);
+  useEffect(() => { void refresh(); }, [paperId, selectedStudentId, isKidRoute]);
 
   const toggleAttempt = async (attemptId: string) => {
     if (expandedAttemptId === attemptId) {
@@ -64,7 +71,7 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
     if (attemptDetails[attemptId]) return;
     try {
       setDetailLoadingId(attemptId);
-      const detail = await getPracticeAttempt(attemptId);
+      const detail = await (isKidRoute ? getStudentPracticeAttempt(attemptId) : getPracticeAttempt(attemptId));
       setAttemptDetails((prev) => ({ ...prev, [attemptId]: detail }));
     } catch (error) {
       setMessage(`加载本次练习详情失败：${error instanceof Error ? error.message : String(error)}`);

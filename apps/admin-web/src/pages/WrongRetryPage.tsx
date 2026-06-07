@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getWrongStats, listWrongAnswers, submitPaperAttempt } from '../api/submissions';
+import { getStudentWrongStats as getWrongStats, listStudentWrongAnswers as listWrongAnswers, submitStudentPaperAttempt as submitPaperAttempt } from '../api/submissions';
 import { applyRewardSnapshot, badgeLabels, grantPracticeReward, type RewardGrant } from '../utils/rewards';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
 

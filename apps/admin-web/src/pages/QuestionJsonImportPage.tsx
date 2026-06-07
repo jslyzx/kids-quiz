@@ -40,12 +40,168 @@ function asArray(value: unknown) {
 
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([typeof data === 'string' ? data : JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  downloadBlob(filename, blob);
+}
+
+function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+const EXCEL_TEMPLATE_ROWS = [
+  {
+    title: '两位数加法填空',
+    gradeLevel: '二年级',
+    difficulty: 1,
+    tags: '数学|填空题',
+    question_type: 'fill_blank',
+    stem: '36 + 27 = {{blank:1}}',
+    answer: '63',
+    options: '',
+    explanation: '个位 6+7=13，十位进 1。',
+  },
+  {
+    title: '选择正确结果',
+    gradeLevel: '二年级',
+    difficulty: 1,
+    tags: '数学|选择题',
+    question_type: 'single_choice',
+    stem: '8 x 6 = ?',
+    answer: 'B',
+    options: 'A=42|B=48|C=54|D=56',
+    explanation: '8 个 6 相加是 48。',
+  },
+];
+
+function normalizeHeader(value: unknown) {
+  return String(value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+function normalizeRow(row: Record<string, unknown>) {
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) normalized[normalizeHeader(key)] = value;
+  return normalized;
+}
+
+function readCell(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[normalizeHeader(key)];
+    if (value !== undefined && String(value).trim() !== '') return value;
+  }
+  return '';
+}
+
+function splitList(value: unknown) {
+  return String(value ?? '')
+    .split(/\r?\n|[|,;，；、]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseOptions(value: unknown) {
+  return splitList(value).map((item, index) => {
+    const match = item.match(/^([^=:：]+)\s*[=:：]\s*(.+)$/);
+    if (match) return { key: match[1].trim(), text: match[2].trim() };
+    return { key: String.fromCharCode(65 + index), text: item };
+  });
+}
+
+function excelRowToDraft(source: Record<string, unknown>) {
+  const row = normalizeRow(source);
+  const questionType = String(readCell(row, ['question_type', 'questionType', '题型']) || 'fill_blank').trim();
+  const stem = String(readCell(row, ['stem', '题干', 'question']) ?? '').trim();
+  const title = String(readCell(row, ['title', '标题']) || compactText(stem) || 'Excel 导入题目').trim();
+  const answers = [
+    ...Array.from({ length: 10 }, (_item, index) => readCell(row, [`answer_${index + 1}`, `answer${index + 1}`, `答案${index + 1}`])),
+    readCell(row, ['answer', 'answers', '答案']),
+  ].flatMap(splitList);
+  const options = parseOptions(readCell(row, ['options', '选项']));
+  const explanation = String(readCell(row, ['explanation', '解析']) ?? '').trim();
+
+  const draft: any = {
+    type: 'question',
+    title,
+    gradeLevel: String(readCell(row, ['gradeLevel', 'grade', '年级']) ?? '').trim(),
+    difficulty: normalizeDifficultyValue(readCell(row, ['difficulty', '难度'])),
+    tags: splitList(readCell(row, ['tags', '标签'])),
+    question: {
+      question_type: questionType,
+      stem,
+      answer_slots: [{
+        slot_key: 'answer',
+        slot_type: questionType === 'ordering' ? 'order' : questionType === 'matching' ? 'match' : 'choice',
+        correct_answer: answers,
+      }],
+    },
+  };
+
+  if (questionType === 'fill_blank') {
+    const keys = blankKeys(normalizeText(stem));
+    draft.question.answer_slots = (answers.length ? answers : ['']).map((answer, index) => ({
+      slot_key: keys[index] ?? `blank_${index + 1}`,
+      slot_type: /^-?\d+(\.\d+)?$/.test(String(answer)) ? 'number' : 'text',
+      correct_answer: [answer],
+    }));
+  }
+
+  if (questionType === 'single_choice' || questionType === 'multiple_choice') {
+    draft.question.content = { options };
+  }
+
+  if (explanation) {
+    draft.question.explanation = explanation;
+    draft.question.content = { ...(draft.question.content ?? {}), explanationHtml: explanation, explanationFormat: 'html' };
+  }
+
+  return normalizeImportedItem(draft);
+}
+
+function parseDelimitedText(text: string) {
+  const delimiter = text.includes('\t') ? '\t' : ',';
+  const rows: string[][] = [];
+  let cell = '';
+  let row: string[] = [];
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === delimiter && !quoted) {
+      row.push(cell);
+      cell = '';
+    } else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && next === '\n') index += 1;
+      row.push(cell);
+      if (row.some((item) => item.trim())) rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell);
+  if (row.some((item) => item.trim())) rows.push(row);
+
+  const [headers = [], ...body] = rows;
+  return body.map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
+}
+
+async function readExcelFile(file: File) {
+  const XLSX = await import('xlsx');
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], { defval: '' });
+  return rows.map(excelRowToDraft);
 }
 
 function withImportReviewTag(draft: any) {
@@ -593,12 +749,27 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
 
   const onFile = async (file?: File | null) => {
     if (!file) return;
-    setText(await file.text());
-    setSelectedIndex(0);
-    setSavedIds([]);
-    setPaperId('');
-    setFailures([]);
-    setMessage(`已读取文件：${file.name}`);
+    const lowerName = file.name.toLowerCase();
+    try {
+      if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+        const drafts = await readExcelFile(file);
+        setText(JSON.stringify(drafts, null, 2));
+        setMessage(`已读取 Excel 文件：${file.name}，转换 ${drafts.length} 道题`);
+      } else if (lowerName.endsWith('.csv') || lowerName.endsWith('.tsv')) {
+        const drafts = parseDelimitedText(await file.text()).map(excelRowToDraft);
+        setText(JSON.stringify(drafts, null, 2));
+        setMessage(`已读取表格文件：${file.name}，转换 ${drafts.length} 道题`);
+      } else {
+        setText(await file.text());
+        setMessage(`已读取文件：${file.name}`);
+      }
+      setSelectedIndex(0);
+      setSavedIds([]);
+      setPaperId('');
+      setFailures([]);
+    } catch (error) {
+      setMessage(`文件读取失败：${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const copyNormalizedJson = async () => {
@@ -610,6 +781,19 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
   const downloadTemplate = () => {
     downloadJson(`kids-quiz-import-template-${new Date().toISOString().slice(0, 10)}.json`, SAMPLE_JSON);
     setMessage('已下载导入模板');
+  };
+
+  const downloadExcelTemplate = async () => {
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(EXCEL_TEMPLATE_ROWS);
+    XLSX.utils.book_append_sheet(workbook, sheet, 'questions');
+    const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    downloadBlob(
+      `kids-quiz-excel-template-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    );
+    setMessage('已下载 Excel 导入模板');
   };
 
   const restoreSample = () => {
@@ -706,14 +890,15 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
           <button className="btn btn-ghost btn-sm" onClick={onBack} aria-label="返回题库">←</button>
           <h1 className="page-title">导入题目 JSON</h1>
         </div>
-        <p className="page-subtitle">粘贴或上传识别工具输出的 JSON，先校验预览，再批量导入题库。</p>
+        <p className="page-subtitle">粘贴 JSON 或上传 Excel 表格，先校验预览，再批量导入题库。</p>
       </div>
       <div className="page-actions">
         <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
-          上传 JSON
-          <input type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={(e) => void onFile(e.target.files?.[0])} />
+          上传 JSON/Excel
+          <input type="file" accept=".json,.xlsx,.xls,.csv,.tsv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/tab-separated-values" style={{ display: 'none' }} onChange={(e) => void onFile(e.target.files?.[0])} />
         </label>
-        <button className="btn btn-outline btn-sm" onClick={downloadTemplate}>下载模板</button>
+        <button className="btn btn-outline btn-sm" onClick={() => void downloadExcelTemplate()}>下载 Excel 模板</button>
+        <button className="btn btn-outline btn-sm" onClick={downloadTemplate}>下载 JSON 模板</button>
         <button className="btn btn-soft btn-sm" onClick={restoreSample}>恢复示例</button>
         <button className="btn btn-soft btn-sm" disabled={duplicateLoading} onClick={() => void refreshDuplicateMap()}>{duplicateLoading ? '刷新中...' : '刷新去重'}</button>
         <button className="btn btn-primary btn-sm" disabled={saving || !validItems.length} onClick={() => void importValid()}>
@@ -741,13 +926,13 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     <div className="editor-layout">
       <section className="editor-panel">
         <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>1. JSON 内容</h2>
+          <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>1. 导入内容</h2>
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
             <button className="btn btn-outline btn-sm" onClick={() => void copyNormalizedJson()} disabled={!parsed.items.length || Boolean(parsed.parseError)}>复制规范化 JSON</button>
             <button className="btn btn-secondary btn-sm" onClick={() => { setText(''); setSelectedIndex(0); setSavedIds([]); setPaperId(''); setFailures([]); }}>清空</button>
           </div>
           <textarea style={{ minHeight: 320 }} value={text} onChange={(e) => { setText(e.target.value); setSelectedIndex(0); setSavedIds([]); setPaperId(''); setFailures([]); }} />
-          <p className="tip">支持单个对象或数组。会自动兼容 \(...\)、\[...\] 公式和 {'{_0}'} 旧空位写法。</p>
+          <p className="tip">支持 JSON 对象/数组，也支持 Excel、CSV、TSV 表格上传。Excel 表头可用 title、gradeLevel、difficulty、tags、question_type、stem、answer、options、explanation。</p>
         </div>
 
         <div className="card">

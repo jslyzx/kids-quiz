@@ -3,9 +3,6 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { SaveQuestionGroupDto } from './dto';
 
-const DEFAULT_OWNER_ID = 1n;
-const DEFAULT_SUBJECT_ID = 1n;
-
 function jsonSafe<T>(value: T): T {
   return JSON.parse(JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? v.toString() : v));
 }
@@ -84,18 +81,18 @@ function shiftZeroBasedBlankSlotKey(value: unknown) {
 export class QuestionGroupsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createFromDraft(dto: SaveQuestionGroupDto) {
+  async createFromDraft(ownerId: bigint, dto: SaveQuestionGroupDto) {
     if (!dto || !('type' in dto)) throw new BadRequestException('Invalid draft payload');
 
     const result = await this.prisma.$transaction(async (tx: any) => {
-      await this.ensureDefaults(tx);
+      const subjectId = await this.ensureDefaultSubject(tx, ownerId);
 
       if (dto.type === 'calculation_group') {
         const meta = groupMeta(dto);
         const group = await tx.questionGroup.create({
           data: {
-            ownerId: DEFAULT_OWNER_ID,
-            subjectId: DEFAULT_SUBJECT_ID,
+            ownerId,
+            subjectId,
             title: dto.title,
             ...meta,
             groupType: 'MENTAL_MATH',
@@ -105,8 +102,8 @@ export class QuestionGroupsService {
         for (const [index, item] of dto.items.entries()) {
           const q = await tx.question.create({
             data: {
-              ownerId: DEFAULT_OWNER_ID,
-              subjectId: DEFAULT_SUBJECT_ID,
+              ownerId,
+              subjectId,
               groupId: group.id,
               questionType: 'CALCULATION',
               stem: item.stem,
@@ -130,8 +127,8 @@ export class QuestionGroupsService {
         const meta = groupMeta(dto);
         const group = await tx.questionGroup.create({
           data: {
-            ownerId: DEFAULT_OWNER_ID,
-            subjectId: DEFAULT_SUBJECT_ID,
+            ownerId,
+            subjectId,
             title: dto.title,
             ...meta,
             commonStem: dto.commonStem,
@@ -140,7 +137,7 @@ export class QuestionGroupsService {
           },
         });
         for (const [index, child] of dto.children.entries()) {
-          await this.createQuestionWithSlots(tx, group.id, child, index, meta);
+          await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, child, index, meta);
         }
         return group;
       }
@@ -149,31 +146,31 @@ export class QuestionGroupsService {
         const meta = groupMeta(dto);
         const group = await tx.questionGroup.create({
           data: {
-            ownerId: DEFAULT_OWNER_ID,
-            subjectId: DEFAULT_SUBJECT_ID,
+            ownerId,
+            subjectId,
             title: dto.title,
             ...meta,
             groupType: 'PRACTICE_SET',
           },
         });
-        await this.createQuestionWithSlots(tx, group.id, dto.question, 0, meta);
+        await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, dto.question, 0, meta);
         return group;
       }
 
       throw new BadRequestException('Unsupported draft type');
     });
 
-    return jsonSafe(await this.get(Number(result.id)));
+    return jsonSafe(await this.get(ownerId, Number(result.id)));
   }
 
-  async updateFromDraft(id: number, dto: SaveQuestionGroupDto) {
+  async updateFromDraft(ownerId: bigint, id: number, dto: SaveQuestionGroupDto) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid question group id');
     if (!dto || !('type' in dto)) throw new BadRequestException('Invalid draft payload');
 
     await this.prisma.$transaction(async (tx: any) => {
-      await this.ensureDefaults(tx);
+      const subjectId = await this.ensureDefaultSubject(tx, ownerId);
       const groupId = BigInt(id);
-      const exists = await tx.questionGroup.findUnique({ where: { id: groupId }, select: { id: true } });
+      const exists = await tx.questionGroup.findFirst({ where: { id: groupId, ownerId }, select: { id: true } });
       if (!exists) throw new BadRequestException('Question group not found');
 
       await tx.question.deleteMany({ where: { groupId } });
@@ -193,8 +190,8 @@ export class QuestionGroupsService {
         for (const [index, item] of dto.items.entries()) {
           const q = await tx.question.create({
             data: {
-              ownerId: DEFAULT_OWNER_ID,
-              subjectId: DEFAULT_SUBJECT_ID,
+              ownerId,
+              subjectId,
               groupId,
               questionType: 'CALCULATION',
               stem: item.stem,
@@ -227,7 +224,7 @@ export class QuestionGroupsService {
           },
         });
         for (const [index, child] of dto.children.entries()) {
-          await this.createQuestionWithSlots(tx, groupId, child, index, meta);
+          await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, child, index, meta);
         }
         return;
       }
@@ -244,19 +241,19 @@ export class QuestionGroupsService {
             content: undefined,
           },
         });
-        await this.createQuestionWithSlots(tx, groupId, dto.question, 0, meta);
+        await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, dto.question, 0, meta);
         return;
       }
 
       throw new BadRequestException('Unsupported draft type');
     });
 
-    return this.get(id);
+    return this.get(ownerId, id);
   }
 
-  async list(includeDisabled = false) {
+  async list(ownerId: bigint, includeDisabled = false) {
     const rows = await this.prisma.questionGroup.findMany({
-      where: includeDisabled ? { status: { not: 'DELETED' } } : { status: 'ENABLED' },
+      where: { ownerId, ...(includeDisabled ? { status: { not: 'DELETED' } } : { status: 'ENABLED' }) },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { questions: true } },
@@ -267,9 +264,9 @@ export class QuestionGroupsService {
     return jsonSafe(rows);
   }
 
-  async exportAll() {
+  async exportAll(ownerId: bigint) {
     const rows = await this.prisma.questionGroup.findMany({
-      where: { status: { not: 'DELETED' } },
+      where: { ownerId, status: { not: 'DELETED' } },
       orderBy: { createdAt: 'desc' },
       include: {
         questions: {
@@ -290,9 +287,9 @@ export class QuestionGroupsService {
     });
   }
 
-  async get(id: number) {
-    const row = await this.prisma.questionGroup.findUnique({
-      where: { id: BigInt(id) },
+  async get(ownerId: bigint, id: number) {
+    const row = await this.prisma.questionGroup.findFirst({
+      where: { id: BigInt(id), ownerId },
       include: {
         questions: {
           orderBy: { sortOrder: 'asc' },
@@ -304,24 +301,24 @@ export class QuestionGroupsService {
     return jsonSafe(row);
   }
 
-  async bulkUpdateStatus(ids: Array<string | number>, status?: string) {
+  async bulkUpdateStatus(ownerId: bigint, ids: Array<string | number>, status?: string) {
     const nextStatus = status === 'DISABLED' ? 'DISABLED' : status === 'ENABLED' ? 'ENABLED' : null;
     if (!nextStatus) throw new BadRequestException('Unsupported question group status');
     const groupIds = ids.map((id) => Number(id)).filter((id) => id && !Number.isNaN(id)).map((id) => BigInt(id));
     if (!groupIds.length) throw new BadRequestException('No question groups selected');
     const result = await this.prisma.questionGroup.updateMany({
-      where: { id: { in: groupIds }, status: { not: 'DELETED' } },
+      where: { ownerId, id: { in: groupIds }, status: { not: 'DELETED' } },
       data: { status: nextStatus },
     });
     return jsonSafe({ ok: true, count: result.count, status: nextStatus });
   }
 
-  async bulkAddTags(ids: Array<string | number>, tags: string[]) {
+  async bulkAddTags(ownerId: bigint, ids: Array<string | number>, tags: string[]) {
     const groupIds = ids.map((id) => Number(id)).filter((id) => id && !Number.isNaN(id)).map((id) => BigInt(id));
     const nextTags = Array.from(new Set((tags ?? []).map((tag) => String(tag).trim()).filter(Boolean)));
     if (!groupIds.length) throw new BadRequestException('No question groups selected');
     if (!nextTags.length) throw new BadRequestException('No tags provided');
-    const rows = await this.prisma.questionGroup.findMany({ where: { id: { in: groupIds }, status: { not: 'DELETED' } }, select: { id: true, tags: true } });
+    const rows = await this.prisma.questionGroup.findMany({ where: { ownerId, id: { in: groupIds }, status: { not: 'DELETED' } }, select: { id: true, tags: true } });
     for (const row of rows) {
       const merged = Array.from(new Set([...(Array.isArray(row.tags) ? row.tags.map(String) : []), ...nextTags]));
       await this.prisma.questionGroup.update({ where: { id: row.id }, data: { tags: merged } });
@@ -330,12 +327,12 @@ export class QuestionGroupsService {
     return jsonSafe({ ok: true, count: rows.length, tags: nextTags });
   }
 
-  async bulkRemoveTags(ids: Array<string | number>, tags: string[]) {
+  async bulkRemoveTags(ownerId: bigint, ids: Array<string | number>, tags: string[]) {
     const groupIds = ids.map((id) => Number(id)).filter((id) => id && !Number.isNaN(id)).map((id) => BigInt(id));
     const removeTags = new Set((tags ?? []).map((tag) => String(tag).trim()).filter(Boolean));
     if (!groupIds.length) throw new BadRequestException('No question groups selected');
     if (!removeTags.size) throw new BadRequestException('No tags provided');
-    const rows = await this.prisma.questionGroup.findMany({ where: { id: { in: groupIds }, status: { not: 'DELETED' } }, select: { id: true, tags: true } });
+    const rows = await this.prisma.questionGroup.findMany({ where: { ownerId, id: { in: groupIds }, status: { not: 'DELETED' } }, select: { id: true, tags: true } });
     for (const row of rows) {
       const nextTags = (Array.isArray(row.tags) ? row.tags.map(String) : []).filter((tag) => !removeTags.has(tag));
       await this.prisma.questionGroup.update({ where: { id: row.id }, data: { tags: nextTags } });
@@ -344,12 +341,12 @@ export class QuestionGroupsService {
     return jsonSafe({ ok: true, count: rows.length, tags: Array.from(removeTags) });
   }
 
-  async bulkApplyDefaults(ids: Array<string | number>, options: { gradeLevel?: string; addMissingTags?: boolean }) {
+  async bulkApplyDefaults(ownerId: bigint, ids: Array<string | number>, options: { gradeLevel?: string; addMissingTags?: boolean }) {
     const groupIds = ids.map((id) => Number(id)).filter((id) => id && !Number.isNaN(id)).map((id) => BigInt(id));
     if (!groupIds.length) throw new BadRequestException('No question groups selected');
     const defaultGradeLevel = String(options?.gradeLevel ?? '').trim() || '二年级';
     const rows = await this.prisma.questionGroup.findMany({
-      where: { id: { in: groupIds }, status: { not: 'DELETED' } },
+      where: { ownerId, id: { in: groupIds }, status: { not: 'DELETED' } },
       select: { id: true, groupType: true, title: true, tags: true, gradeLevel: true },
     });
     let gradeFixed = 0;
@@ -378,11 +375,11 @@ export class QuestionGroupsService {
     return jsonSafe({ ok: true, count: rows.length, gradeFixed, tagFixed, gradeLevel: defaultGradeLevel });
   }
 
-  async bulkNormalizeLegacy(ids: Array<string | number>) {
+  async bulkNormalizeLegacy(ownerId: bigint, ids: Array<string | number>) {
     const groupIds = ids.map((id) => Number(id)).filter((id) => id && !Number.isNaN(id)).map((id) => BigInt(id));
     if (!groupIds.length) throw new BadRequestException('No question groups selected');
     const rows = await this.prisma.questionGroup.findMany({
-      where: { id: { in: groupIds }, status: { not: 'DELETED' } },
+      where: { ownerId, id: { in: groupIds }, status: { not: 'DELETED' } },
       include: {
         questions: {
           where: { status: { not: 'DELETED' } },
@@ -441,52 +438,50 @@ export class QuestionGroupsService {
     return jsonSafe({ ok: true, count: rows.length, groupFixed, questionFixed, slotFixed, optionFixed });
   }
 
-  async updateStatus(id: number, status?: string) {
+  async updateStatus(ownerId: bigint, id: number, status?: string) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid question group id');
     const nextStatus = status === 'DISABLED' ? 'DISABLED' : status === 'ENABLED' ? 'ENABLED' : null;
     if (!nextStatus) throw new BadRequestException('Unsupported question group status');
-    const row = await this.prisma.questionGroup.update({
-      where: { id: BigInt(id) },
+    const result = await this.prisma.questionGroup.updateMany({
+      where: { id: BigInt(id), ownerId, status: { not: 'DELETED' } },
       data: { status: nextStatus },
-      include: { _count: { select: { questions: true } } },
     });
-    return jsonSafe(row);
+    if (!result.count) throw new BadRequestException('Question group not found');
+    return this.get(ownerId, id);
   }
 
-  async remove(id: number) {
+  async remove(ownerId: bigint, id: number) {
     if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid question group id');
-    await this.prisma.questionGroup.update({
-      where: { id: BigInt(id) },
+    const result = await this.prisma.questionGroup.updateMany({
+      where: { id: BigInt(id), ownerId, status: { not: 'DELETED' } },
       data: { status: 'DELETED' },
     });
+    if (!result.count) throw new BadRequestException('Question group not found');
     return { ok: true };
   }
 
-  private async ensureDefaults(tx: any) {
-    await tx.user.upsert({
-      where: { id: DEFAULT_OWNER_ID },
-      update: {},
-      create: {
-        id: DEFAULT_OWNER_ID,
-        username: 'admin',
-        passwordHash: 'dev-placeholder',
-        displayName: '默认管理员',
-      },
+  private async ensureDefaultSubject(tx: any, ownerId: bigint) {
+    const existing = await tx.subject.findFirst({
+      where: { ownerId, name: '数学', status: { not: 'DELETED' } },
+      orderBy: { id: 'asc' },
+      select: { id: true },
     });
-    await tx.subject.upsert({
-      where: { id: DEFAULT_SUBJECT_ID },
-      update: {},
-      create: {
-        id: DEFAULT_SUBJECT_ID,
-        ownerId: DEFAULT_OWNER_ID,
+    if (existing) return existing.id as bigint;
+    const subject = await tx.subject.create({
+      data: {
+        ownerId,
         name: '数学',
         icon: '🔢',
       },
+      select: { id: true },
     });
+    return subject.id as bigint;
   }
 
   private async createQuestionWithSlots(
     tx: any,
+    ownerId: bigint,
+    subjectId: bigint,
     groupId: bigint,
     question: SaveQuestionGroupDto extends infer _ ? any : never,
     sortOrder: number,
@@ -494,8 +489,8 @@ export class QuestionGroupsService {
   ) {
     const q = await tx.question.create({
       data: {
-        ownerId: DEFAULT_OWNER_ID,
-        subjectId: DEFAULT_SUBJECT_ID,
+        ownerId,
+        subjectId,
         groupId,
         questionType: mapQuestionType(question.question_type),
         stem: question.stem,

@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { Public } from '../auth/public.decorator';
+import type { AuthUser } from '../auth/current-user';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { QuestionGroupsService } from './question-groups.service';
 import type { SaveQuestionGroupDto } from './dto';
 
@@ -8,67 +9,65 @@ export class QuestionGroupsController {
   constructor(private readonly service: QuestionGroupsService) {}
 
   @Post()
-  create(@Body() dto: SaveQuestionGroupDto) {
-    return this.service.createFromDraft(dto);
+  create(@CurrentUser() user: AuthUser, @Body() dto: SaveQuestionGroupDto) {
+    return this.service.createFromDraft(user.id, dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: SaveQuestionGroupDto) {
-    return this.service.updateFromDraft(Number(id), dto);
+  update(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SaveQuestionGroupDto) {
+    return this.service.updateFromDraft(user.id, Number(id), dto);
   }
 
   @Get()
-  @Public()
-  list(@Query('includeDisabled') includeDisabled?: string) {
-    return this.service.list(includeDisabled === '1' || includeDisabled === 'true');
+  list(@CurrentUser() user: AuthUser, @Query('includeDisabled') includeDisabled?: string) {
+    return this.service.list(user.id, includeDisabled === '1' || includeDisabled === 'true');
   }
 
   @Get('export/all')
-  exportAll() {
-    return this.service.exportAll();
+  exportAll(@CurrentUser() user: AuthUser) {
+    return this.service.exportAll(user.id);
   }
 
   @Get(':id')
-  @Public()
-  get(@Param('id') id: string) {
-    return this.service.get(Number(id));
+  get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.service.get(user.id, Number(id));
   }
 
   @Patch('bulk/status')
-  bulkUpdateStatus(@Body() body: { ids?: Array<string | number>; status?: string }) {
-    return this.service.bulkUpdateStatus(body?.ids ?? [], body?.status);
+  bulkUpdateStatus(@CurrentUser() user: AuthUser, @Body() body: { ids?: Array<string | number>; status?: string }) {
+    return this.service.bulkUpdateStatus(user.id, body?.ids ?? [], body?.status);
   }
 
   @Patch('bulk/tags')
-  bulkAddTags(@Body() body: { ids?: Array<string | number>; tags?: string[] }) {
-    return this.service.bulkAddTags(body?.ids ?? [], body?.tags ?? []);
+  bulkAddTags(@CurrentUser() user: AuthUser, @Body() body: { ids?: Array<string | number>; tags?: string[] }) {
+    return this.service.bulkAddTags(user.id, body?.ids ?? [], body?.tags ?? []);
   }
 
   @Patch('bulk/tags/remove')
-  bulkRemoveTags(@Body() body: { ids?: Array<string | number>; tags?: string[] }) {
-    return this.service.bulkRemoveTags(body?.ids ?? [], body?.tags ?? []);
+  bulkRemoveTags(@CurrentUser() user: AuthUser, @Body() body: { ids?: Array<string | number>; tags?: string[] }) {
+    return this.service.bulkRemoveTags(user.id, body?.ids ?? [], body?.tags ?? []);
   }
 
   @Patch('bulk/defaults')
-  bulkApplyDefaults(@Body() body: { ids?: Array<string | number>; gradeLevel?: string; addMissingTags?: boolean }) {
-    return this.service.bulkApplyDefaults(body?.ids ?? [], {
+  bulkApplyDefaults(@CurrentUser() user: AuthUser, @Body() body: { ids?: Array<string | number>; gradeLevel?: string; addMissingTags?: boolean }) {
+    return this.service.bulkApplyDefaults(user.id, body?.ids ?? [], {
       gradeLevel: body?.gradeLevel,
       addMissingTags: body?.addMissingTags,
     });
   }
 
   @Patch('bulk/normalize-legacy')
-  bulkNormalizeLegacy(@Body() body: { ids?: Array<string | number> }) {
-    return this.service.bulkNormalizeLegacy(body?.ids ?? []);
+  bulkNormalizeLegacy(@CurrentUser() user: AuthUser, @Body() body: { ids?: Array<string | number> }) {
+    return this.service.bulkNormalizeLegacy(user.id, body?.ids ?? []);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() body: { status?: string }) {
-    return this.service.updateStatus(Number(id), body?.status);
+  updateStatus(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: { status?: string }) {
+    return this.service.updateStatus(user.id, Number(id), body?.status);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(Number(id));
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.service.remove(user.id, Number(id));
   }
 }
