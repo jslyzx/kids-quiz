@@ -1,0 +1,34 @@
+{
+  "name": "kids-quiz",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.4.0",
+  "scripts": {
+    "dev:admin": "pnpm --filter @kids-quiz/admin-web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "db:push": "pnpm --filter @kids-quiz/api exec prisma db push --schema ../../prisma/schema.prisma",
+    "db:generate": "pnpm --filter @kids-quiz/api exec prisma generate --schema ../../prisma/schema.prisma",
+    "dev:api": "pnpm --filter @kids-quiz/api dev",
+    "dev": "powershell -ExecutionPolicy Bypass -File scripts/start-dev.ps1",
+    "setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-db.ps1",
+    "db:backup": "powershell -ExecutionPolicy Bypass -File scripts/backup-db.ps1",
+    "migrate:matching:export": "node scripts/migrate-matching/migrate-matching.js export --fresh",
+    "migrate:matching:preview": "node scripts/migrate-matching/migrate-matching.js preview --fresh --sample-per-type=1",
+    "migrate:matching:import:sample": "node scripts/migrate-matching/migrate-matching.js import --fresh --sample-per-type=1",
+    "migrate:matching:import:all": "node scripts/migrate-matching/migrate-matching.js import --fresh --all --include-papers",
+    "paper:all": "node scripts/create-all-question-paper.js",
+    "smoke:e2e": "node scripts/e2e-smoke.mjs"
+  },
+  "devDependencies": {
+    "@prisma/client": "6.19.3",
+    "@types/katex": "^0.16.8",
+    "prisma": "6.19.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.2",
+    "katex": "^0.17.0",
+    "mysql2": "^3.22.4"
+  }
+}

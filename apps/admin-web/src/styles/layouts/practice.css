@@ -1,0 +1,904 @@
+/* ========================================
+   答题播放器布局
+   全屏沉浸式答题体验
+   ======================================== */
+
+.practice-layout {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eef6ff, #f8fafc 48%, #fff7ed);
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+}
+
+/* ---- 顶部进度栏 ---- */
+.practice-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) clamp(18px, 5vw, 70px);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid var(--border-light);
+  backdrop-filter: blur(12px);
+}
+
+.practice-progress-info {
+  flex: 1;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.practice-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.practice-source-pills {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.practice-source-pill {
+  display: inline-flex;
+  background: var(--violet-50);
+  color: var(--violet-600);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+}
+
+.practice-source-pill:last-child {
+  background: var(--orange-50);
+  color: var(--orange-600);
+}
+
+.practice-status {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.practice-progress-track {
+  height: 8px;
+  background: var(--slate-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+
+.practice-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-400), var(--violet-500));
+  border-radius: var(--radius-full);
+  transition: width 0.4s var(--ease-out-expo);
+}
+
+/* ---- 答题区 ---- */
+.practice-stage {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6);
+  max-width: var(--content-max-width);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.practice-question-card {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-lg);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInScale 0.35s var(--ease-out-expo);
+}
+
+.practice-question-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.practice-meta-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--violet-50);
+  color: var(--violet-600);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.practice-meta-title .sub-question-badge {
+  background: var(--blue-100);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.practice-question-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.practice-question-status b {
+  background: var(--color-success-soft);
+  color: var(--emerald-700);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.practice-draft-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.practice-draft-btn:hover {
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.practice-draft-btn.active {
+  background: var(--color-primary-soft);
+  border-color: var(--blue-300);
+  color: var(--color-primary);
+}
+
+.practice-draft-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* ---- 题干 ---- */
+.practice-stem {
+  font-size: var(--text-2xl);
+  line-height: 2.2;
+  margin-bottom: var(--space-6);
+  font-weight: 700;
+  white-space: pre-wrap;
+}
+
+/* ---- 填空输入 ---- */
+.practice-blank-input {
+  display: inline-block;
+  min-width: 100px;
+  border: 2px solid var(--blue-200);
+  border-radius: var(--radius-lg);
+  padding: 6px 12px;
+  font-size: var(--text-lg);
+  margin: 6px var(--space-1);
+  background: var(--blue-50);
+  vertical-align: middle;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.practice-blank-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.practice-blank-input.correct {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.practice-blank-input.wrong {
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.practice-blank-input.missing {
+  border-color: var(--color-orange);
+  background: var(--color-orange-soft);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+/* ---- 宽输入 ---- */
+.practice-wide-input {
+  width: 100%;
+  border: 2px solid var(--blue-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-lg);
+  background: var(--blue-50);
+}
+
+.practice-wide-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+/* ---- 选择题选项 ---- */
+.practice-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.practice-option {
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-card);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: left;
+  font-size: var(--text-lg);
+  transition: all var(--transition-fast);
+}
+
+.practice-option:hover {
+  border-color: var(--blue-200);
+  background: var(--blue-50);
+}
+
+.practice-option.selected {
+  border-color: var(--color-primary);
+  background: var(--blue-50);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.practice-option-key {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--blue-50);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.practice-option.selected .practice-option-key {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.practice-option b {
+  font-weight: 700;
+}
+
+/* ---- 连线题 ---- */
+.practice-match {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+.practice-match-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.practice-match-board {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(180px, 360px) minmax(180px, 360px);
+  justify-content: space-between;
+  gap: clamp(150px, 22vw, 320px);
+  align-items: start;
+}
+
+.practice-match-col {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.practice-match button {
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  padding: var(--space-4);
+  font-size: var(--text-md);
+  font-weight: 700;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.practice-match button.selected {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  border-color: var(--color-primary);
+}
+
+.practice-match button.paired {
+  background: var(--emerald-50);
+  border-color: var(--color-success);
+  color: var(--emerald-700);
+}
+
+.practice-match-tools {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  margin: var(--space-4) auto 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.practice-match-tools .btn {
+  white-space: nowrap;
+}
+
+/* ---- 古诗题 ---- */
+.practice-poem {
+  text-align: center;
+}
+
+.practice-poem h2 {
+  font-size: var(--text-3xl);
+  margin: 0;
+}
+
+.practice-poem-author {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.practice-poem-lines {
+  display: grid;
+  gap: var(--space-5);
+  margin: var(--space-6) 0;
+}
+
+.practice-poem-lines > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.practice-poem-lines span {
+  width: 44px;
+  height: 40px;
+  border-bottom: 3px solid var(--slate-300);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.practice-poem-lines b {
+  font-size: var(--text-2xl);
+}
+
+.practice-poem-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.practice-poem-actions button,
+.practice-char-pool button {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 800;
+}
+
+.practice-char-pool {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+}
+
+.practice-char-pool button {
+  width: 52px;
+  height: 52px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.practice-char-pool button.used {
+  opacity: 0.3;
+  background: var(--slate-100);
+}
+
+/* ---- 公共材料 ---- */
+.practice-material {
+  border: 1px solid var(--blue-100);
+  background: linear-gradient(180deg, #f8fbff, var(--blue-50));
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.practice-material-tag {
+  display: inline-flex;
+  background: var(--blue-100);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  margin-bottom: var(--space-3);
+}
+
+.practice-material p {
+  font-size: var(--text-lg);
+  line-height: 1.8;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.practice-material img {
+  max-width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--blue-100);
+}
+
+.practice-material-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.practice-material-table th,
+.practice-material-table td {
+  padding: var(--space-3);
+  text-align: center;
+  border-right: 1px solid var(--blue-100);
+  border-bottom: 1px solid var(--blue-100);
+  font-weight: 700;
+}
+
+.practice-material-table th {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+
+.practice-material-table tr:last-child td { border-bottom: 0; }
+.practice-material-table th:last-child,
+.practice-material-table td:last-child { border-right: 0; }
+
+/* ---- 底部导航栏 ---- */
+.practice-bottombar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 120px 1fr 140px;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  background: rgba(255, 255, 255, 0.88);
+  border-top: 1px solid var(--border-light);
+  backdrop-filter: blur(12px);
+}
+
+.practice-bottombar .btn {
+  font-size: var(--text-md);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-xl);
+}
+
+.practice-dots {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--space-2) var(--space-4);
+}
+
+.practice-dots::before,
+.practice-dots::after {
+  content: '';
+  margin: auto;
+}
+
+.practice-dot {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 0;
+  background: var(--slate-200);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.practice-dot.done {
+  background: var(--emerald-100);
+  color: var(--emerald-700);
+}
+
+.practice-dot.active {
+  background: var(--color-accent);
+  color: var(--text-inverse);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+/* ---- 结果页 ---- */
+.practice-result {
+  width: min(880px, 94vw);
+  margin: auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-10);
+  text-align: center;
+  box-shadow: var(--shadow-xl);
+  animation: bounceIn 0.5s var(--ease-spring);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
+
+.result-emoji {
+  font-size: 64px;
+  animation: starPop 0.6s var(--ease-spring) 0.2s backwards;
+}
+
+.practice-result h1 {
+  font-size: var(--text-4xl);
+  margin: var(--space-2) 0;
+}
+
+.practice-result > p {
+  font-size: var(--text-xl);
+  color: var(--text-secondary);
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+
+.result-stat {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+}
+
+.result-stat b {
+  display: block;
+  font-size: var(--text-3xl);
+  color: var(--color-accent);
+}
+
+.result-stat span {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.result-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---- 答案回顾 ---- */
+.result-review {
+  margin-top: var(--space-5);
+  text-align: left;
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--space-5);
+}
+
+.result-review-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.result-review-header b {
+  font-size: var(--text-xl);
+}
+
+.result-review-header span {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.result-answer-card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+}
+
+.result-answer-card.wrong {
+  border-color: var(--color-danger-border);
+  background: var(--rose-50);
+}
+
+.result-answer-card.ok {
+  border-color: var(--color-success-border);
+  background: var(--emerald-50);
+}
+
+.result-answer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.result-answer-head b {
+  font-size: var(--text-md);
+}
+
+.result-answer-head em {
+  font-style: normal;
+  border-radius: var(--radius-full);
+  padding: 3px 9px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+}
+
+.result-answer-card.ok .result-answer-head em {
+  background: var(--emerald-100);
+  color: var(--emerald-700);
+}
+
+.result-answer-card.wrong .result-answer-head em {
+  background: var(--rose-100);
+  color: var(--rose-600);
+}
+
+.result-answer-card p {
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin: var(--space-3) 0;
+}
+
+.result-answer-rows {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.result-answer-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  padding: var(--space-2) var(--space-3);
+}
+
+.result-answer-row.wrong {
+  border-color: var(--color-danger-border);
+  background: var(--rose-50);
+}
+
+.result-answer-row.ok {
+  border-color: var(--color-success-border);
+  background: var(--emerald-50);
+}
+
+.result-answer-row span {
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.result-answer-row strong {
+  font-weight: 700;
+  word-break: break-word;
+}
+
+/* ========================================================
+   响应式与 iPad / 手机端特定适配
+   ======================================================== */
+
+/* ---- iPad & 纵向中大平板适配断点 ---- */
+@media (max-width: 1024px) {
+  .practice-topbar {
+    min-height: 72px;
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .practice-stage {
+    padding: var(--space-4);
+  }
+
+  .practice-question-card {
+    min-height: 460px;
+    padding: var(--space-6);
+    border-radius: var(--radius-2xl);
+  }
+
+  .practice-stem {
+    font-size: var(--text-xl);
+    line-height: 1.8;
+  }
+
+  /* 在 iPad 平板上，选择题选项依然保持优雅的 2 列并排，触控体验更优 */
+  .practice-options {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  /* 在 iPad 平板上，连线题依然以多列合理分布 */
+  .practice-match-board {
+    grid-template-columns: minmax(160px, 320px) minmax(160px, 320px);
+    justify-content: space-between;
+    gap: clamp(96px, 18vw, 240px);
+  }
+
+  .practice-bottombar {
+    grid-template-columns: 90px 1fr 110px;
+    padding: var(--space-3) var(--space-4);
+    min-height: 76px;
+  }
+
+  .practice-dots {
+    /* 自动继承 margin: auto 居中与安全对齐逻辑 */
+  }
+
+  .result-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+  }
+
+  .result-answer-row {
+    grid-template-columns: 72px 1fr 1fr;
+  }
+}
+
+/* ---- 手机端/小屏特定物理断点 ---- */
+@media (max-width: 600px) {
+  .practice-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    min-height: auto;
+    padding: var(--space-3);
+  }
+
+  .practice-question-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  /* 手机端由于宽度极窄，选择题降级为单列 */
+  .practice-options {
+    grid-template-columns: 1fr;
+  }
+
+  /* 手机端连线题排列 */
+  .practice-match-board {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .practice-bottombar {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    min-height: auto;
+  }
+  
+  .practice-bottombar .btn {
+    width: 100%;
+  }
+
+  .practice-dots {
+    /* 自动继承 margin: auto 居中与安全对齐逻辑 */
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .result-answer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-stem {
+    font-size: var(--text-lg);
+    line-height: 1.8;
+    margin-bottom: var(--space-4);
+  }
+
+  .practice-blank-input {
+    min-width: 80px;
+    padding: 5px 10px;
+    font-size: var(--text-md);
+    margin: 4px 2px;
+    border-radius: var(--radius-md);
+  }
+
+  .practice-wide-input {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-md);
+    border-radius: var(--radius-md);
+  }
+}
+
+.practice-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: var(--space-3);
+}
+
+.practice-fill-table {
+  min-width: 520px;
+}
+
+.practice-fill-table .practice-blank-input {
+  min-width: 76px;
+  margin: 0;
+  text-align: center;
+}

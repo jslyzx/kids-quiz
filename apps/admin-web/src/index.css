@@ -1,0 +1,21 @@
+/* ========================================
+   Kids Quiz — 主样式入口
+   ======================================== */
+
+/* 基础设施 */
+@import './styles/tokens.css';
+@import './styles/reset.css';
+@import './styles/animations.css';
+
+/* 组件 */
+@import './styles/components/button.css';
+@import './styles/components/card.css';
+@import './styles/components/ui.css';
+
+/* 布局 */
+@import './styles/layouts/parent.css';
+@import './styles/layouts/kid.css';
+@import './styles/layouts/practice.css';
+
+/* 页面 */
+@import './styles/pages.css';

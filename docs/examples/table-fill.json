@@ -1,0 +1,93 @@
+[
+  {
+    "type": "question",
+    "title": "统计水果数量",
+    "gradeLevel": "三年级",
+    "difficulty": 1,
+    "tags": ["统计表", "数据收集整理"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "统计下面的水果数量，完成统计表并填空。\n\n苹果：○○○○○○○○\n香蕉：○○○○\n橙子：○○○○○○\n梨：○○\n\n{{blank:5}}的数量最多，{{blank:6}}的数量最少。",
+      "content": {
+        "tableFill": {
+          "headers": ["水果", "苹果", "香蕉", "橙子", "梨"],
+          "rows": [
+            ["数量(个)", "{{blank:1}}", "{{blank:2}}", "{{blank:3}}", "{{blank:4}}"]
+          ]
+        }
+      },
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] },
+        { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["6"] },
+        { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["2"] },
+        { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["苹果"] },
+        { "slot_key": "blank_6", "slot_type": "text", "correct_answer": ["梨"] }
+      ],
+      "explanation": "数一数可知：苹果8个，香蕉4个，橙子6个，梨2个，所以苹果最多，梨最少。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "完成课程表",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["表格", "信息提取"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "根据课程安排完成表格。",
+      "content": {
+        "tableFill": {
+          "headers": ["节次", "星期一", "星期二", "星期三"],
+          "rows": [
+            ["第一节", "语文", "{{blank:1}}", "数学"],
+            ["第二节", "{{blank:2}}", "美术", "体育"]
+          ]
+        }
+      },
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["数学"] },
+        { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["音乐"] }
+      ],
+      "explanation": "按照题目给出的课程安排填写对应单元格。"
+    }
+  },
+  {
+    "type": "composite_group",
+    "title": "四、操作题",
+    "gradeLevel": "三年级",
+    "difficulty": 1,
+    "tags": ["统计表", "数据收集整理"],
+    "commonStem": "四、操作题。",
+    "materials": [
+      {
+        "type": "text",
+        "title": "水果图案",
+        "text": "统计下面的水果数量，完成统计表并填空。\n\n苹果：○○○○○○○○\n香蕉：○○○○\n橙子：○○○○○○\n梨：○○"
+      }
+    ],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "完成统计表。\n\n{{blank:5}}的数量最多，{{blank:6}}的数量最少。",
+        "content": {
+          "tableFill": {
+            "headers": ["水果", "苹果", "香蕉", "橙子", "梨"],
+            "rows": [
+              ["数量(个)", "{{blank:1}}", "{{blank:2}}", "{{blank:3}}", "{{blank:4}}"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["2"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["苹果"] },
+          { "slot_key": "blank_6", "slot_type": "text", "correct_answer": ["梨"] }
+        ],
+        "explanation": "数一数可知：苹果8个，香蕉4个，橙子6个，梨2个。苹果最多，梨最少。"
+      }
+    ]
+  }
+]

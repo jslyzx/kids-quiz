@@ -1,0 +1,31 @@
+export type EditorMode = 'calculation' | 'fill_blank' | 'compare' | 'single_choice' | 'multiple_choice' | 'ordering' | 'matching' | 'composite';
+export type ChildType = 'fill_blank' | 'compare';
+export type ChildDraftInput = { type: ChildType; stem: string; answer: string; slotType: 'number' | 'text' | 'compare_symbol'; answers?: Record<string, string>; explanationHtml?: string };
+export type MaterialInput = { type: 'text' | 'table' | 'image'; title?: string; text: string };
+export type SavedDraft = { id: string; name: string; updatedAt: string; state: AppState };
+
+export type AppState = {
+  mode: EditorMode;
+  title: string;
+  gradeLevel: string;
+  difficulty: number;
+  tagsText: string;
+  stem: string;
+  answers: Record<string, string>;
+  explanationHtml: string;
+  choiceStem: string;
+  choiceOptionsText: string;
+  choiceAnswer: string;
+  calcText: string;
+  calcColumns: number;
+  orderingText: string;
+  orderingAnswer: string;
+  orderingSeparator: '>' | '<';
+  matchingLeft: string;
+  matchingRight: string;
+  matchingAnswer: string;
+  commonStem: string;
+  tableText: string;
+  materials: MaterialInput[];
+  children: ChildDraftInput[];
+};

@@ -1,0 +1,816 @@
+{
+  "generatedAt": "2026-06-02T08:01:23.298Z",
+  "dryRun": false,
+  "samplePerType": 0,
+  "includePapers": true,
+  "converted": [
+    {
+      "oldQuestionId": 19,
+      "type": "matching",
+      "title": "几个几与几和几",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 20,
+      "type": "choice",
+      "title": "计算下面的数学表达式: \\(2x + 3 = 7\\)",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 21,
+      "type": "choice",
+      "title": "求下列方程的解: \\(x^2 - 4 = 0\\)",
+      "questionType": "MULTIPLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 22,
+      "type": "matching",
+      "title": "动词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 23,
+      "type": "matching",
+      "title": "形容词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 24,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 25,
+      "type": "matching",
+      "title": "近义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 26,
+      "type": "matching",
+      "title": "反义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 27,
+      "type": "matching",
+      "title": "课文告诉我们什么道理",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 28,
+      "type": "matching",
+      "title": "形容词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 29,
+      "type": "matching",
+      "title": "动作描写",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 30,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 31,
+      "type": "matching",
+      "title": "ABB搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 32,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 33,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 34,
+      "type": "matching",
+      "title": "多音字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 44,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 45,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 46,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 47,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 48,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 49,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 50,
+      "type": "matching",
+      "title": "量词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 51,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 52,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 53,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 54,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 55,
+      "type": "matching",
+      "title": "形近字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 56,
+      "type": "matching",
+      "title": "多音字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 57,
+      "type": "matching",
+      "title": "多音字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 58,
+      "type": "matching",
+      "title": "多音字辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 59,
+      "type": "matching",
+      "title": "近义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 60,
+      "type": "matching",
+      "title": "近义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 61,
+      "type": "matching",
+      "title": "反义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 62,
+      "type": "matching",
+      "title": "反义词",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 63,
+      "type": "matching",
+      "title": "俗语搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 64,
+      "type": "matching",
+      "title": "动词搭配",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 66,
+      "type": "poem_fill",
+      "title": "梅花",
+      "questionType": "FILL_BLANK",
+      "groupType": "COMPOSITE"
+    },
+    {
+      "oldQuestionId": 67,
+      "type": "poem_fill",
+      "title": "小儿垂钓",
+      "questionType": "FILL_BLANK",
+      "groupType": "COMPOSITE"
+    },
+    {
+      "oldQuestionId": 68,
+      "type": "choice",
+      "title": "谁比谁多",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 69,
+      "type": "matching",
+      "title": "代词辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 70,
+      "type": "matching",
+      "title": "代词辨析",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 71,
+      "type": "choice",
+      "title": "看书问题",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 72,
+      "type": "choice",
+      "title": "have got和has got",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 73,
+      "type": "choice",
+      "title": "THere be有",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 74,
+      "type": "fill_blank",
+      "title": "3乘5",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 75,
+      "type": "fill_blank",
+      "title": "兔妈妈采蘑菇",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 76,
+      "type": "matching",
+      "title": "多音字：mu",
+      "questionType": "MATCHING",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 77,
+      "type": "choice",
+      "title": "看电影",
+      "questionType": "SINGLE_CHOICE",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 78,
+      "type": "fill_blank",
+      "title": "等量代换",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 79,
+      "type": "fill_blank",
+      "title": "归一问题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 80,
+      "type": "fill_blank",
+      "title": "数位问题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 81,
+      "type": "fill_blank",
+      "title": "错中求解",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 82,
+      "type": "fill_blank",
+      "title": "乘法口诀",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 83,
+      "type": "fill_blank",
+      "title": "剪绳子",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 84,
+      "type": "fill_blank",
+      "title": "绳子对折",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 85,
+      "type": "fill_blank",
+      "title": "简单乘法",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 86,
+      "type": "fill_blank",
+      "title": "绳子对折",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 87,
+      "type": "fill_blank",
+      "title": "间隔问题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 88,
+      "type": "fill_blank",
+      "title": "敲钟问题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 89,
+      "type": "fill_blank",
+      "title": "爬楼问题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 90,
+      "type": "fill_blank",
+      "title": "数感",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 91,
+      "type": "fill_blank",
+      "title": "数感",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 92,
+      "type": "fill_blank",
+      "title": "在()里填合适的数。",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    },
+    {
+      "oldQuestionId": 93,
+      "type": "fill_blank",
+      "title": "应用题",
+      "questionType": "FILL_BLANK",
+      "groupType": "PRACTICE_SET"
+    }
+  ],
+  "skipped": [],
+  "errors": [
+    {
+      "oldQuestionId": 16,
+      "type": "matching",
+      "message": "连线题存在缺失或无效 match_item_id，跳过。"
+    },
+    {
+      "oldQuestionId": 17,
+      "type": "matching",
+      "message": "连线题存在缺失或无效 match_item_id，跳过。"
+    },
+    {
+      "oldQuestionId": 18,
+      "type": "matching",
+      "message": "连线题存在缺失或无效 match_item_id，跳过。"
+    }
+  ],
+  "warnings": [
+    {
+      "oldQuestionId": 66,
+      "type": "poem_fill",
+      "message": "古诗填空已迁为选字答题结构：只维护诗全文，系统自动生成字池和答案。"
+    },
+    {
+      "oldQuestionId": 67,
+      "type": "poem_fill",
+      "message": "古诗填空已迁为选字答题结构：只维护诗全文，系统自动生成字池和答案。"
+    },
+    {
+      "oldQuestionId": 19,
+      "message": "新库已存在该旧题目来源，已跳过重复导入。"
+    },
+    {
+      "oldQuestionId": 20,
+      "message": "新库已存在该旧题目来源，已跳过重复导入。"
+    },
+    {
+      "oldQuestionId": 66,
+      "message": "新库已存在该旧题目来源，已跳过重复导入。"
+    },
+    {
+      "oldQuestionId": 74,
+      "message": "新库已存在该旧题目来源，已跳过重复导入。"
+    }
+  ],
+  "imported": [
+    {
+      "oldQuestionId": 21,
+      "newGroupId": "22",
+      "title": "求下列方程的解: {{math:x^2 - 4 = 0}}"
+    },
+    {
+      "oldQuestionId": 22,
+      "newGroupId": "23",
+      "title": "动词搭配"
+    },
+    {
+      "oldQuestionId": 23,
+      "newGroupId": "24",
+      "title": "形容词搭配"
+    },
+    {
+      "oldQuestionId": 24,
+      "newGroupId": "25",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 25,
+      "newGroupId": "26",
+      "title": "近义词"
+    },
+    {
+      "oldQuestionId": 26,
+      "newGroupId": "27",
+      "title": "反义词"
+    },
+    {
+      "oldQuestionId": 27,
+      "newGroupId": "28",
+      "title": "课文告诉我们什么道理"
+    },
+    {
+      "oldQuestionId": 28,
+      "newGroupId": "29",
+      "title": "形容词搭配"
+    },
+    {
+      "oldQuestionId": 29,
+      "newGroupId": "30",
+      "title": "动作描写"
+    },
+    {
+      "oldQuestionId": 30,
+      "newGroupId": "31",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 31,
+      "newGroupId": "32",
+      "title": "ABB搭配"
+    },
+    {
+      "oldQuestionId": 32,
+      "newGroupId": "33",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 33,
+      "newGroupId": "34",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 34,
+      "newGroupId": "35",
+      "title": "多音字辨析"
+    },
+    {
+      "oldQuestionId": 44,
+      "newGroupId": "36",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 45,
+      "newGroupId": "37",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 46,
+      "newGroupId": "38",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 47,
+      "newGroupId": "39",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 48,
+      "newGroupId": "40",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 49,
+      "newGroupId": "41",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 50,
+      "newGroupId": "42",
+      "title": "量词搭配"
+    },
+    {
+      "oldQuestionId": 51,
+      "newGroupId": "43",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 52,
+      "newGroupId": "44",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 53,
+      "newGroupId": "45",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 54,
+      "newGroupId": "46",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 55,
+      "newGroupId": "47",
+      "title": "形近字辨析"
+    },
+    {
+      "oldQuestionId": 56,
+      "newGroupId": "48",
+      "title": "多音字辨析"
+    },
+    {
+      "oldQuestionId": 57,
+      "newGroupId": "49",
+      "title": "多音字辨析"
+    },
+    {
+      "oldQuestionId": 58,
+      "newGroupId": "50",
+      "title": "多音字辨析"
+    },
+    {
+      "oldQuestionId": 59,
+      "newGroupId": "51",
+      "title": "近义词"
+    },
+    {
+      "oldQuestionId": 60,
+      "newGroupId": "52",
+      "title": "近义词"
+    },
+    {
+      "oldQuestionId": 61,
+      "newGroupId": "53",
+      "title": "反义词"
+    },
+    {
+      "oldQuestionId": 62,
+      "newGroupId": "54",
+      "title": "反义词"
+    },
+    {
+      "oldQuestionId": 63,
+      "newGroupId": "55",
+      "title": "俗语搭配"
+    },
+    {
+      "oldQuestionId": 64,
+      "newGroupId": "56",
+      "title": "动词搭配"
+    },
+    {
+      "oldQuestionId": 67,
+      "newGroupId": "57",
+      "title": "小儿垂钓"
+    },
+    {
+      "oldQuestionId": 68,
+      "newGroupId": "58",
+      "title": "谁比谁多"
+    },
+    {
+      "oldQuestionId": 69,
+      "newGroupId": "59",
+      "title": "代词辨析"
+    },
+    {
+      "oldQuestionId": 70,
+      "newGroupId": "60",
+      "title": "代词辨析"
+    },
+    {
+      "oldQuestionId": 71,
+      "newGroupId": "61",
+      "title": "看书问题"
+    },
+    {
+      "oldQuestionId": 72,
+      "newGroupId": "62",
+      "title": "have got和has got"
+    },
+    {
+      "oldQuestionId": 73,
+      "newGroupId": "63",
+      "title": "THere be有"
+    },
+    {
+      "oldQuestionId": 75,
+      "newGroupId": "64",
+      "title": "兔妈妈采蘑菇"
+    },
+    {
+      "oldQuestionId": 76,
+      "newGroupId": "65",
+      "title": "多音字：mu"
+    },
+    {
+      "oldQuestionId": 77,
+      "newGroupId": "66",
+      "title": "看电影"
+    },
+    {
+      "oldQuestionId": 78,
+      "newGroupId": "67",
+      "title": "等量代换"
+    },
+    {
+      "oldQuestionId": 79,
+      "newGroupId": "68",
+      "title": "归一问题"
+    },
+    {
+      "oldQuestionId": 80,
+      "newGroupId": "69",
+      "title": "数位问题"
+    },
+    {
+      "oldQuestionId": 81,
+      "newGroupId": "70",
+      "title": "错中求解"
+    },
+    {
+      "oldQuestionId": 82,
+      "newGroupId": "71",
+      "title": "乘法口诀"
+    },
+    {
+      "oldQuestionId": 83,
+      "newGroupId": "72",
+      "title": "剪绳子"
+    },
+    {
+      "oldQuestionId": 84,
+      "newGroupId": "73",
+      "title": "绳子对折"
+    },
+    {
+      "oldQuestionId": 85,
+      "newGroupId": "74",
+      "title": "简单乘法"
+    },
+    {
+      "oldQuestionId": 86,
+      "newGroupId": "75",
+      "title": "绳子对折"
+    },
+    {
+      "oldQuestionId": 87,
+      "newGroupId": "76",
+      "title": "间隔问题"
+    },
+    {
+      "oldQuestionId": 88,
+      "newGroupId": "77",
+      "title": "敲钟问题"
+    },
+    {
+      "oldQuestionId": 89,
+      "newGroupId": "78",
+      "title": "爬楼问题"
+    },
+    {
+      "oldQuestionId": 90,
+      "newGroupId": "79",
+      "title": "数感"
+    },
+    {
+      "oldQuestionId": 91,
+      "newGroupId": "80",
+      "title": "数感"
+    },
+    {
+      "oldQuestionId": 92,
+      "newGroupId": "81",
+      "title": "在()里填合适的数。"
+    },
+    {
+      "oldQuestionId": 93,
+      "newGroupId": "82",
+      "title": "应用题"
+    }
+  ]
+}

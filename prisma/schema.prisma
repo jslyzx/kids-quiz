@@ -1,0 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+}
+
+enum EntityStatus {
+  ENABLED
+  DISABLED
+  DELETED
+}
+
+enum QuestionGroupType {
+  PRACTICE_SET
+  WORKSHEET_SECTION
+  MENTAL_MATH
+  FILL_BLANK_GROUP
+  MATCHING_GROUP
+  COMPOSITE
+}
+
+enum QuestionType {
+  CALCULATION
+  FILL_BLANK
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  MATCHING
+  ORDERING
+  WORD_PROBLEM
+  COMPOSITE_CHILD
+}
+
+enum SlotType {
+  TEXT
+  NUMBER
+  EXPRESSION
+  CHOICE
+  MATCH
+  ORDER
+  COMPARE_SYMBOL
+}
+
+enum AnswerSource {
+  PRACTICE
+  PAPER
+  TASK
+  WRONG_RETRY
+}
+
+model User {
+  id           BigInt       @id @default(autoincrement())
+  username     String       @unique @db.VarChar(80)
+  passwordHash String       @map("password_hash") @db.VarChar(255)
+  displayName  String?      @map("display_name") @db.VarChar(80)
+  role         UserRole     @default(ADMIN)
+  status       EntityStatus @default(ENABLED)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  students        Student[]
+  subjects        Subject[]
+  knowledgePoints KnowledgePoint[]
+  questionGroups  QuestionGroup[]
+  questions       Question[]
+  papers          Paper[]
+
+  @@map("users")
+}
+
+model Student {
+  id          BigInt       @id @default(autoincrement())
+  ownerId     BigInt       @map("owner_id")
+  name        String       @db.VarChar(80)
+  avatarUrl   String?      @map("avatar_url") @db.VarChar(500)
+  grade       String?      @db.VarChar(30)
+  pinHash     String?      @map("pin_hash") @db.VarChar(255)
+  totalStars  Int          @default(0) @map("total_stars")
+  streakDays  Int          @default(0) @map("streak_days")
+  lastPracticeDate DateTime? @map("last_practice_date")
+  rewardBadges Json?       @map("reward_badges")
+  taskSettings Json?       @map("task_settings")
+  status      EntityStatus @default(ENABLED)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  owner   User            @relation(fields: [ownerId], references: [id])
+  answers StudentAnswer[]
+  attempts PracticeAttempt[]
+
+  @@index([ownerId])
+  @@map("students")
+}
+
+model Subject {
+  id        BigInt       @id @default(autoincrement())
+  ownerId   BigInt       @map("owner_id")
+  name      String       @db.VarChar(80)
+  icon      String?      @db.VarChar(100)
+  sortOrder Int          @default(0) @map("sort_order")
+  status    EntityStatus @default(ENABLED)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  owner           User             @relation(fields: [ownerId], references: [id])
+  knowledgePoints KnowledgePoint[]
+  questionGroups  QuestionGroup[]
+  questions       Question[]
+  papers          Paper[]
+
+  @@index([ownerId])
+  @@map("subjects")
+}
+
+model KnowledgePoint {
+  id        BigInt       @id @default(autoincrement())
+  ownerId   BigInt       @map("owner_id")
+  subjectId BigInt       @map("subject_id")
+  parentId  BigInt?      @map("parent_id")
+  name      String       @db.VarChar(120)
+  path      String?      @db.VarChar(500)
+  sortOrder Int          @default(0) @map("sort_order")
+  status    EntityStatus @default(ENABLED)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  owner    User              @relation(fields: [ownerId], references: [id])
+  subject  Subject           @relation(fields: [subjectId], references: [id])
+  parent   KnowledgePoint?   @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children KnowledgePoint[]  @relation("KnowledgePointTree")
+  groups   QuestionGroup[]
+  questions Question[]
+
+  @@index([ownerId])
+  @@index([subjectId])
+  @@index([parentId])
+  @@map("knowledge_points")
+}
+
+model QuestionGroup {
+  id               BigInt            @id @default(autoincrement())
+  ownerId          BigInt            @map("owner_id")
+  subjectId        BigInt            @map("subject_id")
+  knowledgePointId BigInt?           @map("knowledge_point_id")
+  title            String            @db.VarChar(255)
+  commonStem       String?           @map("common_stem") @db.Text
+  content          Json?
+  groupType        QuestionGroupType @default(PRACTICE_SET) @map("group_type")
+  difficulty       Int               @default(1)
+  gradeLevel       String?           @map("grade_level") @db.VarChar(30)
+  tags             Json?
+  score            Decimal           @default(0) @db.Decimal(8, 2)
+  sortOrder        Int               @default(0) @map("sort_order")
+  status           EntityStatus      @default(ENABLED)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  owner          User            @relation(fields: [ownerId], references: [id])
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  knowledgePoint KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
+  questions      Question[]
+  paperItems     PaperQuestion[]
+
+  @@index([ownerId])
+  @@index([subjectId])
+  @@index([knowledgePointId])
+  @@map("question_groups")
+}
+
+model Question {
+  id               BigInt       @id @default(autoincrement())
+  ownerId          BigInt       @map("owner_id")
+  groupId          BigInt?      @map("group_id")
+  subjectId        BigInt       @map("subject_id")
+  knowledgePointId BigInt?      @map("knowledge_point_id")
+  questionType     QuestionType @map("question_type")
+  stem             String       @db.Text
+  stemFormat       String       @default("plain") @map("stem_format") @db.VarChar(30)
+  content          Json?
+  explanation      String?      @db.Text
+  difficulty       Int          @default(1)
+  gradeLevel       String?      @map("grade_level") @db.VarChar(30)
+  tags             Json?
+  score            Decimal      @default(1) @db.Decimal(8, 2)
+  sortOrder        Int          @default(0) @map("sort_order")
+  status           EntityStatus @default(ENABLED)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  owner          User              @relation(fields: [ownerId], references: [id])
+  group          QuestionGroup?    @relation(fields: [groupId], references: [id])
+  subject        Subject           @relation(fields: [subjectId], references: [id])
+  knowledgePoint KnowledgePoint?   @relation(fields: [knowledgePointId], references: [id])
+  answerSlots    AnswerSlot[]
+  options        QuestionOption[]
+  answers        StudentAnswer[]
+  paperItems     PaperQuestion[]
+
+  @@index([ownerId])
+  @@index([groupId])
+  @@index([subjectId])
+  @@index([knowledgePointId])
+  @@map("questions")
+}
+
+model AnswerSlot {
+  id            BigInt   @id @default(autoincrement())
+  questionId    BigInt   @map("question_id")
+  slotKey       String   @map("slot_key") @db.VarChar(50)
+  slotType      SlotType @map("slot_type")
+  correctAnswer Json     @map("correct_answer")
+  answerRule    Json?    @map("answer_rule")
+  placeholder   String?  @db.VarChar(100)
+  unit          String?  @db.VarChar(50)
+  score         Decimal  @default(1) @db.Decimal(8, 2)
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, slotKey])
+  @@index([questionId])
+  @@map("answer_slots")
+}
+
+model QuestionOption {
+  id         BigInt  @id @default(autoincrement())
+  questionId BigInt  @map("question_id")
+  optionKey  String  @map("option_key") @db.VarChar(20)
+  content    String  @db.Text
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, optionKey])
+  @@index([questionId])
+  @@map("question_options")
+}
+
+model Paper {
+  id          BigInt       @id @default(autoincrement())
+  ownerId     BigInt       @map("owner_id")
+  subjectId   BigInt       @map("subject_id")
+  title       String       @db.VarChar(255)
+  description String?      @db.Text
+  timeLimit   Int?         @map("time_limit")
+  status      EntityStatus @default(ENABLED)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  owner   User            @relation(fields: [ownerId], references: [id])
+  subject Subject         @relation(fields: [subjectId], references: [id])
+  items   PaperQuestion[]
+  answers StudentAnswer[]
+  attempts PracticeAttempt[]
+
+  @@index([ownerId])
+  @@index([subjectId])
+  @@map("papers")
+}
+
+model PaperQuestion {
+  id         BigInt   @id @default(autoincrement())
+  paperId    BigInt   @map("paper_id")
+  groupId    BigInt?  @map("group_id")
+  questionId BigInt?  @map("question_id")
+  score      Decimal  @default(1) @db.Decimal(8, 2)
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  paper    Paper          @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  group    QuestionGroup? @relation(fields: [groupId], references: [id])
+  question Question?      @relation(fields: [questionId], references: [id])
+
+  @@index([paperId])
+  @@index([groupId])
+  @@index([questionId])
+  @@map("paper_questions")
+}
+
+model StudentAnswer {
+  id              BigInt       @id @default(autoincrement())
+  attemptId       BigInt?      @map("attempt_id")
+  studentId       BigInt       @map("student_id")
+  questionId      BigInt       @map("question_id")
+  groupId         BigInt?      @map("group_id")
+  paperId         BigInt?      @map("paper_id")
+  source          AnswerSource @default(PRACTICE)
+  answerData      Json         @map("answer_data")
+  correctData     Json?        @map("correct_data")
+  isCorrect       Boolean      @map("is_correct")
+  score           Decimal      @default(0) @db.Decimal(8, 2)
+  maxScore        Decimal      @default(1) @map("max_score") @db.Decimal(8, 2)
+  usedHintCount   Int          @default(0) @map("used_hint_count")
+  durationSeconds Int          @default(0) @map("duration_seconds")
+  submittedAt     DateTime     @default(now()) @map("submitted_at")
+
+  attempt  PracticeAttempt?       @relation(fields: [attemptId], references: [id])
+  student  Student               @relation(fields: [studentId], references: [id])
+  question Question              @relation(fields: [questionId], references: [id])
+  paper    Paper?                @relation(fields: [paperId], references: [id])
+  details  StudentAnswerDetail[]
+
+  @@index([studentId, submittedAt])
+  @@index([attemptId])
+  @@index([studentId, questionId])
+  @@index([paperId])
+  @@map("student_answers")
+}
+
+model PracticeAttempt {
+  id              BigInt       @id @default(autoincrement())
+  studentId       BigInt       @map("student_id")
+  paperId         BigInt?      @map("paper_id")
+  source          AnswerSource @default(PAPER)
+  title           String?      @db.VarChar(255)
+  totalCount      Int          @default(0) @map("total_count")
+  correctCount    Int          @default(0) @map("correct_count")
+  wrongCount      Int          @default(0) @map("wrong_count")
+  score           Decimal      @default(0) @db.Decimal(8, 2)
+  maxScore        Decimal      @default(0) @map("max_score") @db.Decimal(8, 2)
+  accuracy        Int          @default(0)
+  durationSeconds Int          @default(0) @map("duration_seconds")
+  rewardStars     Int          @default(0) @map("reward_stars")
+  submittedAt     DateTime     @default(now()) @map("submitted_at")
+
+  student Student @relation(fields: [studentId], references: [id])
+  paper   Paper?  @relation(fields: [paperId], references: [id])
+  answers StudentAnswer[]
+
+  @@index([studentId, submittedAt])
+  @@index([paperId])
+  @@map("practice_attempts")
+}
+
+model StudentAnswerDetail {
+  id              BigInt  @id @default(autoincrement())
+  studentAnswerId BigInt  @map("student_answer_id")
+  slotKey         String  @map("slot_key") @db.VarChar(50)
+  studentValue    Json    @map("student_value")
+  correctValue    Json?   @map("correct_value")
+  isCorrect       Boolean @map("is_correct")
+  score           Decimal @default(0) @db.Decimal(8, 2)
+
+  answer StudentAnswer @relation(fields: [studentAnswerId], references: [id], onDelete: Cascade)
+
+  @@index([studentAnswerId])
+  @@map("student_answer_details")
+}

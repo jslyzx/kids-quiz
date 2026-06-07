@@ -1,0 +1,415 @@
+/* ========================================
+   孩子端布局
+   底部 Tab + 沉浸式内容
+   ======================================== */
+
+.kid-layout {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eef6ff 0%, #f7f0ff 48%, #fff7ed 100%);
+  padding: var(--space-5) var(--space-5) calc(var(--bottom-tab-height) + var(--space-10));
+  color: var(--text-primary);
+}
+
+/* ---- 顶部 ---- */
+.kid-header {
+  max-width: var(--content-max-width);
+  margin: 0 auto var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.kid-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.kid-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-2xl);
+  background: var(--bg-card);
+  border: 3px solid var(--blue-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.kid-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kid-greeting {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.kid-name {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.kid-parent-btn {
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-5);
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+}
+
+.kid-parent-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* ---- 内容区 ---- */
+.kid-content {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  animation: fadeInUp 0.35s var(--ease-out-expo);
+}
+
+/* ---- 今日推荐卡 ---- */
+.kid-hero-card {
+  background: linear-gradient(135deg, var(--blue-600), var(--violet-600));
+  color: var(--text-inverse);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-8);
+  box-shadow: 0 20px 60px rgba(37, 99, 235, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 320px;
+}
+
+.kid-hero-tag {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.kid-hero-title {
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+.kid-hero-desc {
+  font-size: var(--text-lg);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: var(--leading-relaxed);
+}
+
+.kid-hero-stats {
+  display: flex;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+
+.kid-hero-stat {
+  min-width: 88px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.kid-hero-stat b {
+  display: block;
+  font-size: var(--text-2xl);
+}
+
+.kid-hero-stat small {
+  color: rgba(224, 231, 255, 0.9);
+  font-weight: 800;
+  font-size: var(--text-xs);
+}
+
+.kid-hero-action {
+  align-self: flex-start;
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  color: var(--color-primary);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  padding: var(--space-4) var(--space-6);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+}
+
+.kid-hero-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* ---- 快捷入口 ---- */
+.kid-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.kid-quick-btn {
+  border-radius: var(--radius-2xl);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-5);
+  text-align: left;
+  transition: all var(--transition-normal);
+}
+
+.kid-quick-btn:hover {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.kid-quick-btn b {
+  display: block;
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+}
+
+.kid-quick-btn span {
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: var(--text-base);
+}
+
+/* ---- 面板 ---- */
+.kid-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  min-height: 480px;
+  animation: fadeInUp 0.35s var(--ease-out-expo);
+}
+
+.kid-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.kid-section-tag {
+  color: var(--color-accent);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.kid-section-title {
+  font-size: var(--text-2xl);
+  margin: var(--space-1) 0 0;
+}
+
+/* ---- 练习卡片 ---- */
+.kid-practice-card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-card);
+  text-align: left;
+  padding: var(--space-5);
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.kid-practice-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.kid-practice-card b {
+  font-size: var(--text-lg);
+}
+
+.kid-practice-card small {
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+.kid-practice-card span {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+/* ---- 底部 Tab ---- */
+.kid-bottom-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: var(--z-fixed);
+  width: min(680px, 92vw);
+  height: var(--bottom-tab-height);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-2);
+  backdrop-filter: blur(14px);
+}
+
+.kid-tab {
+  border-radius: var(--radius-xl);
+  background: transparent;
+  color: var(--text-muted);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  font-weight: 800;
+  transition: all var(--transition-fast);
+}
+
+.kid-tab:hover {
+  background: var(--slate-100);
+}
+
+.kid-tab-icon {
+  font-size: 22px;
+}
+
+.kid-tab-label {
+  font-size: var(--text-xs);
+}
+
+.kid-tab.active {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+/* 孩子端首页网格默认布局 (双栏，适合桌面端与横向大平板) */
+.kid-home-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.75fr;
+  gap: var(--space-5);
+}
+
+/* ========================================================
+   响应式与 iPad 平板端特定适配
+   ======================================================== */
+
+/* ---- iPad & 纵向中大平板适配断点 ---- */
+@media (max-width: 1024px) {
+  .kid-layout {
+    padding: var(--space-4) var(--space-4) calc(var(--bottom-tab-height) + var(--space-8));
+  }
+
+  /* 首页网格降级为单栏堆叠，防止左右卡片过窄折行，更加符合平板手势滚动习惯 */
+  .kid-home-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .kid-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .kid-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: var(--radius-xl);
+  }
+
+  .kid-name {
+    font-size: var(--text-xl);
+  }
+
+  .kid-hero-card {
+    min-height: 290px;
+    padding: var(--space-6);
+    border-radius: var(--radius-2xl);
+  }
+
+  .kid-hero-title {
+    font-size: var(--text-3xl);
+  }
+
+  .kid-quick-grid {
+    gap: var(--space-3);
+  }
+
+  .kid-quick-btn {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .kid-panel {
+    padding: var(--space-5);
+    border-radius: var(--radius-2xl);
+  }
+
+  .kid-bottom-tabs {
+    bottom: 12px;
+    height: 72px;
+    width: min(600px, 94vw);
+  }
+}
+
+/* ---- 手机端/小屏特定适配断点 ---- */
+@media (max-width: 600px) {
+  .kid-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+  }
+
+  .kid-identity {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .kid-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .kid-quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kid-bottom-tabs {
+    padding: 2px;
+  }
+
+  .kid-tab-icon {
+    font-size: 18px;
+  }
+
+  .kid-tab-label {
+    font-size: 10px;
+  }
+}
+
+

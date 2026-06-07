@@ -1,0 +1,192 @@
+/* ========================================
+   Kids Quiz — Design Tokens
+   ======================================== */
+
+:root {
+  /* ---- 调色板 ---- */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+
+  --violet-50: #f5f3ff;
+  --violet-100: #ede9fe;
+  --violet-200: #ddd6fe;
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --violet-700: #6d28d9;
+
+  --emerald-50: #ecfdf5;
+  --emerald-100: #d1fae5;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-700: #047857;
+
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+
+  --rose-50: #fff1f2;
+  --rose-100: #ffe4e6;
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+  --rose-600: #e11d48;
+
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  /* ---- 语义色 ---- */
+  --color-primary: var(--blue-600);
+  --color-primary-hover: var(--blue-700);
+  --color-primary-soft: var(--blue-50);
+  --color-primary-border: var(--blue-200);
+
+  --color-accent: var(--violet-600);
+  --color-accent-soft: var(--violet-50);
+
+  --color-success: var(--emerald-500);
+  --color-success-soft: var(--emerald-50);
+  --color-success-border: var(--emerald-100);
+
+  --color-warning: var(--amber-500);
+  --color-warning-soft: var(--amber-50);
+  --color-warning-border: var(--amber-100);
+
+  --color-danger: var(--rose-500);
+  --color-danger-soft: var(--rose-50);
+  --color-danger-border: var(--rose-100);
+
+  --color-orange: var(--orange-500);
+  --color-orange-soft: var(--orange-50);
+
+  /* ---- 背景 ---- */
+  --bg-page: #f7f8fc;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-muted: var(--slate-50);
+  --bg-input: var(--slate-50);
+
+  /* ---- 文字 ---- */
+  --text-primary: var(--slate-900);
+  --text-secondary: var(--slate-600);
+  --text-muted: var(--slate-400);
+  --text-inverse: #ffffff;
+
+  /* ---- 边框 ---- */
+  --border-default: var(--slate-200);
+  --border-light: var(--slate-100);
+  --border-focus: var(--blue-400);
+
+  /* ---- 字体 ---- */
+  --font-sans: 'Inter', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  /* ---- 字号 ---- */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-md: 1rem;       /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+
+  /* ---- 行高 ---- */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ---- 间距 ---- */
+  --space-0: 0;
+  --space-1: 0.25rem;    /* 4px */
+  --space-2: 0.5rem;     /* 8px */
+  --space-3: 0.75rem;    /* 12px */
+  --space-4: 1rem;       /* 16px */
+  --space-5: 1.25rem;    /* 20px */
+  --space-6: 1.5rem;     /* 24px */
+  --space-8: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+
+  /* ---- 圆角 ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-full: 9999px;
+
+  /* ---- 阴影 ---- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-glow-primary: 0 8px 24px rgba(37, 99, 235, 0.25);
+  --shadow-glow-accent: 0 8px 24px rgba(124, 58, 237, 0.25);
+  --shadow-glow-success: 0 8px 24px rgba(16, 185, 129, 0.25);
+
+  /* ---- 过渡 ---- */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- 层级 ---- */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-draft: 80;
+
+  /* ---- 布局 ---- */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+  --header-height: 64px;
+  --bottom-tab-height: 76px;
+  --content-max-width: 1200px;
+}
+
+/* ---- 孩子端主题 ---- */
+[data-theme="kid"] {
+  --bg-page: linear-gradient(135deg, #eef6ff 0%, #f7f0ff 48%, #fff7ed 100%);
+  --text-primary: #172033;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --radius-3xl: 38px;
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.10);
+}
