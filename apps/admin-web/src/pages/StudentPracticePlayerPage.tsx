@@ -576,6 +576,8 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
   const [draftOpen, setDraftOpen] = useState(false);
   const [summary, setSummary] = useState<FinishSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saveWarning, setSaveWarning] = useState('');
 
   const questions = useMemo<PracticeQuestion[]>(() => paper ? (paper?.items || []).flatMap(questionsFromItem) : group ? questionsFromGroup(group) : [], [paper, group]);
   const current = questions[index];
@@ -595,15 +597,31 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     setMessage('');
     setDraftOpen(false);
     setSummary(null);
+    setSaveWarning('');
     setStartedAt(Date.now());
   }, [sourceId]);
 
   useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setMessage('');
+    setPaper(null);
+    setGroup(null);
     if (paperId) {
-      getPaper(paperId).then((data) => { setPaper(data); setGroup(null); }).catch((error) => setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`));
+      getPaper(paperId)
+        .then((data) => { if (alive) { setPaper(data); setGroup(null); } })
+        .catch((error) => { if (alive) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`); })
+        .finally(() => { if (alive) setLoading(false); });
     } else if (questionGroupId) {
-      getQuestionGroup(questionGroupId).then((data) => { setGroup(data); setPaper(null); }).catch((error) => setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`));
+      getQuestionGroup(questionGroupId)
+        .then((data) => { if (alive) { setGroup(data); setPaper(null); } })
+        .catch((error) => { if (alive) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`); })
+        .finally(() => { if (alive) setLoading(false); });
+    } else {
+      setMessage('没有找到要练习的试卷或题组。');
+      setLoading(false);
     }
+    return () => { alive = false; };
   }, [paperId, questionGroupId]);
 
   useEffect(() => {
@@ -686,7 +704,9 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
         }
       }
       localStorage.removeItem(draftStorageKey(sourceId));
-    } catch {
+      setSaveWarning('');
+    } catch (error) {
+      setSaveWarning(`本次结果已在本机结算，但保存到服务器失败：${error instanceof Error ? error.message : String(error)}`);
       reward = grantPracticeReward({ accuracy, correct, total });
     } finally {
       setSubmitting(false);
@@ -700,6 +720,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     const explanationCount = wrongRecords.filter((record) => record.explanationHtml).length;
     return <div className="practice-layout">
     <div className="practice-result">
+      {saveWarning && <div className="message-banner warning" style={{ marginBottom: 'var(--space-4)' }}>{saveWarning}</div>}
       <div className="result-emoji">{summary.accuracy >= 90 ? '🌟' : summary.accuracy >= 70 ? '👍' : '💪'}</div>
       <h1>{summary.accuracy >= 90 ? '太棒啦！' : '完成练习啦！'}</h1>
       <p>答对 {summary.correct} / {summary.total}，正确率 {summary.accuracy}%</p>
@@ -761,7 +782,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
 
     <main className="practice-stage">
       <section className="practice-question-card">
-        {current ? <>
+        {loading ? <p className="tip">正在加载练习...</p> : current ? <>
           <div className="practice-question-meta">
             <span className="practice-meta-title">{renderMathText(current.title)}{current.subQuestionLabel && <em className="sub-question-badge">{current.subQuestionLabel}</em>}</span>
             <div className="practice-question-status">
@@ -788,7 +809,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     <footer className="practice-bottombar">
       <button className="btn btn-secondary" disabled={index <= 0} onClick={() => { setDraftOpen(false); setIndex((value) => Math.max(0, value - 1)); }}>上一题</button>
       <div className="practice-dots">{questions.map((item, dotIndex) => <button key={`${item.itemId}-${item.questionIndex}`} className={`practice-dot ${dotIndex === index ? 'active' : ''} ${questionAnswered(item, answers) ? 'done' : ''}`} onClick={() => { setDraftOpen(false); setIndex(dotIndex); }}>{dotIndex + 1}</button>)}</div>
-      {index >= questions.length - 1 ? <button className="btn btn-primary" onClick={finish} disabled={submitting || !questions.length}>{submitting ? '提交中...' : '完成练习'}</button> : <button className="btn btn-primary" onClick={next}>下一题</button>}
+      {index >= questions.length - 1 ? <button className="btn btn-primary" onClick={finish} disabled={loading || submitting || !questions.length}>{submitting ? '提交中...' : '完成练习'}</button> : <button className="btn btn-primary" onClick={next} disabled={loading}>下一题</button>}
     </footer>
   </div>;
 }

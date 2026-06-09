@@ -46,6 +46,20 @@ type RewardRedemption = {
   confirmedAt?: string;
 };
 
+type EntertainmentSessionState = {
+  date: string;
+  enabled: boolean;
+  allowedGames: string[];
+  dailyLimitSeconds: number;
+  usedSeconds: number;
+  remainingSeconds: number;
+  locked: boolean;
+  serverNow: string;
+};
+
+const ENTERTAINMENT_GAME_KEYS = ['2048', '24', 'sudoku', 'gomoku', 'memory'];
+const ENTERTAINMENT_MIN_LIMIT_SECONDS = 60;
+const ENTERTAINMENT_MAX_LIMIT_SECONDS = 30 * 60;
 const DEFAULT_REWARD_CATALOG: RewardCatalogItem[] = [
   { id: 'screen_15', title: '15 分钟自由屏幕时间', cost: 30, description: '家长确认后兑换一次', enabled: true },
   { id: 'story_pick', title: '睡前故事选择权', cost: 20, description: '今晚由孩子挑一本故事书', enabled: true },
@@ -54,6 +68,11 @@ const DEFAULT_REWARD_CATALOG: RewardCatalogItem[] = [
 
 function settingsObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value) ? { ...(value as Record<string, any>) } : {};
+}
+
+function todayKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
 function rewardCatalogFrom(settings: Record<string, any>): RewardCatalogItem[] {
@@ -77,6 +96,69 @@ function rewardRedemptionsFrom(settings: Record<string, any>): RewardRedemption[
     requestedAt: String(item.requestedAt || new Date().toISOString()),
     confirmedAt: item.confirmedAt ? String(item.confirmedAt) : undefined,
   })) : [];
+}
+
+function rewardCatalogFromRows(rows: any[]): RewardCatalogItem[] {
+  return rows.map((row) => ({
+    id: String(row.rewardKey),
+    title: String(row.title || ''),
+    cost: Math.max(1, Math.floor(Number(row.cost || 1))),
+    description: String(row.description || ''),
+    enabled: row.enabled !== false,
+  }));
+}
+
+function rewardRedemptionsFromRows(rows: any[]): RewardRedemption[] {
+  return rows.map((row) => ({
+    id: String(row.id),
+    rewardId: String(row.rewardKey),
+    title: String(row.title || ''),
+    cost: Math.max(1, Math.floor(Number(row.cost || 1))),
+    status: row.status === 'APPROVED' || row.status === 'REJECTED' ? row.status : 'PENDING',
+    requestedAt: row.requestedAt instanceof Date ? row.requestedAt.toISOString() : String(row.requestedAt || new Date().toISOString()),
+    confirmedAt: row.confirmedAt ? (row.confirmedAt instanceof Date ? row.confirmedAt.toISOString() : String(row.confirmedAt)) : undefined,
+  }));
+}
+
+function parseOptionalDate(value: unknown) {
+  if (!value) return undefined;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function entertainmentStateFrom(settings: Record<string, any>): EntertainmentSessionState {
+  const session = settingsObject(settings.entertainmentSession);
+  const date = todayKey();
+  const normalized = normalizeEntertainmentSettings({ ...settings, entertainmentDailyLimitSeconds: settings.entertainmentDailyLimitSeconds || session.dailyLimitSeconds });
+  const enabled = normalized.entertainmentEnabled;
+  const allowedGames = normalized.entertainmentAllowedGames;
+  const dailyLimitSeconds = normalized.entertainmentDailyLimitSeconds;
+  const usedSeconds = session.date === date ? Math.max(0, Math.floor(Number(session.usedSeconds || 0))) : 0;
+  const cappedUsed = Math.min(dailyLimitSeconds, usedSeconds);
+  return {
+    date,
+    enabled,
+    allowedGames: allowedGames.length ? allowedGames : ENTERTAINMENT_GAME_KEYS,
+    dailyLimitSeconds,
+    usedSeconds: cappedUsed,
+    remainingSeconds: Math.max(0, dailyLimitSeconds - cappedUsed),
+    locked: !enabled || cappedUsed >= dailyLimitSeconds,
+    serverNow: new Date().toISOString(),
+  };
+}
+
+function normalizeEntertainmentSettings(settings: Record<string, any>) {
+  const allowedGames = Array.isArray(settings.entertainmentAllowedGames)
+    ? settings.entertainmentAllowedGames.map(String).filter((key: string) => ENTERTAINMENT_GAME_KEYS.includes(key))
+    : ENTERTAINMENT_GAME_KEYS;
+  return {
+    entertainmentEnabled: settings.entertainmentEnabled !== false,
+    entertainmentDailyLimitSeconds: Math.max(
+      ENTERTAINMENT_MIN_LIMIT_SECONDS,
+      Math.min(ENTERTAINMENT_MAX_LIMIT_SECONDS, Math.floor(Number(settings.entertainmentDailyLimitSeconds || ENTERTAINMENT_MAX_LIMIT_SECONDS))),
+    ),
+    entertainmentAllowedGames: allowedGames.length ? allowedGames : ENTERTAINMENT_GAME_KEYS,
+  };
 }
 
 @Injectable()
@@ -232,8 +314,15 @@ export class StudentService {
     const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
     const row = await this.prisma.student.findUnique({ where: { id: student.id }, select: { taskSettings: true } });
     const settings = settingsObject(row?.taskSettings);
-    const { rewardCatalog: _catalog, rewardRedemptions: _redemptions, ...taskOnly } = settings;
-    return { requireWrongFirst: true, targetAccuracy: 90, dailyLimit: 5, paperIds: [], ...taskOnly };
+    const { rewardCatalog: _catalog, rewardRedemptions: _redemptions, entertainmentSession: _session, ...taskOnly } = settings;
+    return {
+      requireWrongFirst: true,
+      targetAccuracy: 90,
+      dailyLimit: 5,
+      paperIds: [],
+      ...taskOnly,
+      ...normalizeEntertainmentSettings(taskOnly),
+    };
   }
 
   async updateTaskSettings(ownerId: bigint, dto: unknown, studentId?: bigint) {
@@ -243,15 +332,72 @@ export class StudentService {
     const rewardData = {
       ...(settings.rewardCatalog ? { rewardCatalog: settings.rewardCatalog } : {}),
       ...(settings.rewardRedemptions ? { rewardRedemptions: settings.rewardRedemptions } : {}),
+      ...(settings.entertainmentSession ? { entertainmentSession: settings.entertainmentSession } : {}),
+    };
+    const nextSettings = {
+      ...settings,
+      ...settingsObject(dto),
+      ...rewardData,
     };
     const row = await this.prisma.student.update({
       where: { id: student.id },
-      data: { taskSettings: { ...settingsObject(dto), ...rewardData } as any },
+      data: { taskSettings: { ...nextSettings, ...normalizeEntertainmentSettings(nextSettings) } as any },
       select: { taskSettings: true },
     });
     const next = settingsObject(row.taskSettings);
-    const { rewardCatalog: _catalog, rewardRedemptions: _redemptions, ...taskOnly } = next;
+    const { rewardCatalog: _catalog, rewardRedemptions: _redemptions, entertainmentSession: _session, ...taskOnly } = next;
     return taskOnly;
+  }
+
+  async entertainmentSession(ownerId: bigint, studentId?: bigint) {
+    const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
+    const row = await this.prisma.student.findUnique({ where: { id: student.id }, select: { taskSettings: true } });
+    return entertainmentStateFrom(settingsObject(row?.taskSettings));
+  }
+
+  async addEntertainmentUsage(ownerId: bigint, dto: { addSeconds?: number }, studentId?: bigint) {
+    const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
+    const current = await this.prisma.student.findUnique({ where: { id: student.id }, select: { taskSettings: true } });
+    const settings = settingsObject(current?.taskSettings);
+    const state = entertainmentStateFrom(settings);
+    if (!state.enabled) return state;
+    const addSeconds = Math.max(0, Math.min(60, Math.floor(Number(dto.addSeconds || 0))));
+    const usedSeconds = Math.min(state.dailyLimitSeconds, state.usedSeconds + addSeconds);
+    const nextSettings = {
+      ...settings,
+      entertainmentSession: {
+        date: state.date,
+        dailyLimitSeconds: state.dailyLimitSeconds,
+        usedSeconds,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    await this.prisma.student.update({
+      where: { id: student.id },
+      data: { taskSettings: nextSettings as any },
+    });
+    return entertainmentStateFrom(nextSettings);
+  }
+
+  async resetEntertainmentUsage(ownerId: bigint, studentId?: bigint) {
+    const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
+    const current = await this.prisma.student.findUnique({ where: { id: student.id }, select: { taskSettings: true } });
+    const settings = settingsObject(current?.taskSettings);
+    const state = entertainmentStateFrom(settings);
+    const nextSettings = {
+      ...settings,
+      entertainmentSession: {
+        date: state.date,
+        dailyLimitSeconds: state.dailyLimitSeconds,
+        usedSeconds: 0,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    await this.prisma.student.update({
+      where: { id: student.id },
+      data: { taskSettings: nextSettings as any },
+    });
+    return entertainmentStateFrom(nextSettings);
   }
 
   async rewards(ownerId: bigint, studentId?: bigint) {
@@ -261,19 +407,26 @@ export class StudentService {
       select: { totalStars: true, streakDays: true, lastPracticeDate: true, rewardBadges: true, taskSettings: true },
     });
     const settings = settingsObject(row?.taskSettings);
+    const catalogRows = await this.ensureRewardCatalogRows(student.id, settings);
+    await this.ensureRewardRedemptionRows(student.id, settings, catalogRows);
+    const redemptionRows = await this.prisma.rewardRedemption.findMany({
+      where: { studentId: student.id },
+      orderBy: { requestedAt: 'desc' },
+      take: 100,
+    });
     return {
       stars: row?.totalStars ?? 0,
       streakDays: row?.streakDays ?? 0,
       lastPracticeDate: row?.lastPracticeDate,
       badges: Array.isArray(row?.rewardBadges) ? row?.rewardBadges : [],
-      catalog: rewardCatalogFrom(settings),
-      redemptions: rewardRedemptionsFrom(settings),
+      catalog: rewardCatalogFromRows(catalogRows),
+      redemptions: rewardRedemptionsFromRows(redemptionRows),
     };
   }
 
   async updateRewards(ownerId: bigint, dto: { stars?: number; streakDays?: number; lastPracticeDate?: string; badges?: string[] }, studentId?: bigint) {
     const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
-    const row = await this.prisma.student.update({
+    await this.prisma.student.update({
       where: { id: student.id },
       data: {
         totalStars: Number(dto.stars ?? 0),
@@ -281,20 +434,12 @@ export class StudentService {
         lastPracticeDate: dto.lastPracticeDate ? new Date(dto.lastPracticeDate) : undefined,
         rewardBadges: Array.isArray(dto.badges) ? dto.badges : [],
       },
-      select: { totalStars: true, streakDays: true, lastPracticeDate: true, rewardBadges: true },
     });
-    return {
-      stars: row.totalStars,
-      streakDays: row.streakDays,
-      lastPracticeDate: row.lastPracticeDate,
-      badges: Array.isArray(row.rewardBadges) ? row.rewardBadges : [],
-    };
+    return this.rewards(ownerId, student.id);
   }
 
   async updateRewardCatalog(ownerId: bigint, dto: { catalog?: RewardCatalogItem[] }, studentId?: bigint) {
     const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
-    const current = await this.prisma.student.findUnique({ where: { id: student.id }, select: { taskSettings: true } });
-    const settings = settingsObject(current?.taskSettings);
     const catalog = (Array.isArray(dto.catalog) ? dto.catalog : []).map((item, index) => ({
       id: String(item.id || `reward_${Date.now()}_${index}`),
       title: String(item.title || '').trim(),
@@ -302,9 +447,31 @@ export class StudentService {
       description: String(item.description || '').trim(),
       enabled: item.enabled !== false,
     })).filter((item) => item.title);
-    await this.prisma.student.update({
-      where: { id: student.id },
-      data: { taskSettings: { ...settings, rewardCatalog: catalog.length ? catalog : DEFAULT_REWARD_CATALOG } as any },
+    const rows = catalog.length ? catalog : DEFAULT_REWARD_CATALOG;
+    const keys = rows.map((item) => item.id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.rewardCatalogItem.deleteMany({ where: { studentId: student.id, rewardKey: { notIn: keys } } });
+      for (const [index, item] of rows.entries()) {
+        await tx.rewardCatalogItem.upsert({
+          where: { studentId_rewardKey: { studentId: student.id, rewardKey: item.id } },
+          update: {
+            title: item.title,
+            cost: item.cost,
+            description: item.description || null,
+            enabled: item.enabled,
+            sortOrder: index,
+          },
+          create: {
+            studentId: student.id,
+            rewardKey: item.id,
+            title: item.title,
+            cost: item.cost,
+            description: item.description || null,
+            enabled: item.enabled,
+            sortOrder: index,
+          },
+        });
+      }
     });
     return this.rewards(ownerId, student.id);
   }
@@ -316,49 +483,95 @@ export class StudentService {
       select: { taskSettings: true, totalStars: true },
     });
     const settings = settingsObject(current?.taskSettings);
-    const catalog = rewardCatalogFrom(settings);
-    const reward = catalog.find((item) => item.id === rewardId && item.enabled);
+    await this.ensureRewardCatalogRows(student.id, settings);
+    const reward = await this.prisma.rewardCatalogItem.findFirst({
+      where: { studentId: student.id, rewardKey: rewardId, enabled: true },
+    });
     if (!reward) throw new BadRequestException('奖励不存在或已停用');
     if ((current?.totalStars ?? 0) < reward.cost) throw new BadRequestException('星星不足，暂时不能兑换');
-    const redemptions = rewardRedemptionsFrom(settings);
-    redemptions.unshift({
-      id: `redeem_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
-      rewardId: reward.id,
-      title: reward.title,
-      cost: reward.cost,
-      status: 'PENDING',
-      requestedAt: new Date().toISOString(),
-    });
-    await this.prisma.student.update({
-      where: { id: student.id },
-      data: { taskSettings: { ...settings, rewardCatalog: catalog, rewardRedemptions: redemptions.slice(0, 100) } as any },
+    await this.prisma.rewardRedemption.create({
+      data: {
+        studentId: student.id,
+        catalogItemId: reward.id,
+        rewardKey: reward.rewardKey,
+        title: reward.title,
+        cost: reward.cost,
+      },
     });
     return this.rewards(ownerId, student.id);
   }
 
   async confirmRewardRedemption(ownerId: bigint, redemptionId: string, dto: { status?: string }, studentId?: bigint) {
     const student = studentId ? await this.ensureStudent(ownerId, studentId) : await this.ensureDefaultStudent(ownerId);
-    const current = await this.prisma.student.findUnique({
-      where: { id: student.id },
-      select: { taskSettings: true, totalStars: true },
-    });
-    const settings = settingsObject(current?.taskSettings);
-    const catalog = rewardCatalogFrom(settings);
-    const redemptions = rewardRedemptionsFrom(settings);
-    const index = redemptions.findIndex((item) => item.id === redemptionId);
-    if (index < 0) throw new BadRequestException('兑换申请不存在');
-    if (redemptions[index].status !== 'PENDING') throw new BadRequestException('兑换申请已处理');
+    const id = toBigIntOrNull(redemptionId);
+    if (!id) throw new BadRequestException('兑换申请不存在');
     const status = dto.status === 'REJECTED' ? 'REJECTED' : 'APPROVED';
-    if (status === 'APPROVED' && (current?.totalStars ?? 0) < redemptions[index].cost) throw new BadRequestException('星星余额不足，无法批准兑换');
-    redemptions[index] = { ...redemptions[index], status, confirmedAt: new Date().toISOString() };
-    await this.prisma.student.update({
-      where: { id: student.id },
-      data: {
-        totalStars: status === 'APPROVED' ? { decrement: redemptions[index].cost } : undefined,
-        taskSettings: { ...settings, rewardCatalog: catalog, rewardRedemptions: redemptions } as any,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const redemption = await tx.rewardRedemption.findFirst({ where: { id, studentId: student.id } });
+      if (!redemption) throw new BadRequestException('兑换申请不存在');
+      if (redemption.status !== 'PENDING') throw new BadRequestException('兑换申请已处理');
+      if (status === 'APPROVED') {
+        const current = await tx.student.findUnique({ where: { id: student.id }, select: { totalStars: true } });
+        if ((current?.totalStars ?? 0) < redemption.cost) throw new BadRequestException('星星余额不足，无法批准兑换');
+        await tx.student.update({ where: { id: student.id }, data: { totalStars: { decrement: redemption.cost } } });
+      }
+      await tx.rewardRedemption.update({
+        where: { id: redemption.id },
+        data: { status, confirmedAt: new Date() },
+      });
     });
     return this.rewards(ownerId, student.id);
+  }
+
+  private async ensureRewardCatalogRows(studentId: bigint, settings: Record<string, any>) {
+    const existing = await this.prisma.rewardCatalogItem.findMany({
+      where: { studentId },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    });
+    if (existing.length) return existing;
+
+    const catalog = rewardCatalogFrom(settings);
+    await this.prisma.rewardCatalogItem.createMany({
+      data: catalog.map((item, index) => ({
+        studentId,
+        rewardKey: item.id,
+        title: item.title,
+        cost: item.cost,
+        description: item.description || null,
+        enabled: item.enabled,
+        sortOrder: index,
+      })),
+      skipDuplicates: true,
+    });
+    return this.prisma.rewardCatalogItem.findMany({
+      where: { studentId },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    });
+  }
+
+  private async ensureRewardRedemptionRows(studentId: bigint, settings: Record<string, any>, catalogRows: any[]) {
+    const existingCount = await this.prisma.rewardRedemption.count({ where: { studentId } });
+    if (existingCount) return;
+
+    const legacyRows = rewardRedemptionsFrom(settings);
+    if (!legacyRows.length) return;
+
+    const catalogByKey = new Map(catalogRows.map((row) => [String(row.rewardKey), row]));
+    await this.prisma.rewardRedemption.createMany({
+      data: legacyRows.map((item) => {
+        const catalogItem = catalogByKey.get(item.rewardId);
+        return {
+          studentId,
+          catalogItemId: catalogItem?.id,
+          rewardKey: item.rewardId,
+          title: item.title || catalogItem?.title || item.rewardId,
+          cost: item.cost,
+          status: item.status,
+          requestedAt: parseOptionalDate(item.requestedAt) || new Date(),
+          confirmedAt: parseOptionalDate(item.confirmedAt),
+        };
+      }),
+    });
   }
 
   private createSession(student: { id: bigint; ownerId: bigint; name: string; avatarUrl?: string | null; grade?: string | null }) {

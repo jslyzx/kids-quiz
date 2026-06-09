@@ -29,6 +29,7 @@ const StudentPracticePlayerPage = lazy(() => import('./pages/StudentPracticePlay
 const LoginPage = lazy(() => import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })));
 const StudentLoginPage = lazy(() => import('./pages/StudentLoginPage').then((module) => ({ default: module.StudentLoginPage })));
 const StudentManagementPage = lazy(() => import('./pages/StudentManagementPage').then((module) => ({ default: module.StudentManagementPage })));
+const EntertainmentCenterPage = lazy(() => import('./pages/EntertainmentCenterPage').then((module) => ({ default: module.EntertainmentCenterPage })));
 
 /* ---- 路由适配包装器 ---- */
 /* 将 react-router 的导航方法转换为现有页面组件期望的回调 props */
@@ -44,6 +45,7 @@ function KidHomeRoute() {
     onOpenReport={() => navigate('/kid/report')}
     onOpenRewards={() => navigate('/kid/rewards')}
     onOpenRecords={() => navigate('/kid/records')}
+    onOpenGames={() => navigate('/kid/games')}
     onStartQuestionGroup={(groupId) => navigate(`/kid/practice/group/${groupId}`)}
     onSwitchStudent={() => {
       clearStudentSession();
@@ -239,6 +241,11 @@ function RewardCenterRoute() {
   />;
 }
 
+function EntertainmentCenterRoute() {
+  const navigate = useNavigate();
+  return <EntertainmentCenterPage onBack={() => navigate('/')} />;
+}
+
 function WrongBookRoute() {
   const navigate = useNavigate();
   return <WrongBookPage
@@ -297,6 +304,7 @@ function AppRoutes() {
         <Route path="/kid/tasks" element={<TaskCenterRoute />} />
         <Route path="/kid/report" element={<StudyReportRoute />} />
         <Route path="/kid/rewards" element={<RewardCenterRoute />} />
+        <Route path="/kid/games" element={<EntertainmentCenterRoute />} />
         <Route path="/kid/records" element={<AllRecordsRoute />} />
         <Route path="/kid/wrong" element={<WrongBookRoute />} />
         <Route path="/kid/wrong-retry" element={<WrongRetryRoute />} />

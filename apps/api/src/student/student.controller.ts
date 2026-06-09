@@ -54,6 +54,21 @@ export class StudentController {
   @Put('task-settings')
   updateTaskSettings(@CurrentUser() user: AuthUser, @Body() dto: unknown, @Query('studentId') studentId?: string) { return this.service.updateTaskSettings(user.id, dto, this.studentId(studentId)); }
 
+  @Get('entertainment-session')
+  entertainmentSession(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.entertainmentSession(user.id, this.studentId(studentId));
+  }
+
+  @Post('entertainment-session/usage')
+  addEntertainmentUsage(@CurrentUser() user: AuthUser, @Body() dto: { addSeconds?: number }, @Query('studentId') studentId?: string) {
+    return this.service.addEntertainmentUsage(user.id, dto, this.studentId(studentId));
+  }
+
+  @Post('entertainment-session/reset')
+  resetEntertainmentUsage(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) {
+    return this.service.resetEntertainmentUsage(user.id, this.studentId(studentId));
+  }
+
   @Get('rewards')
   rewards(@CurrentUser() user: AuthUser, @Query('studentId') studentId?: string) { return this.service.rewards(user.id, this.studentId(studentId)); }
 

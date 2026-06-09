@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { confirmRewardRedemption, getChildRewards, getRewards, requestRewardRedemption, saveRewardCatalog, type RewardCatalogItem } from '../api/student';
 import { badgeLabels, readRewardState, type RewardState } from '../utils/rewards';
@@ -19,10 +19,15 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [catalogDraft, setCatalogDraft] = useState({ title: '', cost: '20', description: '' });
+  const refreshSeqRef = useRef(0);
 
   const refresh = () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     setReward(readRewardState());
+    setMessage('');
     void (isKidRoute ? getChildRewards() : getRewards()).then((data) => {
+      if (seq !== refreshSeqRef.current) return;
       const next = {
         stars: Number(data.stars || 0),
         streakDays: Number(data.streakDays || 0),
@@ -33,7 +38,9 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
       };
       localStorage.setItem('kidsQuiz.rewardState', JSON.stringify(next));
       setReward(next);
-    }).catch(() => undefined);
+    }).catch((error) => {
+      if (seq === refreshSeqRef.current) setMessage(`刷新奖励失败：${error instanceof Error ? error.message : String(error)}`);
+    });
   };
   useEffect(() => { refresh(); }, [selectedStudentId, isKidRoute]);
 
