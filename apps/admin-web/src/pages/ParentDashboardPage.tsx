@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { listPapers } from '../api/papers';
 import { listQuestionGroups } from '../api/questionGroups';
 import { getWrongStats, listPaperStats, listPracticeAttempts, listRecentAttempts, listTagStats, listWrongAnswers } from '../api/submissions';
+import { getEntertainmentSession, getRewards, type EntertainmentSessionState } from '../api/student';
 import { badgeLabels, readRewardState } from '../utils/rewards';
 import { readTaskPlanSettings } from '../utils/taskPlan';
 import { renderMathText } from '../utils/mathText';
@@ -60,13 +61,18 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
   const [tagStats, setTagStats] = useState<any[]>([]);
   const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
   const [practiceAttempts, setPracticeAttempts] = useState<any[]>([]);
+  const [reward, setReward] = useState(() => readRewardState());
+  const [entertainmentSession, setEntertainmentSession] = useState<EntertainmentSessionState | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const refreshSeqRef = useRef(0);
 
   const refresh = async () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     try {
       setLoading(true);
-      const [paperData, groupData, statData, wrongData, wrongStatData, tagStatData, recentData, attemptData] = await Promise.all([
+      const [paperData, groupData, statData, wrongData, wrongStatData, tagStatData, recentData, attemptData, rewardData, entertainmentData] = await Promise.all([
         listPapers(),
         listQuestionGroups(),
         listPaperStats(),
@@ -75,7 +81,10 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
         listTagStats(),
         listRecentAttempts(),
         listPracticeAttempts(),
+        getRewards().catch(() => null),
+        getEntertainmentSession().catch(() => null),
       ]);
+      if (seq !== refreshSeqRef.current) return;
       setPapers(paperData);
       setGroups(groupData);
       setStats(statData);
@@ -84,17 +93,31 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
       setTagStats(tagStatData);
       setRecentAttempts(recentData);
       setPracticeAttempts(attemptData);
+      if (rewardData) {
+        const nextReward = {
+          stars: Number(rewardData.stars || 0),
+          streakDays: Number(rewardData.streakDays || 0),
+          lastPracticeDate: rewardData.lastPracticeDate,
+          badges: Array.isArray(rewardData.badges) ? rewardData.badges : [],
+          catalog: Array.isArray(rewardData.catalog) ? rewardData.catalog : [],
+          redemptions: Array.isArray(rewardData.redemptions) ? rewardData.redemptions : [],
+        };
+        localStorage.setItem('kidsQuiz.rewardState', JSON.stringify(nextReward));
+        setReward(nextReward);
+      } else {
+        setReward(readRewardState());
+      }
+      if (entertainmentData) setEntertainmentSession(entertainmentData);
       setMessage('家长仪表盘已更新');
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      if (seq === refreshSeqRef.current) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) setLoading(false);
     }
   };
 
   useEffect(() => { void refresh(); }, [selectedStudentId]);
 
-  const reward = readRewardState();
   const taskSettings = readTaskPlanSettings();
 
   const summary = useMemo(() => {
@@ -103,6 +126,7 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
     const todayAttempts = practiceAttempts.filter((item) => isToday(item.submittedAt));
     const todayCorrect = todayAttempts.reduce((sum, item) => sum + Number(item.correctCount || 0), 0);
     const todayTotal = todayAttempts.reduce((sum, item) => sum + Number(item.totalCount || 0), 0);
+    const todayDuration = todayAttempts.reduce((sum, item) => sum + Number(item.durationSeconds || 0), 0);
     const duration = practiceAttempts.reduce((sum, item) => sum + Number(item.durationSeconds || 0), 0);
     return {
       total,
@@ -110,6 +134,8 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
       accuracy: total ? Math.round((correct / total) * 100) : 0,
       todayTotal,
       todayAccuracy: todayTotal ? Math.round((todayCorrect / todayTotal) * 100) : 0,
+      todayDuration,
+      todayAttempts: todayAttempts.length,
       wrongSlots: Number(wrongStats?.unresolvedSlots ?? wrongAnswers.length),
       masteredSlots: Number(wrongStats?.masteredSlots ?? 0),
       duration,
@@ -158,10 +184,18 @@ export function ParentDashboardPage({ onQuestions, onPapers, onTaskSettings, onT
             {summary.todayTotal ? `今天已练 ${summary.todayTotal} 题次` : '今天还没开始练习'}
           </h2>
           <p style={{ margin: 0, opacity: 0.9, color: 'rgba(255, 255, 255, 0.9)' }}>
-            {summary.todayTotal ? `今日正确率 ${summary.todayAccuracy}%，继续保持。` : '可以先让孩子从“今日任务”开始。'}
+            {summary.todayTotal ? `今日正确率 ${summary.todayAccuracy}%，学习用时 ${formatDuration(summary.todayDuration)}。` : '可以先让孩子从“今日任务”开始。'}
           </p>
         </div>
         <button className="btn" style={{ background: '#fff', color: 'var(--blue-600)', border: 'none' }} onClick={onTaskCenter}>安排孩子开始练习</button>
+      </div>
+
+      <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-2" style={{ marginBottom: 'var(--space-5)' }}>
+        <div className="stat-card"><span className="stat-value">{summary.todayTotal}</span><span className="stat-label">今日题次</span></div>
+        <div className="stat-card"><span className="stat-value accent">{summary.todayAccuracy || '-'}{summary.todayTotal ? '%' : ''}</span><span className="stat-label">今日正确率</span></div>
+        <div className="stat-card"><span className="stat-value success">{formatDuration(summary.todayDuration)}</span><span className="stat-label">今日学习用时</span></div>
+        <div className="stat-card"><span className="stat-value orange">{entertainmentSession ? formatDuration(entertainmentSession.usedSeconds) : '-'}</span><span className="stat-label">娱乐已用</span></div>
+        <div className="stat-card"><span className="stat-value warning">{entertainmentSession ? formatDuration(entertainmentSession.remainingSeconds) : '-'}</span><span className="stat-label">娱乐剩余</span></div>
       </div>
 
       <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-2" style={{ marginBottom: 'var(--space-5)' }}>

@@ -3,16 +3,32 @@ export type TaskPlanSettings = {
   targetAccuracy: number;
   dailyLimit: number;
   paperIds: string[];
+  entertainmentEnabled: boolean;
+  entertainmentDailyLimitSeconds: number;
+  entertainmentAllowedGames: string[];
 };
 
 export const TASK_PLAN_KEY = 'kidsQuiz.taskPlanSettings';
 const API_BASE = 'http://localhost:3000';
+export const ENTERTAINMENT_GAME_KEYS = ['2048', '24', 'sudoku', 'gomoku', 'memory'] as const;
+export const ENTERTAINMENT_MIN_LIMIT_SECONDS = 60;
+export const ENTERTAINMENT_MAX_LIMIT_SECONDS = 30 * 60;
+
+export function normalizeEntertainmentLimitSeconds(value: unknown) {
+  return Math.min(
+    ENTERTAINMENT_MAX_LIMIT_SECONDS,
+    Math.max(ENTERTAINMENT_MIN_LIMIT_SECONDS, Math.floor(Number(value || ENTERTAINMENT_MAX_LIMIT_SECONDS))),
+  );
+}
 
 export const defaultTaskPlanSettings: TaskPlanSettings = {
   requireWrongFirst: true,
   targetAccuracy: 90,
   dailyLimit: 5,
   paperIds: [],
+  entertainmentEnabled: true,
+  entertainmentDailyLimitSeconds: 1800,
+  entertainmentAllowedGames: [...ENTERTAINMENT_GAME_KEYS],
 };
 
 export function readTaskPlanSettings(): TaskPlanSettings {
@@ -25,6 +41,11 @@ export function readTaskPlanSettings(): TaskPlanSettings {
       targetAccuracy: Number(parsed.targetAccuracy || defaultTaskPlanSettings.targetAccuracy),
       dailyLimit: Number(parsed.dailyLimit || defaultTaskPlanSettings.dailyLimit),
       paperIds: Array.isArray(parsed.paperIds) ? parsed.paperIds.map(String) : [],
+      entertainmentEnabled: parsed.entertainmentEnabled ?? defaultTaskPlanSettings.entertainmentEnabled,
+      entertainmentDailyLimitSeconds: normalizeEntertainmentLimitSeconds(parsed.entertainmentDailyLimitSeconds),
+      entertainmentAllowedGames: Array.isArray(parsed.entertainmentAllowedGames)
+        ? parsed.entertainmentAllowedGames.map(String).filter((key) => (ENTERTAINMENT_GAME_KEYS as readonly string[]).includes(key))
+        : [...ENTERTAINMENT_GAME_KEYS],
     };
   } catch {
     return defaultTaskPlanSettings;

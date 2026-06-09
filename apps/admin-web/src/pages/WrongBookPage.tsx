@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { listStudentWrongAnswers, listWrongAnswers } from '../api/submissions';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
@@ -53,17 +53,21 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
   const [keyword, setKeyword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const refreshSeqRef = useRef(0);
 
   const refresh = async () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     try {
       setLoading(true);
       const data = await (isKidRoute ? listStudentWrongAnswers() : listWrongAnswers());
+      if (seq !== refreshSeqRef.current) return;
       setRecords(data);
       setMessage(`已加载 ${data.length} 条错题`);
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      if (seq === refreshSeqRef.current) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) setLoading(false);
     }
   };
 

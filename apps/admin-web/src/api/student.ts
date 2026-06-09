@@ -36,6 +36,17 @@ export type RewardRedemption = {
   confirmedAt?: string;
 };
 
+export type EntertainmentSessionState = {
+  date: string;
+  enabled: boolean;
+  allowedGames: string[];
+  dailyLimitSeconds: number;
+  usedSeconds: number;
+  remainingSeconds: number;
+  locked: boolean;
+  serverNow: string;
+};
+
 export function getStudentProfile(): Promise<any> {
   return request<any>(withSelectedStudent('/admin/student/profile'));
 }
@@ -130,6 +141,26 @@ export function saveTaskSettings(data: unknown): Promise<any> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
+}
+
+export function getChildEntertainmentSession(): Promise<EntertainmentSessionState> {
+  return studentOrAdminRequest<EntertainmentSessionState>('/student/entertainment-session', withSelectedStudent('/admin/student/entertainment-session'));
+}
+
+export function getEntertainmentSession(): Promise<EntertainmentSessionState> {
+  return request<EntertainmentSessionState>(withSelectedStudent('/admin/student/entertainment-session'));
+}
+
+export function addChildEntertainmentUsage(addSeconds: number): Promise<EntertainmentSessionState> {
+  return studentOrAdminRequest<EntertainmentSessionState>('/student/entertainment-session/usage', withSelectedStudent('/admin/student/entertainment-session/usage'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ addSeconds }),
+  });
+}
+
+export function resetEntertainmentUsage(): Promise<EntertainmentSessionState> {
+  return request<EntertainmentSessionState>(withSelectedStudent('/admin/student/entertainment-session/reset'), { method: 'POST' });
 }
 
 export function getRewards(): Promise<any> {

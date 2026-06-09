@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getStudentWrongStats as getWrongStats, listStudentWrongAnswers as listWrongAnswers, submitStudentPaperAttempt as submitPaperAttempt } from '../api/submissions';
 import { applyRewardSnapshot, badgeLabels, grantPracticeReward, type RewardGrant } from '../utils/rewards';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
@@ -91,6 +91,7 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
   const [stats, setStats] = useState<WrongStats | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const refreshSeqRef = useRef(0);
 
   const refreshStats = async () => {
     try {
@@ -101,9 +102,12 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
   };
 
   const refresh = async () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     try {
       setLoading(true);
       const [data, nextStats] = await Promise.all([listWrongAnswers(), getWrongStats()]);
+      if (seq !== refreshSeqRef.current) return;
       setRecords(data);
       setStats(nextStats);
       setAnswers({});
@@ -111,9 +115,9 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
       setReward(null);
       setMessage(`已加载 ${data.length} 道错题`);
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      if (seq === refreshSeqRef.current) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) setLoading(false);
     }
   };
 

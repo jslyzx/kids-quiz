@@ -56,6 +56,12 @@ enum AnswerSource {
   WRONG_RETRY
 }
 
+enum RewardRedemptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id           BigInt       @id @default(autoincrement())
   username     String       @unique @db.VarChar(80)
@@ -95,9 +101,50 @@ model Student {
   owner   User            @relation(fields: [ownerId], references: [id])
   answers StudentAnswer[]
   attempts PracticeAttempt[]
+  rewardCatalogItems RewardCatalogItem[]
+  rewardRedemptions  RewardRedemption[]
 
   @@index([ownerId])
   @@map("students")
+}
+
+model RewardCatalogItem {
+  id          BigInt       @id @default(autoincrement())
+  studentId   BigInt       @map("student_id")
+  rewardKey   String       @map("reward_key") @db.VarChar(100)
+  title       String       @db.VarChar(160)
+  cost        Int
+  description String?      @db.VarChar(500)
+  enabled     Boolean      @default(true)
+  sortOrder   Int          @default(0) @map("sort_order")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  redemptions RewardRedemption[]
+
+  @@unique([studentId, rewardKey])
+  @@index([studentId])
+  @@map("reward_catalog_items")
+}
+
+model RewardRedemption {
+  id            BigInt                 @id @default(autoincrement())
+  studentId     BigInt                 @map("student_id")
+  catalogItemId BigInt?                @map("catalog_item_id")
+  rewardKey     String                 @map("reward_key") @db.VarChar(100)
+  title         String                 @db.VarChar(160)
+  cost          Int
+  status        RewardRedemptionStatus @default(PENDING)
+  requestedAt   DateTime               @default(now()) @map("requested_at")
+  confirmedAt   DateTime?              @map("confirmed_at")
+
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  catalogItem RewardCatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, status, requestedAt])
+  @@index([catalogItemId])
+  @@map("reward_redemptions")
 }
 
 model Subject {

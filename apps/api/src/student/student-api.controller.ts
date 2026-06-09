@@ -34,6 +34,16 @@ export class StudentApiController {
     return this.studentService.taskSettings(student.ownerId, student.studentId);
   }
 
+  @Get('entertainment-session')
+  entertainmentSession(@CurrentStudent() student: StudentSessionUser) {
+    return this.studentService.entertainmentSession(student.ownerId, student.studentId);
+  }
+
+  @Post('entertainment-session/usage')
+  addEntertainmentUsage(@CurrentStudent() student: StudentSessionUser, @Body() dto: { addSeconds?: number }) {
+    return this.studentService.addEntertainmentUsage(student.ownerId, dto, student.studentId);
+  }
+
   @Get('rewards')
   rewards(@CurrentStudent() student: StudentSessionUser) {
     return this.studentService.rewards(student.ownerId, student.studentId);

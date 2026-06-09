@@ -19,7 +19,8 @@
     "migrate:matching:import:all": "node scripts/migrate-matching/migrate-matching.js import --fresh --all --include-papers",
     "paper:all": "node scripts/create-all-question-paper.js",
     "smoke:e2e": "node scripts/e2e-smoke.mjs",
-    "smoke:isolation": "node scripts/isolation-smoke.mjs"
+    "smoke:isolation": "node scripts/isolation-smoke.mjs",
+    "smoke:entertainment": "node scripts/entertainment-smoke.mjs"
   },
   "devDependencies": {
     "@prisma/client": "6.19.3",

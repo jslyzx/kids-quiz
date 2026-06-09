@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { listStudentPapers as listPapers } from '../api/papers';
 import { listStudentQuestionGroups as listQuestionGroups } from '../api/questionGroups';
 import { listStudentPaperStats as listPaperStats, listStudentRecentAttempts as listRecentAttempts, listStudentWrongAnswers as listWrongAnswers } from '../api/submissions';
-import { getChildStudentProfile as getStudentProfile, saveChildStudentProfile as saveStudentProfileApi } from '../api/student';
+import { getChildStudentProfile as getStudentProfile, getChildTaskSettings, saveChildStudentProfile as saveStudentProfileApi } from '../api/student';
 import { readRewardState } from '../utils/rewards';
 
 type Props = {
@@ -14,6 +14,7 @@ type Props = {
   onOpenReport: () => void;
   onOpenRewards: () => void;
   onOpenRecords: () => void;
+  onOpenGames: () => void;
   onStartQuestionGroup: (groupId: string) => void;
   onSwitchStudent: () => void;
 };
@@ -71,6 +72,7 @@ const TXT = {
   noRecordsTip: '\u5b8c\u6210\u4e00\u6b21\u7ec3\u4e60\u540e\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002',
   report: '\u5b66\u4e60\u62a5\u544a',
   allRecords: '\u5168\u90e8\u8bb0\u5f55',
+  games: '娱乐中心',
   home: '\u9996\u9875',
   practice: '\u7ec3\u4e60',
   wrong: '\u9519\u9898',
@@ -109,7 +111,7 @@ function groupSearchText(group: any) {
   return `${group.title || ''}\u3001${group.commonStem || ''}\u3001${groupTags(group).join('\u3001')}`;
 }
 
-export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, onOpenWrongBook, onRetryWrong, onOpenTaskCenter, onOpenReport, onOpenRewards, onOpenRecords, onSwitchStudent }: Props) {
+export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, onOpenWrongBook, onRetryWrong, onOpenTaskCenter, onOpenReport, onOpenRewards, onOpenRecords, onOpenGames, onSwitchStudent }: Props) {
   const [activeTab, setActiveTab] = useState<KidTab>('home');
   const [papers, setPapers] = useState<any[]>([]);
   const [questionGroups, setQuestionGroups] = useState<any[]>([]);
@@ -124,36 +126,67 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
   const [studentName, setStudentName] = useState(() => localStorage.getItem('kidsQuiz.studentName') || TXT.child);
   const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem('kidsQuiz.avatarUrl') || '');
   const [rewardState, setRewardState] = useState(() => readRewardState());
+  const [entertainmentSettings, setEntertainmentSettings] = useState({ enabled: true, dailyLimitSeconds: 1800 });
   const [loading, setLoading] = useState(false);
+  const [homeMessage, setHomeMessage] = useState('');
+  const refreshSeqRef = useRef(0);
 
   const refresh = async () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     try {
       setLoading(true);
-      const [paperData, groupData, statData, wrongData, recentData] = await Promise.all([listPapers(), listQuestionGroups(), listPaperStats(), listWrongAnswers(), listRecentAttempts()]);
+      setHomeMessage('');
+      const [paperData, groupData, statData, wrongData, recentData, taskSettings, profile] = await Promise.all([
+        listPapers(),
+        listQuestionGroups(),
+        listPaperStats(),
+        listWrongAnswers(),
+        listRecentAttempts(),
+        getChildTaskSettings().catch(() => null),
+        getStudentProfile().catch(() => null),
+      ]);
+      if (seq !== refreshSeqRef.current) return;
       setPapers(paperData);
       setQuestionGroups(groupData);
       setStatsMap(Object.fromEntries(statData.map((item) => [String(item.paperId), item])));
       setWrongAnswers(wrongData);
       setRecentAttempts(recentData);
       setRewardState(readRewardState());
-      getStudentProfile().then((profile) => {
+      if (taskSettings) {
+        setEntertainmentSettings({
+          enabled: taskSettings.entertainmentEnabled !== false,
+          dailyLimitSeconds: Math.max(60, Number(taskSettings.entertainmentDailyLimitSeconds || 1800)),
+        });
+      }
+      if (profile) {
         if (profile?.name) setStudentName(profile.name);
         if (profile?.avatarUrl !== undefined) setAvatarUrl(profile.avatarUrl || '');
-      }).catch(() => undefined);
+      }
+    } catch (error) {
+      if (seq === refreshSeqRef.current) setHomeMessage(`刷新失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) setLoading(false);
     }
   };
 
   useEffect(() => { void refresh(); }, []);
 
   const saveProfile = () => {
-    localStorage.setItem('kidsQuiz.studentName', studentName.trim() || TXT.child);
-    localStorage.setItem('kidsQuiz.avatarUrl', avatarUrl.trim());
-    void saveStudentProfileApi({ name: studentName.trim() || TXT.child, avatarUrl: avatarUrl.trim() }).catch(() => undefined);
+    const nextName = studentName.trim() || TXT.child;
+    const nextAvatar = avatarUrl.trim();
+    setStudentName(nextName);
+    setAvatarUrl(nextAvatar);
+    localStorage.setItem('kidsQuiz.studentName', nextName);
+    localStorage.setItem('kidsQuiz.avatarUrl', nextAvatar);
+    setHomeMessage('资料保存中...');
+    void saveStudentProfileApi({ name: nextName, avatarUrl: nextAvatar })
+      .then(() => setHomeMessage('资料已保存'))
+      .catch((error) => setHomeMessage(`资料已保存到本机，但同步到服务器失败：${error instanceof Error ? error.message : String(error)}`));
   };
 
   const recommended = papers[0];
+  const entertainmentMinutes = Math.max(1, Math.round(entertainmentSettings.dailyLimitSeconds / 60));
   const totalStats = useMemo(() => {
     const list = Object.values(statsMap);
     const total = list.reduce((sum, item: any) => sum + Number(item.total || 0), 0);
@@ -228,6 +261,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
     </header>
 
     <main className="kid-content">
+      {homeMessage && <div className="message-banner info" style={{ marginBottom: 'var(--space-4)' }}>{homeMessage}</div>}
       {activeTab === 'home' && <div className="kid-home-grid">
         <section className="kid-hero-card animate-fadeInUp">
           <span className="kid-hero-tag">{TXT.todayRecommend}</span>
@@ -244,7 +278,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <button className="kid-quick-btn animate-fadeInUp stagger-1" onClick={() => setActiveTab('practice')}><b>{TXT.freePractice}</b><span>{papers.length} {TXT.sets}</span></button>
           <button className="kid-quick-btn animate-fadeInUp stagger-2" onClick={() => setActiveTab('wrong')}><b>{TXT.wrongRetry}</b><span>{wrongAnswers.length} {TXT.items}</span></button>
           <button className="kid-quick-btn animate-fadeInUp stagger-3" onClick={() => setActiveTab('reward')}><b>{TXT.myStars}</b><span>{rewardState.stars} {TXT.stars}</span></button>
-          <button className="kid-quick-btn animate-fadeInUp stagger-4" onClick={() => setActiveTab('mine')}><b>{TXT.records}</b><span>{recentAttempts.length} {TXT.items}</span></button>
+          {entertainmentSettings.enabled && <button className="kid-quick-btn animate-fadeInUp stagger-4" onClick={onOpenGames}><b>{TXT.games}</b><span>{entertainmentMinutes} 分钟</span></button>}
         </div>
       </div>}
 
@@ -337,7 +371,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           {recentAttempts.slice(0, 3).map((item) => <div className="card card-flat card-compact" key={item.id}><b>{item.paper?.title || TXT.practice}</b><span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{shortDate(item.submittedAt)} {'\u00b7'} {item.isCorrect ? TXT.correct : TXT.needReview}</span></div>)}
           {!recentAttempts.length && <div className="card card-flat card-compact"><b>{TXT.noRecords}</b><span style={{ color: 'var(--text-muted)' }}>{TXT.noRecordsTip}</span></div>}
         </div>
-        <div className="kid-quick-grid" style={{ gridColumn: '1 / -1' }}><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button><button className="btn btn-secondary btn-lg btn-block" onClick={onSwitchStudent}>切换学生</button></div>
+        <div className="kid-quick-grid" style={{ gridColumn: '1 / -1' }}><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button>{entertainmentSettings.enabled && <button className="btn btn-soft btn-lg btn-block" onClick={onOpenGames}>{TXT.games}</button>}<button className="btn btn-secondary btn-lg btn-block" onClick={onSwitchStudent}>切换学生</button></div>
       </section>}
     </main>
 

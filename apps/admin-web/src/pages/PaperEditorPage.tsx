@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kids-quiz/question-render';
 import { addPaperQuestionGroup, getPaper, removePaperItem, reorderPaperItems, updatePaper } from '../api/papers';
 import { listQuestionGroups } from '../api/questionGroups';
@@ -24,23 +24,70 @@ function renderGroupPreview(group: any) {
   return <pre className="json-preview">{JSON.stringify(group, null, 2)}</pre>;
 }
 
+function groupStemPreview(group: any) {
+  const firstStem = group.questions?.[0]?.stem || group.commonStem || '';
+  return String(firstStem)
+    .replace(/\{\{blank(?::[^}]+)?\}\}/g, '____')
+    .replace(/\{_[0-9]+\}/g, '____')
+    .replace(/\{\{math:(.+?)\}\}/g, '$1')
+    .replace(/\\\((.+?)\\\)/g, '$1')
+    .replace(/\\\[(.+?)\\\]/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function groupTags(group: any): string[] {
+  return Array.isArray(group.tags) ? group.tags.map(String).filter(Boolean) : [];
+}
+
 export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
   const [paper, setPaper] = useState<any>(null);
   const [groups, setGroups] = useState<any[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [pickerKeyword, setPickerKeyword] = useState('');
+  const [pickerType, setPickerType] = useState('ALL');
+  const [pickerGrade, setPickerGrade] = useState('');
+  const [pickerTag, setPickerTag] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [previewGroup, setPreviewGroup] = useState<any>(null);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
+  const refreshSeqRef = useRef(0);
 
   const selectedIds = useMemo(() => new Set((paper?.items || []).map((item: any) => String(item.groupId))), [paper]);
   const availableGroups = useMemo(() => groups.filter((group) => !selectedIds.has(String(group.id))), [groups, selectedIds]);
+  const pickerFilteredGroups = useMemo(() => {
+    const keyword = pickerKeyword.trim().toLowerCase();
+    const grade = pickerGrade.trim();
+    const tag = pickerTag.trim();
+    return availableGroups.filter((group) => {
+      const tags = groupTags(group);
+      const searchText = [
+        group.id,
+        group.title,
+        group.groupType,
+        group.gradeLevel,
+        groupStemPreview(group),
+        ...tags,
+      ].map((item) => String(item ?? '').toLowerCase()).join(' ');
+      return (!keyword || searchText.includes(keyword))
+        && (pickerType === 'ALL' || group.groupType === pickerType)
+        && (!grade || String(group.gradeLevel ?? '').includes(grade))
+        && (!tag || tags.some((item) => item.includes(tag)));
+    });
+  }, [availableGroups, pickerGrade, pickerKeyword, pickerTag, pickerType]);
+  const pickerTypes = useMemo(() => Array.from(new Set(availableGroups.map((group) => String(group.groupType || '')).filter(Boolean))), [availableGroups]);
+  const pickerGrades = useMemo(() => Array.from(new Set(availableGroups.map((group) => String(group.gradeLevel || '')).filter(Boolean))), [availableGroups]);
+  const pickerTags = useMemo(() => Array.from(new Set(availableGroups.flatMap(groupTags))).slice(0, 12), [availableGroups]);
 
   const refresh = async () => {
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     try {
       setLoading(true);
       const [paperData, groupData] = await Promise.all([getPaper(paperId), listQuestionGroups()]);
+      if (seq !== refreshSeqRef.current) return;
       setPaper(paperData);
       setGroups(groupData);
       setMetaTitle(paperData.title || '');
@@ -48,13 +95,17 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
       setSelectedGroupId(groupData.find((group) => !new Set((paperData.items || []).map((item: any) => String(item.groupId))).has(String(group.id)))?.id?.toString() || '');
       setMessage(`已加载试卷：${paperData.title}`);
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      if (seq === refreshSeqRef.current) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) setLoading(false);
     }
   };
 
   useEffect(() => { void refresh(); }, [paperId]);
+  useEffect(() => {
+    if (!selectedGroupId || pickerFilteredGroups.some((group) => String(group.id) === selectedGroupId)) return;
+    setSelectedGroupId(pickerFilteredGroups[0]?.id?.toString() || '');
+  }, [pickerFilteredGroups, selectedGroupId]);
 
   const addSelected = async (groupId = selectedGroupId) => {
     if (!groupId) {
@@ -132,19 +183,32 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
         </div>
 
         <h2>加入题目</h2>
+        <div className="filter-bar" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 'var(--space-2)' }}>
+          <input placeholder="搜索标题、题干、ID、标签" value={pickerKeyword} onChange={(event) => setPickerKeyword(event.target.value)} />
+          <select value={pickerType} onChange={(event) => setPickerType(event.target.value)}>
+            <option value="ALL">全部类型</option>
+            {pickerTypes.map((item) => <option value={item} key={item}>{item}</option>)}
+          </select>
+          <input list="paper-picker-grades" placeholder="年级" value={pickerGrade} onChange={(event) => setPickerGrade(event.target.value)} />
+          <input list="paper-picker-tags" placeholder="标签" value={pickerTag} onChange={(event) => setPickerTag(event.target.value)} />
+          <datalist id="paper-picker-grades">{pickerGrades.map((item) => <option value={item} key={item} />)}</datalist>
+          <datalist id="paper-picker-tags">{pickerTags.map((item) => <option value={item} key={item} />)}</datalist>
+        </div>
         <div className="add-question-box">
           <select value={selectedGroupId} onChange={(event) => setSelectedGroupId(event.target.value)}>
             <option value="">请选择题库题目</option>
-            {availableGroups.map((group) => <option key={group.id} value={group.id}>{group.title}（{group.groupType}）</option>)}
+            {pickerFilteredGroups.map((group) => <option key={group.id} value={group.id}>{group.title}（{group.groupType}）</option>)}
           </select>
           <button className="btn btn-primary btn-sm" onClick={() => addSelected()}>加入试卷</button>
         </div>
+        <small style={{ color: 'var(--text-muted)', fontWeight: 800 }}>可加入 {availableGroups.length} 个，当前筛选 {pickerFilteredGroups.length} 个。</small>
 
         <div className="questionPickerList" style={{ display: 'grid', gap: 'var(--space-2)' }}>
-          {availableGroups.map((group) => <div className="picker-item" key={group.id}>
+          {pickerFilteredGroups.map((group) => <div className="picker-item" key={group.id}>
             <div>
               <b>{group.title}</b>
-              <small>ID：{group.id} / 类型：{group.groupType} / 小题：{group.questions?.length ?? 0}</small>
+              <small>ID：{group.id} / 类型：{group.groupType} / 年级：{group.gradeLevel || '-'} / 小题：{group.questions?.length ?? 0}</small>
+              {groupStemPreview(group) && <small style={{ display: 'block', marginTop: 4, color: 'var(--text-muted)' }}>{groupStemPreview(group).slice(0, 80)}</small>}
             </div>
             <div className="rowActions">
               <button className="btn btn-secondary btn-sm" onClick={() => setPreviewGroup(group)}>预览</button>
@@ -152,6 +216,7 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
             </div>
           </div>)}
           {!availableGroups.length && <p className="tip">题库暂无可加入题目，或所有题目已经加入当前试卷。</p>}
+          {!!availableGroups.length && !pickerFilteredGroups.length && <p className="tip">当前筛选条件下没有可加入题目。</p>}
         </div>
       </section>
 
