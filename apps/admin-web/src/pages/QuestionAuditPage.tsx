@@ -75,11 +75,31 @@ function collectAnswerValues(question: any): string {
   return (question.answerSlots ?? []).map((slot: any) => textOf(slot.correctAnswer)).join('|');
 }
 
+function collectOptions(question: any) {
+  const dbOptions = Array.isArray(question?.options)
+    ? question.options.map((option: any) => ({
+      key: textOf(option.optionKey ?? option.key),
+      text: textOf(option.content ?? option.text),
+    }))
+    : [];
+  const contentOptions = Array.isArray(question?.content?.options)
+    ? question.content.options.map((option: any) => ({
+      key: textOf(option.key ?? option.optionKey),
+      text: textOf(option.text ?? option.content),
+    }))
+    : [];
+  const map = new Map<string, { key: string; text: string }>();
+  for (const option of [...dbOptions, ...contentOptions]) {
+    if (option.key || option.text) map.set(option.key || option.text, option);
+  }
+  return Array.from(map.values());
+}
+
 function buildQuestionSignature(group: any): string {
   const parts = (group.questions ?? []).map((question: any) => [
     normalizeText(question.stem),
     normalizeText(question.questionType),
-    normalizeText((question.options ?? []).map((option: any) => `${option.key}:${option.text}`).join('|')),
+    normalizeText(collectOptions(question).map((option: any) => `${option.key}:${option.text}`).join('|')),
     normalizeText(collectAnswerValues(question)),
   ].join('::'));
   return [normalizeText(group.groupType), ...parts].join('##');
@@ -101,6 +121,31 @@ function hasExplanation(question: any): boolean {
 
 function hasTag(group: any, tag: string) {
   return asArray(group?.tags).map(String).includes(tag);
+}
+
+function collectUrls(value: unknown, urls: string[] = []) {
+  if (!value || typeof value !== 'object') return urls;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectUrls(item, urls));
+    return urls;
+  }
+  for (const [key, item] of Object.entries(value)) {
+    if ((key === 'url' || key === 'src') && typeof item === 'string') urls.push(item);
+    else collectUrls(item, urls);
+  }
+  return urls;
+}
+
+function looksLikeMojibake(value: unknown) {
+  return /锛|绗|涓|瀵|棰|鈥|馃|浜屽勾|鏁板/.test(textOf(value));
+}
+
+function mentionsVisualMaterial(value: unknown) {
+  return /图|钟面|尺|线段|票价|表格|看图|下面/.test(textOf(value));
+}
+
+function materialCount(question: any, group: any) {
+  return asArray(question?.content?.materials).length + asArray(group?.content?.materials).length + (group?.content?.table ? 1 : 0);
 }
 
 function auditBank(bank: any) {
@@ -192,7 +237,7 @@ function auditBank(bank: any) {
       const questionId = String(question.id);
       const stem = textOf(question.stem);
       const answerSlots = asArray(question.answerSlots);
-      const options = asArray(question.options);
+      const options = collectOptions(question);
       const questionType = textOf(question.questionType);
 
       if (!stem.trim() && !textOf(group.commonStem).trim() && group.groupType !== 'MENTAL_MATH') {
@@ -219,6 +264,7 @@ function auditBank(bank: any) {
         });
       }
 
+      const isColumnArithmetic = question.content?.interaction === 'column_arithmetic' || Boolean(question.content?.columnArithmetic);
       const seenSlotKeys = new Set<string>();
       for (const slot of answerSlots) {
         const key = textOf(slot.slotKey);
@@ -247,7 +293,7 @@ function auditBank(bank: any) {
         }
         seenSlotKeys.add(key);
 
-        if (!answers.length || answers.every((answer) => textOf(answer).trim() === '')) {
+        if (!isColumnArithmetic && (!answers.length || answers.every((answer) => textOf(answer).trim() === ''))) {
           addIssue({
             groupId,
             questionId,
@@ -283,6 +329,49 @@ function auditBank(bank: any) {
           title: '仍包含旧格式公式或空位',
           detail: `题干「${visibleStem(group, question)}」中仍有旧格式。`,
           suggestion: '建议转换为 {{math:...}} 和 {{blank:1}}，避免展示异常。',
+        });
+      }
+
+      const searchablePayload = [group.title, group.commonStem, group.content, question.stem, question.content, question.explanation, question.options, question.answerSlots];
+      if (searchablePayload.some(looksLikeMojibake)) {
+        addIssue({
+          groupId,
+          questionId,
+          severity: 'warning',
+          category: '乱码',
+          title: '疑似编码乱码',
+          detail: `小题「${visibleStem(group, question) || questionId}」中检测到常见 mojibake 字符。`,
+          suggestion: '检查源 JSON 是否为 UTF-8，必要时重新 OCR 或从规范化 JSON 重新导入。',
+        });
+      }
+
+      const urls = collectUrls({ groupContent: group.content, questionContent: question.content, explanation: question.explanation });
+      const badUrls = urls.filter((url) => {
+        const text = String(url ?? '').trim();
+        if (!text) return true;
+        return !/^https?:\/\//.test(text) && !text.startsWith('/uploads/');
+      });
+      if (badUrls.length) {
+        addIssue({
+          groupId,
+          questionId,
+          severity: 'critical',
+          category: '图片',
+          title: '图片 URL 格式异常',
+          detail: `检测到无法稳定访问的图片地址：${badUrls.join('、')}`,
+          suggestion: '图片建议放入 apps/api/uploads，并使用 /uploads/xxx 或 http://localhost:3000/uploads/xxx。',
+        });
+      }
+
+      if (mentionsVisualMaterial(stem) && materialCount(question, group) === 0) {
+        addIssue({
+          groupId,
+          questionId,
+          severity: 'warning',
+          category: '材料',
+          title: '题干像是依赖图片/材料但未配置材料',
+          detail: `题干「${visibleStem(group, question)}」提到图、钟面、尺或票价等材料，但未检测到 materials/table。`,
+          suggestion: '补充 content.materials 或确认题干已经包含完整信息。',
         });
       }
 

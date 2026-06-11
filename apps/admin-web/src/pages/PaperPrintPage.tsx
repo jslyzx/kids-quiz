@@ -57,14 +57,17 @@ function MaterialTable({ table }: { table?: TableMaterial }) {
   </table>;
 }
 
-function renderPrintStem(stem: string) {
+function renderPrintStem(question: QuestionDraft) {
   const parts: React.ReactNode[] = [];
   let last = 0;
   const re = /\{\{blank:(\d+)\}\}/g;
   let match: RegExpExecArray | null;
+  const stem = question.stem;
   while ((match = re.exec(stem))) {
     if (match.index > last) parts.push(...renderMathText(stem.slice(last, match.index)));
-    parts.push(<span className="printBlank" key={`${match[1]}-${match.index}`} />);
+    const slot = question.answer_slots.find((item) => item.slot_key === `blank_${match?.[1]}`);
+    const className = slot?.slot_type === 'compare_symbol' && slot.answer_rule?.display_shape === 'circle' ? 'printBlank printCircle' : 'printBlank';
+    parts.push(<span className={className} key={`${match[1]}-${match.index}`} />);
     last = re.lastIndex;
   }
   if (last < stem.length) parts.push(...renderMathText(stem.slice(last)));
@@ -73,6 +76,7 @@ function renderPrintStem(stem: string) {
 
 function PrintQuestion({ question, index }: { question: QuestionDraft; index?: number }) {
   const prefix = index === undefined ? '' : `${index + 1}. `;
+  const materials = question.content?.materials;
   const options = (question.content?.options ?? []) as Array<{ key: string; text: string }>;
   const items = (question.content?.items ?? []) as Array<{ key: string; label: string; value: string }>;
   const left = (question.content?.left ?? []) as Array<{ key: string; text: string }>;
@@ -80,6 +84,7 @@ function PrintQuestion({ question, index }: { question: QuestionDraft; index?: n
 
   if (question.question_type === 'single_choice' || question.question_type === 'multiple_choice') {
     return <div className="printQuestion">
+      {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}
       <div className="printStem">{prefix}{renderMathText(question.stem)}</div>
       <div className="printOptions">{options.map((option) => <span key={option.key}>{option.key}. {renderMathText(option.text)}</span>)}</div>
     </div>;
@@ -88,6 +93,7 @@ function PrintQuestion({ question, index }: { question: QuestionDraft; index?: n
   if (question.question_type === 'ordering') {
     const separator = String(question.content?.separator ?? '>');
     return <div className="printQuestion">
+      {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}
       <div className="printStem">{prefix}{renderMathText(question.stem)}</div>
       <div className="printOptions">{items.map((item) => <span key={item.key}>{item.label} {item.value}</span>)}</div>
       <div className="printOrder">{items.map((_, itemIndex) => <span key={itemIndex}><i />{itemIndex < items.length - 1 && <b>{separator}</b>}</span>)}</div>
@@ -96,6 +102,7 @@ function PrintQuestion({ question, index }: { question: QuestionDraft; index?: n
 
   if (question.question_type === 'matching') {
     return <div className="printQuestion">
+      {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}
       <div className="printStem">{prefix}{renderMathText(question.stem)}</div>
       <div className="printMatch">
         <div>{left.map((item) => <span key={item.key}>{item.text}</span>)}</div>
@@ -105,7 +112,8 @@ function PrintQuestion({ question, index }: { question: QuestionDraft; index?: n
   }
 
   return <div className="printQuestion">
-    <div className="printStem">{prefix}{renderPrintStem(question.stem)}</div>
+    {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}
+    <div className="printStem">{prefix}{renderPrintStem(question)}</div>
   </div>;
 }
 

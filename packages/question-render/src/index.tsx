@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AnswerSlot, QuestionDraft, TableMaterial } from '@kids-quiz/shared-types';
+import type { AnswerSlot, ColumnArithmeticCell, ColumnArithmeticContent, QuestionDraft, TableMaterial } from '@kids-quiz/shared-types';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import './renderer.css';
@@ -51,10 +51,12 @@ function renderStem(stem: string, slots: AnswerSlot[]) {
     const slot = slotByKey(slots, key);
     if (slot?.slot_type === 'compare_symbol') {
       const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
-      parts.push(
-        <span className="kq-compare" key={`${key}-${m.index}`}>
-          {allowed.map((value) => <button key={value}>{value}</button>)}
-        </span>,
+      const isCircle = slot.answer_rule?.display_shape === 'circle';
+      parts.push(isCircle
+        ? <span className="kq-symbol-circle" key={`${key}-${m.index}`} aria-label={`符号 ${m[1]}`} />
+        : <span className="kq-compare" key={`${key}-${m.index}`}>
+            {allowed.map((value) => <button key={value}>{value}</button>)}
+          </span>,
       );
     } else {
       parts.push(<span className="kq-blank" key={`${key}-${m.index}`} aria-label={`填空 ${m[1]}`} />);
@@ -92,6 +94,36 @@ function TableFillPreview({ question }: { question: QuestionDraft }) {
   );
 }
 
+function cellText(cell: ColumnArithmeticCell) {
+  if (!cell) return '';
+  return cell.text ?? '';
+}
+
+function ColumnArithmeticPreview({ question }: { question: QuestionDraft }) {
+  const config = question.content?.columnArithmetic as ColumnArithmeticContent | undefined;
+  const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
+  const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
+  return (
+    <div className="kq-question">
+      {question.stem && <div className="kq-stem">{renderMathText(question.stem)}</div>}
+      <div className="kq-column-arithmetic" style={{ ['--kq-columns' as string]: columns }}>
+        {rows.map((row, rowIndex) => (
+          <div className={`kq-column-row kq-column-row-${row.role ?? 'operand'}`} key={rowIndex}>
+            <span className="kq-column-operator">{row.operator ?? ''}</span>
+            {Array.from({ length: columns }).map((_, cellIndex) => {
+              const offset = columns - row.cells.length;
+              const cell = row.cells[cellIndex - offset] ?? null;
+              const key = cell?.slot ?? `${rowIndex}-${cellIndex}`;
+              if (cell?.slot) return <span className="kq-column-cell kq-column-slot" key={key} />;
+              return <span className={`kq-column-cell ${cell ? 'fixed' : 'empty'}`} key={key}>{cellText(cell)}</span>;
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MaterialBlock({ material }: { material: CompositeMaterial }) {
   return (
     <div className={`kq-material kq-material-${material.type}`}>
@@ -104,6 +136,9 @@ function MaterialBlock({ material }: { material: CompositeMaterial }) {
 }
 
 export function QuestionPreview({ question }: { question: QuestionDraft }) {
+  const materials = question.content?.materials as CompositeMaterial[] | undefined;
+  const materialBlocks = Array.isArray(materials) ? materials.map((material, index) => <MaterialBlock key={index} material={material} />) : null;
+  if (question.content?.interaction === 'column_arithmetic' || question.content?.columnArithmetic) return <ColumnArithmeticPreview question={question} />;
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillPreview question={question} />;
   if (question.content?.tableFill) return <TableFillPreview question={question} />;
   if (question.question_type === 'ordering') return <OrderingPreview question={question} />;
@@ -111,6 +146,7 @@ export function QuestionPreview({ question }: { question: QuestionDraft }) {
   if (['single_choice', 'multiple_choice', 'true_false'].includes(question.question_type)) return <ChoicePreview question={question} />;
   return (
     <div className="kq-question">
+      {materialBlocks}
       <div className="kq-stem">{renderStem(question.stem, question.answer_slots)}</div>
     </div>
   );

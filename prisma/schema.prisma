@@ -62,6 +62,13 @@ enum RewardRedemptionStatus {
   REJECTED
 }
 
+enum ImportBatchStatus {
+  DRAFT
+  IMPORTING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id           BigInt       @id @default(autoincrement())
   username     String       @unique @db.VarChar(80)
@@ -75,6 +82,7 @@ model User {
   students        Student[]
   subjects        Subject[]
   knowledgePoints KnowledgePoint[]
+  importBatches   ImportBatch[]
   questionGroups  QuestionGroup[]
   questions       Question[]
   papers          Paper[]
@@ -83,24 +91,24 @@ model User {
 }
 
 model Student {
-  id          BigInt       @id @default(autoincrement())
-  ownerId     BigInt       @map("owner_id")
-  name        String       @db.VarChar(80)
-  avatarUrl   String?      @map("avatar_url") @db.VarChar(500)
-  grade       String?      @db.VarChar(30)
-  pinHash     String?      @map("pin_hash") @db.VarChar(255)
-  totalStars  Int          @default(0) @map("total_stars")
-  streakDays  Int          @default(0) @map("streak_days")
-  lastPracticeDate DateTime? @map("last_practice_date")
-  rewardBadges Json?       @map("reward_badges")
-  taskSettings Json?       @map("task_settings")
-  status      EntityStatus @default(ENABLED)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id               BigInt       @id @default(autoincrement())
+  ownerId          BigInt       @map("owner_id")
+  name             String       @db.VarChar(80)
+  avatarUrl        String?      @map("avatar_url") @db.VarChar(500)
+  grade            String?      @db.VarChar(30)
+  pinHash          String?      @map("pin_hash") @db.VarChar(255)
+  totalStars       Int          @default(0) @map("total_stars")
+  streakDays       Int          @default(0) @map("streak_days")
+  lastPracticeDate DateTime?    @map("last_practice_date")
+  rewardBadges     Json?        @map("reward_badges")
+  taskSettings     Json?        @map("task_settings")
+  status           EntityStatus @default(ENABLED)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
-  owner   User            @relation(fields: [ownerId], references: [id])
-  answers StudentAnswer[]
-  attempts PracticeAttempt[]
+  owner              User                @relation(fields: [ownerId], references: [id])
+  answers            StudentAnswer[]
+  attempts           PracticeAttempt[]
   rewardCatalogItems RewardCatalogItem[]
   rewardRedemptions  RewardRedemption[]
 
@@ -109,18 +117,18 @@ model Student {
 }
 
 model RewardCatalogItem {
-  id          BigInt       @id @default(autoincrement())
-  studentId   BigInt       @map("student_id")
-  rewardKey   String       @map("reward_key") @db.VarChar(100)
-  title       String       @db.VarChar(160)
+  id          BigInt   @id @default(autoincrement())
+  studentId   BigInt   @map("student_id")
+  rewardKey   String   @map("reward_key") @db.VarChar(100)
+  title       String   @db.VarChar(160)
   cost        Int
-  description String?      @db.VarChar(500)
-  enabled     Boolean      @default(true)
-  sortOrder   Int          @default(0) @map("sort_order")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  description String?  @db.VarChar(500)
+  enabled     Boolean  @default(true)
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   redemptions RewardRedemption[]
 
   @@unique([studentId, rewardKey])
@@ -179,12 +187,14 @@ model KnowledgePoint {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
-  owner    User              @relation(fields: [ownerId], references: [id])
-  subject  Subject           @relation(fields: [subjectId], references: [id])
-  parent   KnowledgePoint?   @relation("KnowledgePointTree", fields: [parentId], references: [id])
-  children KnowledgePoint[]  @relation("KnowledgePointTree")
-  groups   QuestionGroup[]
-  questions Question[]
+  owner         User                          @relation(fields: [ownerId], references: [id])
+  subject       Subject                       @relation(fields: [subjectId], references: [id])
+  parent        KnowledgePoint?               @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children      KnowledgePoint[]              @relation("KnowledgePointTree")
+  groups        QuestionGroup[]
+  questions     Question[]
+  groupLinks    QuestionGroupKnowledgePoint[]
+  questionLinks QuestionKnowledgePoint[]
 
   @@index([ownerId])
   @@index([subjectId])
@@ -192,11 +202,33 @@ model KnowledgePoint {
   @@map("knowledge_points")
 }
 
+model ImportBatch {
+  id          BigInt            @id @default(autoincrement())
+  ownerId     BigInt            @map("owner_id")
+  title       String            @db.VarChar(255)
+  sourceType  String?           @map("source_type") @db.VarChar(60)
+  sourceName  String?           @map("source_name") @db.VarChar(255)
+  status      ImportBatchStatus @default(DRAFT)
+  stats       Json?
+  notes       String?           @db.Text
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  completedAt DateTime?         @map("completed_at")
+
+  owner          User            @relation(fields: [ownerId], references: [id])
+  questionGroups QuestionGroup[]
+
+  @@index([ownerId, createdAt])
+  @@index([ownerId, status])
+  @@map("import_batches")
+}
+
 model QuestionGroup {
   id               BigInt            @id @default(autoincrement())
   ownerId          BigInt            @map("owner_id")
   subjectId        BigInt            @map("subject_id")
   knowledgePointId BigInt?           @map("knowledge_point_id")
+  importBatchId    BigInt?           @map("import_batch_id")
   title            String            @db.VarChar(255)
   commonStem       String?           @map("common_stem") @db.Text
   content          Json?
@@ -210,15 +242,18 @@ model QuestionGroup {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  owner          User            @relation(fields: [ownerId], references: [id])
-  subject        Subject         @relation(fields: [subjectId], references: [id])
-  knowledgePoint KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
-  questions      Question[]
-  paperItems     PaperQuestion[]
+  owner               User                          @relation(fields: [ownerId], references: [id])
+  subject             Subject                       @relation(fields: [subjectId], references: [id])
+  knowledgePoint      KnowledgePoint?               @relation(fields: [knowledgePointId], references: [id])
+  importBatch         ImportBatch?                  @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  knowledgePointLinks QuestionGroupKnowledgePoint[]
+  questions           Question[]
+  paperItems          PaperQuestion[]
 
   @@index([ownerId])
   @@index([subjectId])
   @@index([knowledgePointId])
+  @@index([importBatchId])
   @@map("question_groups")
 }
 
@@ -242,20 +277,49 @@ model Question {
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
 
-  owner          User              @relation(fields: [ownerId], references: [id])
-  group          QuestionGroup?    @relation(fields: [groupId], references: [id])
-  subject        Subject           @relation(fields: [subjectId], references: [id])
-  knowledgePoint KnowledgePoint?   @relation(fields: [knowledgePointId], references: [id])
-  answerSlots    AnswerSlot[]
-  options        QuestionOption[]
-  answers        StudentAnswer[]
-  paperItems     PaperQuestion[]
+  owner               User                     @relation(fields: [ownerId], references: [id])
+  group               QuestionGroup?           @relation(fields: [groupId], references: [id])
+  subject             Subject                  @relation(fields: [subjectId], references: [id])
+  knowledgePoint      KnowledgePoint?          @relation(fields: [knowledgePointId], references: [id])
+  knowledgePointLinks QuestionKnowledgePoint[]
+  answerSlots         AnswerSlot[]
+  options             QuestionOption[]
+  answers             StudentAnswer[]
+  paperItems          PaperQuestion[]
 
   @@index([ownerId])
   @@index([groupId])
   @@index([subjectId])
   @@index([knowledgePointId])
   @@map("questions")
+}
+
+model QuestionGroupKnowledgePoint {
+  id               BigInt   @id @default(autoincrement())
+  groupId          BigInt   @map("group_id")
+  knowledgePointId BigInt   @map("knowledge_point_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  group          QuestionGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, knowledgePointId])
+  @@index([knowledgePointId])
+  @@map("question_group_knowledge_points")
+}
+
+model QuestionKnowledgePoint {
+  id               BigInt   @id @default(autoincrement())
+  questionId       BigInt   @map("question_id")
+  knowledgePointId BigInt   @map("knowledge_point_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  question       Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, knowledgePointId])
+  @@index([knowledgePointId])
+  @@map("question_knowledge_points")
 }
 
 model AnswerSlot {
@@ -279,11 +343,11 @@ model AnswerSlot {
 }
 
 model QuestionOption {
-  id         BigInt  @id @default(autoincrement())
-  questionId BigInt  @map("question_id")
-  optionKey  String  @map("option_key") @db.VarChar(20)
-  content    String  @db.Text
-  sortOrder  Int     @default(0) @map("sort_order")
+  id         BigInt @id @default(autoincrement())
+  questionId BigInt @map("question_id")
+  optionKey  String @map("option_key") @db.VarChar(20)
+  content    String @db.Text
+  sortOrder  Int    @default(0) @map("sort_order")
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
@@ -303,10 +367,10 @@ model Paper {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  owner   User            @relation(fields: [ownerId], references: [id])
-  subject Subject         @relation(fields: [subjectId], references: [id])
-  items   PaperQuestion[]
-  answers StudentAnswer[]
+  owner    User              @relation(fields: [ownerId], references: [id])
+  subject  Subject           @relation(fields: [subjectId], references: [id])
+  items    PaperQuestion[]
+  answers  StudentAnswer[]
   attempts PracticeAttempt[]
 
   @@index([ownerId])
@@ -315,12 +379,12 @@ model Paper {
 }
 
 model PaperQuestion {
-  id         BigInt   @id @default(autoincrement())
-  paperId    BigInt   @map("paper_id")
-  groupId    BigInt?  @map("group_id")
-  questionId BigInt?  @map("question_id")
-  score      Decimal  @default(1) @db.Decimal(8, 2)
-  sortOrder  Int      @default(0) @map("sort_order")
+  id         BigInt  @id @default(autoincrement())
+  paperId    BigInt  @map("paper_id")
+  groupId    BigInt? @map("group_id")
+  questionId BigInt? @map("question_id")
+  score      Decimal @default(1) @db.Decimal(8, 2)
+  sortOrder  Int     @default(0) @map("sort_order")
 
   paper    Paper          @relation(fields: [paperId], references: [id], onDelete: Cascade)
   group    QuestionGroup? @relation(fields: [groupId], references: [id])
@@ -349,7 +413,7 @@ model StudentAnswer {
   durationSeconds Int          @default(0) @map("duration_seconds")
   submittedAt     DateTime     @default(now()) @map("submitted_at")
 
-  attempt  PracticeAttempt?       @relation(fields: [attemptId], references: [id])
+  attempt  PracticeAttempt?      @relation(fields: [attemptId], references: [id])
   student  Student               @relation(fields: [studentId], references: [id])
   question Question              @relation(fields: [questionId], references: [id])
   paper    Paper?                @relation(fields: [paperId], references: [id])
@@ -378,8 +442,8 @@ model PracticeAttempt {
   rewardStars     Int          @default(0) @map("reward_stars")
   submittedAt     DateTime     @default(now()) @map("submitted_at")
 
-  student Student @relation(fields: [studentId], references: [id])
-  paper   Paper?  @relation(fields: [paperId], references: [id])
+  student Student         @relation(fields: [studentId], references: [id])
+  paper   Paper?          @relation(fields: [paperId], references: [id])
   answers StudentAnswer[]
 
   @@index([studentId, submittedAt])

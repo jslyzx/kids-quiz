@@ -4,7 +4,7 @@
 
 ## 1. 顶层结构
 
-推荐输出数组，每一项是一道题组。普通单题也是题组，只是 `questions` 里只有一道小题。
+推荐输出数组，每一项是一道题组。普通单题也是题组，只是 `questions` 里只有一道小题。导入页会把这里的 OCR 友好格式转换成系统内部 draft 格式；命令行可先运行 `pnpm import:validate -- <file.json> --check-assets` 做同一套校验。
 
 ```json
 [
@@ -30,8 +30,21 @@
 | `grade` | 否 | 年级，例如 `二年级`。 |
 | `difficulty` | 否 | 难度，建议 `1` 到 `5`。 |
 | `tags` | 否 | 标签/知识点数组。 |
-| `material` | 否 | 公共材料，复合题使用。 |
+| `material` / `materials` | 否 | 公共材料，复合题使用。图片建议使用 `/uploads/xxx.jpg` 或 `http://localhost:3000/uploads/xxx.jpg`。 |
 | `questions` | 是 | 小题数组。 |
+
+内部规范字段对照：
+
+| OCR 友好字段 | 内部字段 |
+|---|---|
+| `type: "FILL_BLANK"` 等大写题型 | `type: "question"` + `question.question_type` |
+| `type: "ORAL_ARITHMETIC"` | `type: "calculation_group"` |
+| `type: "COMPOSITE"` | `type: "composite_group"` |
+| `grade` | `gradeLevel` |
+| `questions` | 单题转 `question`，多题/复合题转 `children` |
+| `answerSlots` | `answer_slots` |
+| `slotKey` / `slotType` / `correctAnswer` / `answerRule` | `slot_key` / `slot_type` / `correct_answer` / `answer_rule` |
+| `leftItems` / `rightItems` | `content.left` / `content.right` |
 
 ## 2. 文本规则
 
@@ -55,7 +68,7 @@
 推荐输出：
 
 ```text
-3{{blank:blank_0}}5表示{{blank:blank_1}}个{{blank:blank_2}}相加。
+3{{blank:1}}5表示{{blank:2}}个{{blank:3}}相加。
 ```
 
 兼容旧格式，导入页会自动转换：
@@ -69,7 +82,7 @@
 需要换行时在字符串中保留 `\n`：
 
 ```json
-"stem": "1200里面有{{blank:blank_0}}个百\n8个千是{{blank:blank_1}}\n60÷{{blank:blank_2}}=8……4"
+"stem": "1200里面有{{blank:1}}个百\n8个千是{{blank:2}}\n60÷{{blank:3}}=8……4"
 ```
 
 ### 解题解析
@@ -115,11 +128,11 @@
   "tags": ["填空题", "万以内数"],
   "questions": [
     {
-      "stem": "1200里面有{{blank:blank_0}}个百\n8个千是{{blank:blank_1}}\n60÷{{blank:blank_2}}=8……4",
+      "stem": "1200里面有{{blank:1}}个百\n8个千是{{blank:2}}\n60÷{{blank:3}}=8……4",
       "answerSlots": [
-        { "slotKey": "blank_0", "correctAnswer": ["12"] },
-        { "slotKey": "blank_1", "correctAnswer": ["8000"] },
-        { "slotKey": "blank_2", "correctAnswer": ["7"] }
+        { "slotKey": "blank_1", "correctAnswer": ["12"] },
+        { "slotKey": "blank_2", "correctAnswer": ["8000"] },
+        { "slotKey": "blank_3", "correctAnswer": ["7"] }
       ],
       "explanationHtml": "<p>1200 里面有 12 个百。</p>"
     }
@@ -127,7 +140,7 @@
 }
 ```
 
-要求：`stem` 里的空位数量要和 `answerSlots` 对应，`slotKey` 推荐从 `blank_0` 开始递增。
+要求：`stem` 里的空位数量要和 `answerSlots` 对应，`slotKey` 推荐从 `blank_1` 开始递增。历史文件里的 `{_0}`、`{{blank:blank_0}}`、`blank_0` 会在导入时自动转成 1 基序号。
 
 ### 口算题组
 
@@ -270,8 +283,8 @@
   "questions": [
     {
       "type": "FILL_BLANK",
-      "stem": "苹果有{{blank:blank_0}}个。",
-      "answerSlots": [{ "slotKey": "blank_0", "correctAnswer": ["12"] }]
+      "stem": "苹果有{{blank:1}}个。",
+      "answerSlots": [{ "slotKey": "blank_1", "correctAnswer": ["12"] }]
     },
     {
       "type": "SINGLE_CHOICE",
@@ -294,6 +307,141 @@
   "text": "https://example.com/material.png"
 }
 ```
+
+### 看图列式题
+
+低年级数学里常见的“看线段图/实物图列式计算”，推荐使用 `composite_group`，并把图片放到对应小题的 `content.materials` 中。原则是：
+
+- 一小题一张图，不把多道小题的图合在同一个公共材料里，避免学生读图时互相干扰。
+- 图中已经给出的数量关系，不要再完整写进题干；题干只保留“列式框”和单位。
+- 数字位置使用普通填空框，运算符位置使用 `compare_symbol`，并设置 `answer_rule.display_shape: "circle"`，展示为圆圈。
+- 运算符可选值建议写在 `answer_rule.allowed_values` 中，例如 `["+", "-", "×", "÷"]`。
+
+示例：
+
+```json
+{
+  "type": "composite_group",
+  "title": "看图列式计算",
+  "gradeLevel": "二年级",
+  "difficulty": 2,
+  "tags": ["数学", "看图列式", "解决问题"],
+  "commonStem": "看图列式计算。",
+  "materials": [],
+  "children": [
+    {
+      "question_type": "fill_blank",
+      "content": {
+        "materials": [
+          {
+            "type": "image",
+            "title": "第（1）题线段图",
+            "url": "http://localhost:3000/uploads/example-q1.jpg"
+          }
+        ]
+      },
+      "stem": "（1）{{blank:1}}{{blank:2}}{{blank:3}}={{blank:4}}（朵）",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["36"] },
+        {
+          "slot_key": "blank_2",
+          "slot_type": "compare_symbol",
+          "correct_answer": ["÷"],
+          "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+        },
+        { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["4"] },
+        { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["9"] }
+      ],
+      "explanation": "线段图表示36朵平均分成4份，求每份是多少：36÷4=9（朵）。"
+    },
+    {
+      "question_type": "fill_blank",
+      "content": {
+        "materials": [
+          {
+            "type": "image",
+            "title": "第（2）题线段图",
+            "url": "http://localhost:3000/uploads/example-q2.jpg"
+          }
+        ]
+      },
+      "stem": "（2）{{blank:1}}{{blank:2}}{{blank:3}}{{blank:4}}{{blank:5}}={{blank:6}}（箱）",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["48"] },
+        {
+          "slot_key": "blank_2",
+          "slot_type": "compare_symbol",
+          "correct_answer": ["+"],
+          "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+        },
+        { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["52"] },
+        {
+          "slot_key": "blank_4",
+          "slot_type": "compare_symbol",
+          "correct_answer": ["-"],
+          "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+        },
+        { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["20"] },
+        { "slot_key": "blank_6", "slot_type": "number", "correct_answer": ["80"] }
+      ],
+      "explanation": "线段图表示西瓜箱数比苹果和梨的总数少20箱：48+52-20=80（箱）。"
+    }
+  ]
+}
+```
+
+### 竖式算谜题
+
+低年级常见的“把数字填入竖式方框，使算式成立”推荐使用 `fill_blank + content.columnArithmetic`。这种题不需要列出所有正确答案，系统会按规则判分。
+
+```json
+{
+  "type": "question",
+  "title": "智慧加油站：竖式数字谜",
+  "gradeLevel": "二年级",
+  "difficulty": 3,
+  "tags": ["竖式", "数字谜"],
+  "question": {
+    "question_type": "fill_blank",
+    "stem": "把2、3、4、6、7、8填入方框里，使算式成立。",
+    "content": {
+      "interaction": "column_arithmetic",
+      "columnArithmetic": {
+        "operation": "addition",
+        "columns": 4,
+        "allowedDigits": ["2", "3", "4", "6", "7", "8"],
+        "uniqueDigits": true,
+        "rows": [
+          { "role": "operand", "cells": [null, { "slot": "a_h" }, { "slot": "a_t" }, { "slot": "a_o" }] },
+          { "role": "operand", "operator": "+", "cells": [null, { "slot": "b_h" }, { "slot": "b_t" }, { "slot": "b_o" }] },
+          { "role": "result", "cells": [{ "text": "1" }, { "text": "1" }, { "text": "1" }, { "text": "0" }] }
+        ],
+        "validation": {
+          "mode": "expression",
+          "operands": [["a_h", "a_t", "a_o"], ["b_h", "b_t", "b_o"]],
+          "result": ["1", "1", "1", "0"]
+        }
+      }
+    },
+    "answer_slots": [
+      { "slot_key": "a_h", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "a_t", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "a_o", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "b_h", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "b_t", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "b_o", "slot_type": "number", "correct_answer": [] }
+    ]
+  }
+}
+```
+
+字段说明：
+
+- `rows[].cells` 从左到右描述每一格；`null` 是空白占位，`{ "text": "1" }` 是固定数字，`{ "slot": "a_h" }` 是可填写方框。
+- `operator` 放在当前行左侧，支持 `+`、`-`、`×`。
+- `allowedDigits` 限制可填数字；`uniqueDigits: true` 表示每个数字只能使用一次。
+- `validation.operands` 和 `validation.result` 用 slot key 或固定数字组成真实算式。结果中也可以写 slot key，因此结果位同样可以设空。
+- 进位、退位可以放在 `carryRows` 中，格式和 `rows` 一样。
 
 ### 古诗选字填空
 
@@ -333,16 +481,19 @@
 
 导入页会自动转换为孩子端支持的古诗选字题。孩子答题时只看到空格和选字，不会直接看到原诗全文。
 
-## 5. 导入后验收
+## 5. 标准导入流程
 
-1. 家长后台进入「题库管理 → 导入题目 JSON」。
-2. 粘贴 JSON 或上传 `.json` 文件。
-3. 点击校验，检查预览和错误提示。
-4. 先导入每种题型 1 道，点击「生成验收试卷」。
-5. 从「孩子端验收」逐题作答检查展示和交互。
-6. 确认无误后再全量导入。
+1. 从 PDF 提取图片：`pnpm pdf:extract-images -- <paper.pdf> _pdf_images/<paper-name>`。
+2. 按题目裁图后放入 `apps/api/uploads/`，题目 JSON 中引用 `/uploads/xxx.jpg` 或 `http://localhost:3000/uploads/xxx.jpg`。
+3. 生成 JSON 后先运行：`pnpm import:validate -- <file.json> --check-assets --write-normalized=<normalized.json>`。
+4. 家长后台进入「题库管理 → 导入题目 JSON」，粘贴 JSON 或上传 `.json` 文件。
+5. 点击校验，检查预览、错误提示和疑似重复。
+6. 先导入每种题型 1 道，点击「生成验收试卷」。
+7. 从「孩子端验收」逐题作答检查展示、交互、图片和答案。
+8. 确认无误后移除 `待验收` 标签；发现问题则标记 `需修复`。
+9. 无误后再全量导入，并进入「题库体检中心」复扫。
 
-## 5. 表格填空题（新格式）
+## 6. 表格填空题（新格式）
 
 统计表、课程表、分类表、数量表等题目推荐使用 `fill_blank + content.tableFill`，表格里的空位仍然使用 `{{blank:1}}` 并在 `answer_slots` 中对应。
 

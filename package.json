@@ -18,7 +18,10 @@
     "migrate:matching:import:sample": "node scripts/migrate-matching/migrate-matching.js import --fresh --sample-per-type=1",
     "migrate:matching:import:all": "node scripts/migrate-matching/migrate-matching.js import --fresh --all --include-papers",
     "paper:all": "node scripts/create-all-question-paper.js",
+    "import:validate": "node scripts/validate-question-json.mjs",
+    "pdf:extract-images": "node scripts/extract-pdf-images.mjs",
     "smoke:e2e": "node scripts/e2e-smoke.mjs",
+    "smoke:import": "node scripts/import-pipeline-smoke.mjs",
     "smoke:isolation": "node scripts/isolation-smoke.mjs",
     "smoke:entertainment": "node scripts/entertainment-smoke.mjs"
   },

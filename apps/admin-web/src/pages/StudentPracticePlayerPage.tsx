@@ -4,6 +4,7 @@ import { getStudentPaper as getPaper } from '../api/papers';
 import { getStudentQuestionGroup as getQuestionGroup } from '../api/questionGroups';
 import { submitStudentPaperAttempt as submitPaperAttempt } from '../api/submissions';
 import { StudentDraftPad } from '../components/StudentDraftPad';
+import { evaluateColumnArithmetic, getColumnArithmetic, getColumnArithmeticSlotKeys } from '../utils/columnArithmetic';
 import { dbGroupToPreviewDraft, dbQuestionToPreview } from '../utils/dbPreview';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
 import { applyRewardSnapshot, grantPracticeReward, type RewardGrant } from '../utils/rewards';
@@ -98,6 +99,13 @@ function isSlotCorrect(slot: AnswerSlot, value: StudentAnswerValue | undefined) 
   return (correct as unknown[]).some((item) => normalize(item) === normalize(value));
 }
 
+function isQuestionSlotCorrect(question: QuestionDraft, slot: AnswerSlot, itemId: string, questionIndex: number, answers: StudentAnswers) {
+  if (getColumnArithmetic(question)) {
+    return evaluateColumnArithmetic(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).ok;
+  }
+  return isSlotCorrect(slot, answers[answerKey(itemId, questionIndex, slot.slot_key)]);
+}
+
 function formatAnswerValue(value: unknown): string {
   if (Array.isArray(value)) {
     if (value.every((item) => item && typeof item === 'object' && 'left' in item && 'right' in item)) {
@@ -110,6 +118,7 @@ function formatAnswerValue(value: unknown): string {
 }
 
 function formatQuestionAnswer(question: QuestionDraft, value: unknown): string {
+  if (getColumnArithmetic(question)) return normalize(value) || '满足竖式规则即可';
   const options = (question.content?.options ?? []) as Array<{ key: string; text: string }>;
   if ((question.question_type === 'single_choice' || question.question_type === 'multiple_choice') && options.length) {
     const keys = Array.isArray(value) ? value.map(normalize) : normalize(value) ? [normalize(value)] : [];
@@ -247,7 +256,10 @@ function MaterialTable({ table }: { table?: { headers?: string[]; rows?: string[
 
 function PracticeQuestionMaterial({ item }: { item: PracticeQuestion }) {
   if (item.question.content?.interaction === 'poem_char_fill') return null;
-  const materials = Array.isArray(item.materials) && item.materials.length
+  const questionMaterials = item.question.content?.materials;
+  const materials = Array.isArray(questionMaterials) && questionMaterials.length
+    ? questionMaterials as NonNullable<PracticeQuestion['materials']>
+    : Array.isArray(item.materials) && item.materials.length
     ? item.materials
     : [
         item.commonStem ? { type: 'text', title: '', text: item.commonStem } : null,
@@ -266,9 +278,24 @@ function PracticeQuestionMaterial({ item }: { item: PracticeQuestion }) {
 }
 
 function BlankInput({ id, slot, value, setAnswer }: { id: string; slot: AnswerSlot; value: StudentAnswerValue | undefined; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+  const shapeClass = slot.answer_rule?.display_shape === 'circle' ? 'operator-circle' : '';
   if (slot.slot_type === 'compare_symbol') {
     const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
-    return <select className="practice-blank-input" value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)}>
+    if (shapeClass) {
+      const current = normalize(value);
+      const next = allowed[(Math.max(allowed.indexOf(current), -1) + 1) % allowed.length] ?? '';
+      return <button
+        type="button"
+        data-answer-id={id}
+        className={`operatorSymbolButton ${current ? 'filled' : ''}`}
+        aria-label={`选择运算符，当前${current || '未选择'}`}
+        title={`点击切换：${allowed.join(' ')}`}
+        onClick={() => setAnswer(id, next)}
+      >
+        {current || ''}
+      </button>;
+    }
+    return <select className={`practice-blank-input ${shapeClass}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)}>
       <option value="">选择</option>
       {allowed.map((item) => <option value={item} key={item}>{item}</option>)}
     </select>;
@@ -315,6 +342,39 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, setAnswer
         ))}</tbody>
       </table>
     </div>
+  </div>;
+}
+
+function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+  const config = getColumnArithmetic(question);
+  const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
+  const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
+  const slotKeys = getColumnArithmeticSlotKeys(question);
+  return <div className="practice-column-question">
+    {question.stem && <div className="practice-stem">{renderMathText(question.stem)}</div>}
+    <div className="practice-column-board" style={{ ['--column-count' as string]: columns }}>
+      {rows.map((row, rowIndex) => <div className={`practice-column-row row-${row.role ?? 'operand'}`} key={rowIndex}>
+        <span className="practice-column-operator">{row.operator ?? ''}</span>
+        {Array.from({ length: columns }).map((_, cellIndex) => {
+          const offset = columns - row.cells.length;
+          const cell = row.cells[cellIndex - offset] ?? null;
+          if (!cell) return <span className="practice-column-cell empty" key={`${rowIndex}-${cellIndex}`} />;
+          if (cell.slot) {
+            const id = answerKey(itemId, questionIndex, cell.slot);
+            return <input
+              className="practice-column-cell input"
+              key={cell.slot}
+              value={normalize(answers[id])}
+              onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
+              inputMode="numeric"
+              aria-label={`竖式方框 ${cell.slot}`}
+            />;
+          }
+          return <span className="practice-column-cell fixed" key={`${rowIndex}-${cellIndex}`}>{cell.text ?? ''}</span>;
+        })}
+      </div>)}
+    </div>
+    {!!slotKeys.length && <div className="practice-column-hint">可填数字：{(config?.allowedDigits ?? []).join('、') || '按题目要求填写'}{config?.uniqueDigits ? '，每个数字只能用一次' : ''}</div>}
   </div>;
 }
 
@@ -550,6 +610,7 @@ function CurrentQuestion({ item, answers, setAnswer }: { item: PracticeQuestion;
   const { question, itemId, questionIndex } = item;
   const slot = question.answer_slots[0];
   const id = answerKey(itemId, questionIndex, slot?.slot_key || 'answer');
+  if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} setAnswer={setAnswer} />;
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillQuestion question={question} id={id} answers={answers} setAnswer={setAnswer} />;
   if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} setAnswer={setAnswer} />;
   return <>
@@ -664,16 +725,17 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     const records = questions.map(({ title, question, itemId, questionIndex, questionId, groupId }) => {
       const details = question.answer_slots.map((slot) => {
         const key = answerKey(itemId, questionIndex, slot.slot_key);
-        const ok = isSlotCorrect(slot, answers[key]);
+        const ok = isQuestionSlotCorrect(question, slot, itemId, questionIndex, answers);
+        const correctValue = getColumnArithmetic(question) ? ['满足竖式规则即可'] : slot.correct_answer;
         nextResults[key] = ok;
         total += 1;
         if (ok) correct += 1;
         return {
           slotKey: slot.slot_key,
           studentValue: answers[key] ?? '',
-          correctValue: slot.correct_answer,
+          correctValue,
           studentText: formatQuestionAnswer(question, answers[key] ?? ''),
-          correctText: formatQuestionAnswer(question, slot.correct_answer),
+          correctText: formatQuestionAnswer(question, correctValue),
           isCorrect: ok,
           score: ok ? 1 : 0,
         };

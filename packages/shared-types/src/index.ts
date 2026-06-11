@@ -44,6 +44,33 @@ export interface MatchingItem {
   text: string;
 }
 
+export type ColumnArithmeticCell = null | {
+  text?: string;
+  slot?: string;
+};
+
+export interface ColumnArithmeticRow {
+  role?: 'carry' | 'borrow' | 'operand' | 'result' | 'note';
+  operator?: '+' | '-' | 'x' | '×' | '*';
+  cells: ColumnArithmeticCell[];
+}
+
+export interface ColumnArithmeticValidation {
+  mode?: 'expression';
+  operands?: string[][];
+  result?: string[];
+}
+
+export interface ColumnArithmeticContent {
+  operation?: 'addition' | 'subtraction' | 'multiplication';
+  columns?: number;
+  allowedDigits?: string[];
+  uniqueDigits?: boolean;
+  rows: ColumnArithmeticRow[];
+  carryRows?: ColumnArithmeticRow[];
+  validation?: ColumnArithmeticValidation;
+}
+
 export interface TableMaterial {
   headers: string[];
   rows: string[][];

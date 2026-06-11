@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kids-quiz/question-render';
 import { exportQuestionBank, saveQuestionGroup } from '../api/questionGroups';
 import { addPaperQuestionGroup, createPaper } from '../api/papers';
+import { createImportBatch, finishImportBatch } from '../api/importBatches';
 
 const SAMPLE_JSON = `[
   {
@@ -32,7 +33,7 @@ type ImportItem = {
 };
 
 const allowedTypes = new Set(['question', 'calculation_group', 'composite_group']);
-const allowedQuestionTypes = new Set(['fill_blank', 'single_choice', 'multiple_choice', 'ordering', 'matching']);
+const allowedQuestionTypes = new Set(['fill_blank', 'single_choice', 'multiple_choice', 'true_false', 'ordering', 'matching', 'word_problem']);
 
 function asArray(value: unknown) {
   return Array.isArray(value) ? value : [value];
@@ -271,6 +272,19 @@ function questionBlankKeys(question: any) {
   return Array.from(new Set(values.flatMap((value) => blankKeys(value))));
 }
 
+function columnArithmeticSlotKeys(question: any) {
+  const config = question?.content?.columnArithmetic;
+  if (!config || typeof config !== 'object') return [];
+  const rows = [...(Array.isArray(config.carryRows) ? config.carryRows : []), ...(Array.isArray(config.rows) ? config.rows : [])];
+  const cellKeys = rows.flatMap((row: any) => Array.isArray(row?.cells) ? row.cells : []).flatMap((cell: any) => cell?.slot ? [String(cell.slot)] : []);
+  const validationKeys = [
+    ...(Array.isArray(config.validation?.operands) ? config.validation.operands.flat().map(String) : []),
+    ...(Array.isArray(config.validation?.result) ? config.validation.result.map(String) : []),
+  ];
+  const slotKeySet = new Set((question?.answer_slots ?? []).map((slot: any) => String(slot?.slot_key ?? '')));
+  return Array.from(new Set([...cellKeys, ...validationKeys].filter((key) => slotKeySet.has(key))));
+}
+
 function looksLikePlainTextTable(question: any) {
   const stem = String(question?.stem ?? '');
   if (question?.question_type !== 'fill_blank' || question?.content?.tableFill) return false;
@@ -399,9 +413,153 @@ function dbGroupSignature(group: any) {
   return `question|${questionSignature(questions[0], true)}`;
 }
 
+const importTypeAliases: Record<string, string> = {
+  FILL_BLANK: 'fill_blank',
+  FILL_BLANK_GROUP: 'fill_blank',
+  FILL_BLANKS: 'fill_blank',
+  COMPARE: 'compare',
+  SINGLE_CHOICE: 'single_choice',
+  MULTIPLE_CHOICE: 'multiple_choice',
+  TRUE_FALSE: 'true_false',
+  ORDERING: 'ordering',
+  MATCHING: 'matching',
+  WORD_PROBLEM: 'word_problem',
+  ORAL_ARITHMETIC: 'calculation_group',
+  MENTAL_MATH: 'calculation_group',
+  CALCULATION_GROUP: 'calculation_group',
+  COMPOSITE: 'composite_group',
+  COMPOSITE_GROUP: 'composite_group',
+  POEM_CHAR_PICKER: 'poem_char_picker',
+};
+
+const slotTypeAliases: Record<string, string> = {
+  TEXT: 'text',
+  NUMBER: 'number',
+  EXPRESSION: 'expression',
+  CHOICE: 'choice',
+  MATCH: 'match',
+  ORDER: 'order',
+  COMPARE_SYMBOL: 'compare_symbol',
+};
+
+function canonicalImportType(value: unknown) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  return importTypeAliases[raw] ?? importTypeAliases[raw.toUpperCase()] ?? raw.toLowerCase();
+}
+
+function canonicalSlotType(value: unknown, fallback = 'text') {
+  const raw = String(value ?? fallback).trim();
+  return slotTypeAliases[raw] ?? slotTypeAliases[raw.toUpperCase()] ?? raw.toLowerCase();
+}
+
+function normalizeOptionList(value: unknown) {
+  return asArray(value).map((option: any, index) => {
+    if (typeof option === 'string') return { key: String.fromCharCode(65 + index), text: option };
+    return {
+      key: String(option?.key ?? option?.label ?? option?.optionKey ?? String.fromCharCode(65 + index)).trim(),
+      text: String(option?.text ?? option?.content ?? option?.value ?? '').trim(),
+    };
+  }).filter((option) => option.key || option.text);
+}
+
+function normalizeMaterialList(value: unknown) {
+  return asArray(value).flatMap((material: any) => {
+    if (!material) return [];
+    if (typeof material === 'string') return [{ type: 'text', text: material }];
+    const type = String(material.type ?? (material.url || material.src ? 'image' : 'text')).toLowerCase();
+    return [{
+      type: type === 'image' ? 'image' : type === 'table' ? 'table' : 'text',
+      title: material.title,
+      text: material.text,
+      url: material.url ?? material.src ?? (type === 'image' ? material.text : undefined),
+      table: material.table,
+    }];
+  });
+}
+
+function normalizeOcrQuestion(q: any, inheritedType: unknown) {
+  if (!q || typeof q !== 'object') return q;
+  const rawType = canonicalImportType(q.question_type ?? q.questionType ?? q.type ?? inheritedType);
+  if (rawType && !allowedTypes.has(rawType)) q.question_type = rawType === 'compare' || rawType === 'poem_char_picker' ? 'fill_blank' : rawType;
+  if (q.answerSlots && !q.answer_slots) {
+    q.answer_slots = q.answerSlots.map((slot: any, index: number) => ({
+      slot_key: normalizeSlotKey(slot.slot_key ?? slot.slotKey ?? `blank_${index + 1}`),
+      slot_type: canonicalSlotType(slot.slot_type ?? slot.slotType, rawType === 'matching' ? 'match' : rawType === 'ordering' ? 'order' : rawType?.includes?.('choice') || rawType === 'true_false' ? 'choice' : 'text'),
+      correct_answer: Array.isArray(slot.correct_answer ?? slot.correctAnswer) ? (slot.correct_answer ?? slot.correctAnswer) : asArray(slot.correct_answer ?? slot.correctAnswer),
+      answer_rule: slot.answer_rule ?? slot.answerRule,
+    }));
+  }
+  if (q.explanationHtml && !q.explanation) q.explanation = q.explanationHtml;
+  if (q.options && !q.content?.options) q.content = { ...(q.content ?? {}), options: normalizeOptionList(q.options) };
+  if (q.items && !q.content?.items) q.content = { ...(q.content ?? {}), items: normalizeOptionList(q.items).map((item) => ({ key: item.key, label: item.key, value: item.text })) };
+  if ((q.leftItems || q.rightItems) && (!q.content?.left || !q.content?.right)) {
+    q.content = {
+      ...(q.content ?? {}),
+      left: normalizeOptionList(q.leftItems).map((item) => ({ key: item.key, text: item.text })),
+      right: normalizeOptionList(q.rightItems).map((item) => ({ key: item.key, text: item.text })),
+    };
+  }
+  const materials = normalizeMaterialList(q.materials ?? q.material ?? q.content?.materials);
+  if (materials.length) q.content = { ...(q.content ?? {}), materials };
+  if (rawType === 'compare') {
+    if (!blankKeys(String(q.stem ?? '')).length) q.stem = String(q.stem ?? '').replace(/[○〇]/, '{{blank:1}}');
+    if (!blankKeys(String(q.stem ?? '')).length) q.stem = `${String(q.stem ?? '').trim()} {{blank:1}}`;
+    const keys = blankKeys(q.stem);
+    q.answer_slots = (Array.isArray(q.answer_slots) && q.answer_slots.length ? q.answer_slots : [{ correct_answer: asArray(q.answer) }]).map((slot: any, index: number) => ({
+      ...slot,
+      slot_key: keys[index] ?? normalizeSlotKey(slot.slot_key ?? slot.slotKey ?? `blank_${index + 1}`),
+      slot_type: 'compare_symbol',
+      correct_answer: Array.isArray(slot.correct_answer ?? slot.correctAnswer) ? (slot.correct_answer ?? slot.correctAnswer) : asArray(slot.correct_answer ?? slot.correctAnswer ?? q.answer),
+      answer_rule: slot.answer_rule ?? slot.answerRule ?? { allowed_values: ['>', '<', '='], display_shape: 'circle' },
+    }));
+  }
+  if (q.question_type === 'true_false' && !q.content?.options) {
+    q.content = { ...(q.content ?? {}), options: [{ key: 'T', text: '正确' }, { key: 'F', text: '错误' }] };
+  }
+  return q;
+}
+
+function normalizeOcrFriendlyItem(item: any) {
+  const itemType = canonicalImportType(item.type ?? item.groupType ?? item.group_type ?? item.question_type);
+  if (item.grade && !item.gradeLevel) item.gradeLevel = item.grade;
+  const questions = Array.isArray(item.questions) ? item.questions : Array.isArray(item.children) ? item.children : [];
+
+  if (itemType === 'calculation_group') {
+    item.type = 'calculation_group';
+    item.columns = Number(item.columns ?? item.content?.columns ?? 4) || 4;
+    if (!Array.isArray(item.items)) {
+      item.items = questions.map((q: any) => ({
+        stem: String(q?.stem ?? ''),
+        answer: String(q?.answer ?? q?.answerSlots?.[0]?.correctAnswer?.[0] ?? q?.answer_slots?.[0]?.correct_answer?.[0] ?? ''),
+      }));
+    }
+    return item;
+  }
+
+  if (itemType === 'composite_group' || questions.length > 1) {
+    item.type = 'composite_group';
+    item.commonStem = item.commonStem ?? item.common_stem ?? item.material?.text ?? '';
+    const materials = normalizeMaterialList(item.materials ?? item.material);
+    if (materials.length) item.materials = materials;
+    item.children = questions.map((q: any) => normalizeOcrQuestion(q, q?.type ?? itemType));
+    return item;
+  }
+
+  if (itemType && !allowedTypes.has(itemType)) {
+    item.type = 'question';
+    item.question = normalizeOcrQuestion(item.question ?? questions[0] ?? item, itemType);
+    return item;
+  }
+
+  if (item.question) item.question = normalizeOcrQuestion(item.question, item.question?.type ?? item.question_type);
+  return item;
+}
+
 function normalizeImportedItem(raw: unknown) {
   const item = walkNormalize(raw) as any;
   if (!item || typeof item !== 'object') return item;
+  normalizeOcrFriendlyItem(item);
   const normalizeQuestion = (q: any) => {
     if (!q || typeof q !== 'object') return;
     if (!q.answer_slots && q.answer !== undefined) {
@@ -522,10 +680,12 @@ function validateQuestion(question: any) {
   const slots = Array.isArray(question.answer_slots) ? question.answer_slots : [];
   const keys = questionBlankKeys(question);
   const isPoemPicker = question.content?.interaction === 'poem_char_fill';
+  const isColumnArithmetic = question.content?.interaction === 'column_arithmetic' || Boolean(question.content?.columnArithmetic);
+  const columnSlotKeys = columnArithmeticSlotKeys(question);
   const slotKeys = slots.map((slot: any) => normalizeSlotKey(slot.slot_key));
   const duplicateKeys = slotKeys.filter((key: string, index: number) => key && slotKeys.indexOf(key) !== index);
   if (duplicateKeys.length) errors.push(`answer_slots 存在重复 slot_key：${Array.from(new Set(duplicateKeys)).join('、')}`);
-  if (question.question_type === 'fill_blank' && !isPoemPicker) {
+  if (question.question_type === 'fill_blank' && !isPoemPicker && !isColumnArithmetic) {
     if (!keys.length) errors.push('填空题题干里没有 {{blank:1}} 这类空位');
     const missing = keys.filter((key) => !slotKeys.includes(key));
     if (missing.length) errors.push(`这些空位没有答案：${missing.join('、')}`);
@@ -554,11 +714,22 @@ function validateQuestion(question: any) {
     const slotKey = normalizeSlotKey(slots[0]?.slot_key);
     if (slotKey !== 'poem') warnings.push('古诗选字题建议使用 slot_key: poem');
   }
+  if (isColumnArithmetic) {
+    const config = question.content?.columnArithmetic ?? {};
+    const rows = Array.isArray(config.rows) ? config.rows : [];
+    if (!rows.length) errors.push('竖式题缺少 content.columnArithmetic.rows');
+    if (!columnSlotKeys.length) errors.push('竖式题缺少可填写方框 slot');
+    const missing = columnSlotKeys.filter((key) => !slotKeys.includes(key));
+    if (missing.length) errors.push(`竖式方框缺少 answer_slots：${missing.join('、')}`);
+    const extra = slotKeys.filter((key: string) => key && !columnSlotKeys.includes(key));
+    if (extra.length) warnings.push(`这些 answer_slots 未出现在竖式方框中：${Array.from(new Set(extra)).join('、')}`);
+    if (!config.validation && !rows.some((row: any) => row?.role === 'result')) warnings.push('竖式题建议提供 validation 或 role=result 的结果行，便于稳定判分');
+  }
   for (const slot of slots) {
     if (!slot.slot_key) errors.push('answer_slots 中存在空 slot_key');
     if (!slot.slot_type) errors.push(`空位 ${slot.slot_key || '-'} 缺少 slot_type`);
     const answer = slot.correct_answer;
-    if (!Array.isArray(answer) || !answer.some((item) => String(item ?? '').trim())) {
+    if (!isColumnArithmetic && (!Array.isArray(answer) || !answer.some((item) => String(item ?? '').trim()))) {
       errors.push(`空位 ${slot.slot_key || '-'} 缺少 correct_answer`);
     }
   }
@@ -845,9 +1016,15 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     const ids: string[] = [];
     const failed: string[] = [];
     try {
+      const batch = await createImportBatch({
+        title: `JSON 导入 ${new Date().toLocaleString()}`,
+        sourceType: 'json',
+        sourceName: 'QuestionJsonImportPage',
+      });
+      const importBatchId = String(batch.id);
       for (const [index, item] of validItems.entries()) {
         try {
-          const saved = await saveQuestionGroup(withImportReviewTag(item.draft));
+          const saved = await saveQuestionGroup(withImportReviewTag({ ...item.draft, importBatchId }));
           ids.push(String(saved.id));
           setSavedIds([...ids]);
         } catch (error) {
@@ -856,6 +1033,17 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       }
       setFailures(failed);
       const skippedDuplicateCount = skipDuplicates ? duplicateCount : 0;
+      await finishImportBatch(importBatchId, {
+        status: failed.length ? 'FAILED' : 'COMPLETED',
+        stats: {
+          total: validItems.length,
+          saved: ids.length,
+          failed: failed.length,
+          invalid: invalidItems.length,
+          duplicateSkipped: skippedDuplicateCount,
+          groupIds: ids,
+        },
+      });
       setMessage(`导入完成：成功 ${ids.length} 道，保存失败 ${failed.length} 道，跳过 ${invalidItems.length} 道校验失败题目，跳过 ${skippedDuplicateCount} 道重复题。`);
       if (ids.length) void refreshDuplicateMap();
     } finally {

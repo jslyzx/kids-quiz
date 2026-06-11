@@ -1,0 +1,265 @@
+[
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 一、倍的认识",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "倍的认识", "倍数关系", "待验收"],
+    "commonStem": "倍的认识（理解倍数关系）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "第一行摆4根小棒，第二行摆8根小棒。第二行小棒数量是第一行的{{blank:1}}倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["2"] }],
+        "explanation": "8里面有2个4，所以第二行小棒数量是第一行的2倍。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "花坛里有5朵黄花，15朵红花。把黄花的数量看成1份，红花能分成{{blank:1}}份，红花数量是黄花的{{blank:2}}倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "15÷5=3，所以红花能分成3份，红花数量是黄花的3倍。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小明有4颗糖果，姐姐有12颗糖果。姐姐的糖果数量是小明的{{blank:1}}倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] }],
+        "explanation": "12÷4=3，所以姐姐的糖果数量是小明的3倍。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 二、求一个数是另一个数的几倍",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "倍的认识", "除法求倍数", "待验收"],
+    "commonStem": "求一个数是另一个数的几倍（除法计算）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "果园里有24棵苹果树，6棵梨树，苹果树的数量是梨树的{{blank:1}}倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] }],
+        "explanation": "24÷6=4。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小明收集了30张卡片，5张邮票，卡片数量是邮票的{{blank:1}}倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] }],
+        "explanation": "30÷5=6。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈买了28个橘子，4个橙子，橘子数量是橙子的{{blank:1}}倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["7"] }],
+        "explanation": "28÷4=7。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 三、求一个数的几倍是多少",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "倍的认识", "乘法求几倍", "待验收"],
+    "commonStem": "求一个数的几倍是多少（乘法计算）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "小红有7支铅笔，小明的铅笔数量是小红的3倍，小明有{{blank:1}}支铅笔。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["21"] }],
+        "explanation": "7×3=21（支）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一棵小树苗高5分米，大树的高度是小树苗的6倍，大树高{{blank:1}}分米。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["30"] }],
+        "explanation": "5×6=30（分米）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "商店里有8个文具盒，书包的数量是文具盒的4倍，书包有{{blank:1}}个。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["32"] }],
+        "explanation": "8×4=32（个）。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 四、抓不变量",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "倍的认识", "抓不变量", "待验收"],
+    "commonStem": "求一个量增加或减少多少能成为另一个量的几倍（抓不变量）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "小明有6支钢笔，小红有15支钢笔。小红给小明{{blank:1}}支后，小红的钢笔数量是小明的2倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["1"] }],
+        "explanation": "设小红给小明x支，则15-x=2×(6+x)。15-x=12+2x，3=3x，x=1。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "果园里有8棵梨树，20棵苹果树。再种{{blank:1}}棵梨树，梨树数量是苹果树的1倍（即相等）。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] }],
+        "explanation": "要和20棵苹果树相等，梨树需要20棵，20-8=12（棵）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "班级里有10名男生，25名女生。转走{{blank:1}}名女生后，女生人数是男生的2倍。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }],
+        "explanation": "男生10人，女生要是男生的2倍就是20人，25-20=5（人）。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 五、和差问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "倍的认识", "和差问题", "待验收"],
+    "commonStem": "和差问题（结合倍数，已知和与差求数量）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "小明和小红一共有24颗糖果，小明比小红多8颗，且小明的糖果数量是小红的2倍。小明有{{blank:1}}颗，小红有{{blank:2}}颗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["16"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "小明是小红的2倍，一共是3份。24÷3=8，小红8颗，小明16颗。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "果园里苹果树和梨树一共有36棵，苹果树比梨树多12棵，苹果树数量是梨树的2倍。苹果树有{{blank:1}}棵，梨树有{{blank:2}}棵。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["24"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["12"] }
+        ],
+        "explanation": "苹果树是梨树的2倍，一共是3份。36÷3=12，梨树12棵，苹果树24棵。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "学校合唱队男生和女生一共有45人，女生比男生多15人，女生人数是男生的2倍。男生有{{blank:1}}人，女生有{{blank:2}}人。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["15"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["30"] }
+        ],
+        "explanation": "女生是男生的2倍，一共是3份。45÷3=15，男生15人，女生30人。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 六、和倍问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "倍的认识", "和倍问题", "待验收"],
+    "commonStem": "和倍问题（已知和与倍数，求各数量）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "小明和小红一共有27颗糖果，小明的糖果数量是小红的2倍。小明有{{blank:1}}颗，小红有{{blank:2}}颗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["18"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "小红看作1份，小明是2份，一共3份。27÷3=9，小红9颗，小明18颗。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "果园里苹果树和梨树一共有36棵，苹果树数量是梨树的3倍。苹果树有{{blank:1}}棵，梨树有{{blank:2}}棵。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["27"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "梨树1份，苹果树3份，一共4份。36÷4=9，梨树9棵，苹果树27棵。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈买的苹果和梨一共有35个，苹果数量是梨的4倍。苹果有{{blank:1}}个，梨有{{blank:2}}个。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["28"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["7"] }
+        ],
+        "explanation": "梨1份，苹果4份，一共5份。35÷5=7，梨7个，苹果28个。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 七、差倍问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "倍的认识", "差倍问题", "待验收"],
+    "commonStem": "差倍问题（已知差与倍数，求各数量）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "小明比小红多12颗糖果，小明的糖果数量是小红的3倍。小明有{{blank:1}}颗，小红有{{blank:2}}颗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["18"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] }
+        ],
+        "explanation": "小明比小红多2份，2份是12颗，所以1份是6颗。小红6颗，小明18颗。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "果园里苹果树比梨树多18棵，苹果树数量是梨树的4倍。苹果树有{{blank:1}}棵，梨树有{{blank:2}}棵。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["24"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] }
+        ],
+        "explanation": "苹果树比梨树多3份，3份是18棵，1份是6棵。梨树6棵，苹果树24棵。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈买的苹果比梨多21个，苹果数量是梨的4倍。苹果有{{blank:1}}个，梨有{{blank:2}}个。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["28"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["7"] }
+        ],
+        "explanation": "苹果比梨多3份，3份是21个，1份是7个。梨7个，苹果28个。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数学练习题 倍的认识 - 八、年龄问题",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "倍的认识", "年龄问题", "待验收"],
+    "commonStem": "年龄问题（利用年龄差不变，结合倍数）。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "今年小红8岁，妈妈32岁，妈妈的年龄是小红的{{blank:1}}倍；4年前，妈妈的年龄是小红的{{blank:2}}倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["7"] }
+        ],
+        "explanation": "今年：32÷8=4。4年前：小红4岁，妈妈28岁，28÷4=7。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "今年小明9岁，爸爸45岁，爸爸的年龄是小明的{{blank:1}}倍；当小明15岁时，爸爸{{blank:2}}岁。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["51"] }
+        ],
+        "explanation": "今年：45÷9=5。小明从9岁到15岁过了6年，爸爸也增加6岁，45+6=51岁。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "今年小红6岁，妈妈36岁，妈妈的年龄是小红的{{blank:1}}倍；{{blank:2}}年后，妈妈的年龄会是小红的4倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "今年：36÷6=6。设x年后妈妈是小红的4倍：36+x=4×(6+x)，36+x=24+4x，12=3x，x=4。"
+      }
+    ]
+  }
+]

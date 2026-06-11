@@ -4,6 +4,7 @@ import { getPaper } from '../api/papers';
 import { submitPaperAttempt } from '../api/submissions';
 import { saveStudentProfile as saveStudentProfileApi } from '../api/student';
 import { StudentDraftPad } from '../components/StudentDraftPad';
+import { evaluateColumnArithmetic, getColumnArithmetic, getColumnArithmeticSlotKeys } from '../utils/columnArithmetic';
 import { dbGroupToPreviewDraft, dbQuestionToPreview } from '../utils/dbPreview';
 import { renderMathText } from '../utils/mathText';
 import { applyRewardSnapshot, badgeLabels, grantPracticeReward, type RewardGrant } from '../utils/rewards';
@@ -136,12 +137,33 @@ function Materials({ draft }: { draft: any }) {
   </div>)}</>;
 }
 
+function QuestionMaterials({ question }: { question: QuestionDraft }) {
+  const materials = question.content?.materials;
+  if (!Array.isArray(materials) || !materials.length) return null;
+  return <Materials draft={{ materials }} />;
+}
+
 function BlankInput({ id, slot, answers, results, setAnswer }: { id: string; slot: AnswerSlot; answers: StudentAnswers; results: CheckResult | null; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const resultClass = results ? (results[id] ? 'correct' : 'wrong') : '';
   const missingClass = !results && !isAnswered(answers[id]) ? 'missing' : '';
+  const shapeClass = slot.answer_rule?.display_shape === 'circle' ? 'operator-circle' : '';
   if (slot.slot_type === 'compare_symbol') {
     const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
-    return <select data-answer-id={id} className={`studentBlank ${resultClass} ${missingClass}`} value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)}>
+    if (shapeClass) {
+      const current = normalize(answers[id]);
+      const next = allowed[(Math.max(allowed.indexOf(current), -1) + 1) % allowed.length] ?? '';
+      return <button
+        type="button"
+        data-answer-id={id}
+        className={`operatorSymbolButton ${resultClass} ${missingClass} ${current ? 'filled' : ''}`}
+        aria-label={`选择运算符，当前${current || '未选择'}`}
+        title={`点击切换：${allowed.join(' ')}`}
+        onClick={() => setAnswer(id, next)}
+      >
+        {current || ''}
+      </button>;
+    }
+    return <select data-answer-id={id} className={`studentBlank ${shapeClass} ${resultClass} ${missingClass}`} value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)}>
       <option value="">选择</option>
       {allowed.map((value) => <option key={value} value={value}>{value}</option>)}
     </select>;
@@ -165,6 +187,13 @@ function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: str
   return parts;
 }
 
+function isQuestionSlotCorrect(question: QuestionDraft, slot: AnswerSlot, itemId: string, questionIndex: number, answers: StudentAnswers) {
+  if (getColumnArithmetic(question)) {
+    return evaluateColumnArithmetic(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).ok;
+  }
+  return isSlotCorrect(slot, answers[answerKey(itemId, questionIndex, slot.slot_key)]);
+}
+
 function renderStem(question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, results: CheckResult | null, setAnswer: (id: string, value: StudentAnswerValue) => void) {
   return renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, results, setAnswer);
 }
@@ -183,6 +212,45 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, results, 
         ))}</tbody>
       </table>
     </div>
+  </div>;
+}
+
+function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, results, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; results: CheckResult | null; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+  const config = getColumnArithmetic(question);
+  const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
+  const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
+  const slotKeys = getColumnArithmeticSlotKeys(question);
+  return <div className="studentQuestion">
+    {question.stem && <div className="kq-stem">{renderMathText(question.stem)}</div>}
+    <div className="studentColumnBoard" style={{ ['--column-count' as string]: columns }}>
+      {rows.map((row, rowIndex) => <div className={`studentColumnRow row-${row.role ?? 'operand'}`} key={rowIndex}>
+        <span className="studentColumnOperator">{row.operator ?? ''}</span>
+        {Array.from({ length: columns }).map((_, cellIndex) => {
+          const offset = columns - row.cells.length;
+          const cell = row.cells[cellIndex - offset] ?? null;
+          if (!cell) return <span className="studentColumnCell empty" key={`${rowIndex}-${cellIndex}`} />;
+          if (cell.slot) {
+            const id = answerKey(itemId, questionIndex, cell.slot);
+            const resultClass = results ? (results[id] ? 'correct' : 'wrong') : '';
+            const missingClass = !results && !isAnswered(answers[id]) ? 'missing' : '';
+            return <input
+              data-answer-id={id}
+              className={`studentColumnCell input ${resultClass} ${missingClass}`}
+              key={cell.slot}
+              value={normalize(answers[id])}
+              onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
+              inputMode="numeric"
+              aria-label={`竖式方框 ${cell.slot}`}
+            />;
+          }
+          return <span className="studentColumnCell fixed" key={`${rowIndex}-${cellIndex}`}>{cell.text ?? ''}</span>;
+        })}
+      </div>)}
+    </div>
+    {!!slotKeys.length && <p className="studentColumnHint">可填数字：{(config?.allowedDigits ?? []).join('、') || '按题目要求填写'}{config?.uniqueDigits ? '，每个数字只能用一次' : ''}</p>}
+    {results && <p className={evaluateColumnArithmetic(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).ok ? 'resultOk' : 'resultBad'}>
+      {evaluateColumnArithmetic(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).reason}
+    </p>}
   </div>;
 }
 
@@ -313,6 +381,8 @@ function InteractiveQuestion({ question, itemId, questionIndex, answers, results
 
   if (question.content?.interaction === 'poem_char_fill') {
     body = <PoemCharFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} results={results} setAnswer={setAnswer} />;
+  } else if (getColumnArithmetic(question)) {
+    body = <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} results={results} setAnswer={setAnswer} />;
   } else if (question.content?.tableFill) {
     body = <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} results={results} setAnswer={setAnswer} />;
   } else if (question.question_type === 'single_choice' || question.question_type === 'multiple_choice') {
@@ -343,7 +413,10 @@ function InteractiveQuestion({ question, itemId, questionIndex, answers, results
     body = <div className="studentQuestion"><div className="kq-stem">{renderStem(question, itemId, questionIndex, answers, results, setAnswer)}</div></div>;
   }
 
-  return <QuestionDraftShell storageKey={draftKey}>{body}</QuestionDraftShell>;
+  return <QuestionDraftShell storageKey={draftKey}>
+    <QuestionMaterials question={question} />
+    {body}
+  </QuestionDraftShell>;
 }
 
 function questionsFromItem(item: any): PaperQuestionRef[] {
@@ -586,12 +659,13 @@ export function PaperPreviewPage({ paperId, onBack, onEdit, onHome, onRetryWrong
     const answerRecords = allQuestions.map(({ title, question, itemId, questionIndex, questionId, groupId }) => {
       const details = question.answer_slots.map((slot) => {
         const id = answerKey(itemId, questionIndex, slot.slot_key);
-        const ok = isSlotCorrect(slot, answers[id]);
+        const ok = isQuestionSlotCorrect(question, slot, itemId, questionIndex, answers);
+        const correctValue = getColumnArithmetic(question) ? ['满足竖式规则即可'] : slot.correct_answer;
         nextResults[id] = ok;
         total += 1;
         if (ok) correct += 1;
-        else wrongDetails.push({ title: question.stem || title, slotKey: slot.slot_key, studentValue: answers[id] ?? '', correctValue: slot.correct_answer });
-        return { slotKey: slot.slot_key, studentValue: answers[id] ?? '', correctValue: slot.correct_answer, isCorrect: ok, score: ok ? 1 : 0 };
+        else wrongDetails.push({ title: question.stem || title, slotKey: slot.slot_key, studentValue: answers[id] ?? '', correctValue });
+        return { slotKey: slot.slot_key, studentValue: answers[id] ?? '', correctValue, isCorrect: ok, score: ok ? 1 : 0 };
       });
       return {
         questionId,

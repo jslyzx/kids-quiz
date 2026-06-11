@@ -34,12 +34,29 @@ function mapQuestionType(value: string): string {
   return map[value] ?? 'FILL_BLANK';
 }
 
+function normalizeQuestionOptions(question: any) {
+  const options = Array.isArray(question?.content?.options) ? question.content.options : Array.isArray(question?.options) ? question.options : [];
+  return options
+    .map((option: any, index: number) => ({
+      optionKey: String(option?.key ?? option?.optionKey ?? option?.label ?? String.fromCharCode(65 + index)).trim(),
+      content: String(option?.text ?? option?.content ?? option?.value ?? '').trim(),
+      sortOrder: index,
+    }))
+    .filter((option: { optionKey: string; content: string }) => option.optionKey || option.content);
+}
+
 function groupMeta(dto: SaveQuestionGroupDto) {
   return {
     difficulty: Math.min(5, Math.max(1, Number((dto as any).difficulty ?? 1))),
     gradeLevel: (dto as any).gradeLevel?.trim?.() || null,
     tags: Array.isArray((dto as any).tags) ? (dto as any).tags : [],
   };
+}
+
+function numericIds(values: unknown) {
+  return Array.from(new Set((Array.isArray(values) ? values : values == null ? [] : [values])
+    .map((value) => Number(value))
+    .filter((value) => value && !Number.isNaN(value))));
 }
 
 function inferDefaultTags(group: { groupType?: string | null; title?: string | null }) {
@@ -86,6 +103,9 @@ export class QuestionGroupsService {
 
     const result = await this.prisma.$transaction(async (tx: any) => {
       const subjectId = await this.ensureDefaultSubject(tx, ownerId);
+      const importBatchId = await this.resolveImportBatchId(tx, ownerId, (dto as any).importBatchId);
+      const knowledgePointIds = await this.resolveKnowledgePointIds(tx, ownerId, (dto as any).knowledgePointIds);
+      const primaryKnowledgePointId = knowledgePointIds[0] ?? null;
 
       if (dto.type === 'calculation_group') {
         const meta = groupMeta(dto);
@@ -93,24 +113,29 @@ export class QuestionGroupsService {
           data: {
             ownerId,
             subjectId,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             title: dto.title,
             ...meta,
             groupType: 'MENTAL_MATH',
             content: { sourceType: 'calculation_group', columns: dto.columns ?? 4 },
           },
         });
+        await this.createGroupKnowledgePointLinks(tx, group.id, knowledgePointIds);
         for (const [index, item] of dto.items.entries()) {
           const q = await tx.question.create({
             data: {
               ownerId,
               subjectId,
               groupId: group.id,
+              knowledgePointId: primaryKnowledgePointId,
               questionType: 'CALCULATION',
               stem: item.stem,
               ...meta,
               sortOrder: index,
             },
           });
+          await this.createQuestionKnowledgePointLinks(tx, q.id, knowledgePointIds);
           await tx.answerSlot.create({
             data: {
               questionId: q.id,
@@ -129,6 +154,8 @@ export class QuestionGroupsService {
           data: {
             ownerId,
             subjectId,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             title: dto.title,
             ...meta,
             commonStem: dto.commonStem,
@@ -136,8 +163,9 @@ export class QuestionGroupsService {
             content: { table: dto.table ?? null, materials: dto.materials ?? null },
           },
         });
+        await this.createGroupKnowledgePointLinks(tx, group.id, knowledgePointIds);
         for (const [index, child] of dto.children.entries()) {
-          await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, child, index, meta);
+          await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, child, index, { ...meta, knowledgePointId: primaryKnowledgePointId, knowledgePointIds });
         }
         return group;
       }
@@ -148,12 +176,15 @@ export class QuestionGroupsService {
           data: {
             ownerId,
             subjectId,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             title: dto.title,
             ...meta,
             groupType: 'PRACTICE_SET',
           },
         });
-        await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, dto.question, 0, meta);
+        await this.createGroupKnowledgePointLinks(tx, group.id, knowledgePointIds);
+        await this.createQuestionWithSlots(tx, ownerId, subjectId, group.id, dto.question, 0, { ...meta, knowledgePointId: primaryKnowledgePointId, knowledgePointIds });
         return group;
       }
 
@@ -172,8 +203,12 @@ export class QuestionGroupsService {
       const groupId = BigInt(id);
       const exists = await tx.questionGroup.findFirst({ where: { id: groupId, ownerId }, select: { id: true } });
       if (!exists) throw new BadRequestException('Question group not found');
+      const importBatchId = await this.resolveImportBatchId(tx, ownerId, (dto as any).importBatchId);
+      const knowledgePointIds = await this.resolveKnowledgePointIds(tx, ownerId, (dto as any).knowledgePointIds);
+      const primaryKnowledgePointId = knowledgePointIds[0] ?? null;
 
       await tx.question.deleteMany({ where: { groupId } });
+      await tx.questionGroupKnowledgePoint.deleteMany({ where: { groupId } });
 
       if (dto.type === 'calculation_group') {
         const meta = groupMeta(dto);
@@ -182,23 +217,28 @@ export class QuestionGroupsService {
           data: {
             title: dto.title,
             ...meta,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             commonStem: null,
             groupType: 'MENTAL_MATH',
             content: { sourceType: 'calculation_group', columns: dto.columns ?? 4 },
           },
         });
+        await this.createGroupKnowledgePointLinks(tx, groupId, knowledgePointIds);
         for (const [index, item] of dto.items.entries()) {
           const q = await tx.question.create({
             data: {
               ownerId,
               subjectId,
               groupId,
+              knowledgePointId: primaryKnowledgePointId,
               questionType: 'CALCULATION',
               stem: item.stem,
               ...meta,
               sortOrder: index,
             },
           });
+          await this.createQuestionKnowledgePointLinks(tx, q.id, knowledgePointIds);
           await tx.answerSlot.create({
             data: {
               questionId: q.id,
@@ -218,13 +258,16 @@ export class QuestionGroupsService {
           data: {
             title: dto.title,
             ...meta,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             commonStem: dto.commonStem,
             groupType: 'COMPOSITE',
             content: { table: dto.table ?? null, materials: dto.materials ?? null },
           },
         });
+        await this.createGroupKnowledgePointLinks(tx, groupId, knowledgePointIds);
         for (const [index, child] of dto.children.entries()) {
-          await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, child, index, meta);
+          await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, child, index, { ...meta, knowledgePointId: primaryKnowledgePointId, knowledgePointIds });
         }
         return;
       }
@@ -236,12 +279,15 @@ export class QuestionGroupsService {
           data: {
             title: dto.title,
             ...meta,
+            importBatchId,
+            knowledgePointId: primaryKnowledgePointId,
             commonStem: null,
             groupType: 'PRACTICE_SET',
             content: undefined,
           },
         });
-        await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, dto.question, 0, meta);
+        await this.createGroupKnowledgePointLinks(tx, groupId, knowledgePointIds);
+        await this.createQuestionWithSlots(tx, ownerId, subjectId, groupId, dto.question, 0, { ...meta, knowledgePointId: primaryKnowledgePointId, knowledgePointIds });
         return;
       }
 
@@ -478,6 +524,41 @@ export class QuestionGroupsService {
     return subject.id as bigint;
   }
 
+  private async resolveImportBatchId(tx: any, ownerId: bigint, value: unknown) {
+    const id = Number(value);
+    if (!id || Number.isNaN(id)) return null;
+    const batch = await tx.importBatch.findFirst({ where: { id: BigInt(id), ownerId }, select: { id: true } });
+    if (!batch) throw new BadRequestException('Import batch not found');
+    return batch.id as bigint;
+  }
+
+  private async resolveKnowledgePointIds(tx: any, ownerId: bigint, values: unknown) {
+    const ids = numericIds(values);
+    if (!ids.length) return [] as bigint[];
+    const rows = await tx.knowledgePoint.findMany({
+      where: { ownerId, id: { in: ids.map((id) => BigInt(id)) }, status: { not: 'DELETED' } },
+      select: { id: true },
+    });
+    if (rows.length !== ids.length) throw new BadRequestException('Some knowledge points were not found');
+    return rows.map((row: { id: bigint }) => row.id);
+  }
+
+  private async createGroupKnowledgePointLinks(tx: any, groupId: bigint, knowledgePointIds: bigint[]) {
+    for (const knowledgePointId of knowledgePointIds) {
+      await tx.questionGroupKnowledgePoint.create({
+        data: { groupId, knowledgePointId },
+      });
+    }
+  }
+
+  private async createQuestionKnowledgePointLinks(tx: any, questionId: bigint, knowledgePointIds: bigint[]) {
+    for (const knowledgePointId of knowledgePointIds) {
+      await tx.questionKnowledgePoint.create({
+        data: { questionId, knowledgePointId },
+      });
+    }
+  }
+
   private async createQuestionWithSlots(
     tx: any,
     ownerId: bigint,
@@ -485,16 +566,19 @@ export class QuestionGroupsService {
     groupId: bigint,
     question: SaveQuestionGroupDto extends infer _ ? any : never,
     sortOrder: number,
-    meta?: { difficulty: number; gradeLevel: string | null; tags: string[] },
+    meta?: { difficulty: number; gradeLevel: string | null; tags: string[]; knowledgePointId?: bigint | null; knowledgePointIds?: bigint[] },
   ) {
     const q = await tx.question.create({
       data: {
         ownerId,
         subjectId,
         groupId,
+        knowledgePointId: meta?.knowledgePointId ?? null,
         questionType: mapQuestionType(question.question_type),
         stem: question.stem,
-        ...(meta ?? {}),
+        difficulty: meta?.difficulty ?? 1,
+        gradeLevel: meta?.gradeLevel ?? null,
+        tags: meta?.tags ?? [],
         content: question.content ?? undefined,
         explanation: question.explanation ?? null,
         sortOrder,
@@ -509,6 +593,17 @@ export class QuestionGroupsService {
           correctAnswer: slot.correct_answer as any,
           answerRule: slot.answer_rule as any,
           sortOrder: index,
+        },
+      });
+    }
+    await this.createQuestionKnowledgePointLinks(tx, q.id, meta?.knowledgePointIds ?? []);
+    for (const option of normalizeQuestionOptions(question)) {
+      await tx.questionOption.create({
+        data: {
+          questionId: q.id,
+          optionKey: option.optionKey,
+          content: option.content,
+          sortOrder: option.sortOrder,
         },
       });
     }

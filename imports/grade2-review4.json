@@ -1,0 +1,214 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "二年级复习4 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级复习", "口算", "表内乘除法", "待验收"],
+    "columns": 4,
+    "items": [
+      { "stem": "5×6=", "answer": "30" },
+      { "stem": "12÷6=", "answer": "2" },
+      { "stem": "64÷8=", "answer": "8" },
+      { "stem": "4×7=", "answer": "28" },
+      { "stem": "21÷3=", "answer": "7" },
+      { "stem": "8×3=", "answer": "24" },
+      { "stem": "7÷7=", "answer": "1" },
+      { "stem": "16÷2=", "answer": "8" },
+      { "stem": "7×4+6=", "answer": "34" },
+      { "stem": "3×8-5=", "answer": "19" },
+      { "stem": "2×3×9=", "answer": "54" },
+      { "stem": "4×4÷8=", "answer": "2" },
+      { "stem": "48÷8÷3=", "answer": "2" },
+      { "stem": "9×4÷6=", "answer": "6" },
+      { "stem": "35÷7×8=", "answer": "40" },
+      { "stem": "5×6+7=", "answer": "37" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级复习4 - 二、在括号里填上合适的数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级复习", "等式填数", "表内乘除法", "待验收"],
+    "commonStem": "在括号里填上合适的数。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "4×3=2×{{blank:1}}",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] }],
+        "explanation": "4×3=12，12÷2=6。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "6×{{blank:1}}=3×8",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] }],
+        "explanation": "3×8=24，24÷6=4。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "{{blank:1}}÷4={{blank:2}}÷2",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["2"] }
+        ],
+        "explanation": "4÷4=1，2÷2=1。原题有多组答案，这里录入一组最简单的正确答案。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "3×3=4+{{blank:1}}",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }],
+        "explanation": "3×3=9，9-4=5。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "{{blank:1}}+27=5×8",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["13"] }],
+        "explanation": "5×8=40，40-27=13。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "54÷9={{blank:1}}×2",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] }],
+        "explanation": "54÷9=6，6÷2=3。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级复习4 - 三、填空题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级复习", "有余数除法", "解决问题", "待验收"],
+    "commonStem": "填空题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "在□÷8=4……□中，余数最大是{{blank:1}}，这时被除数是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["7"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["39"] }
+        ],
+        "explanation": "除数是8，余数要比8小，最大是7；8×4+7=39。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "☆除以一个一位数，商是5，余数是4，☆最小是{{blank:1}}，最大是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["29"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["49"] }
+        ],
+        "explanation": "余数是4，除数必须大于4。一位数除数最小是5，最大是9，所以☆最小为5×5+4=29，最大为5×9+4=49。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "光荣榜规定每得到5朵红花可以换1面红旗。亮亮刚好换了7面红旗，他一共得到了{{blank:1}}朵红花。小龙得到了20朵红花，他可以换{{blank:2}}面红旗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["35"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "亮亮：7×5=35（朵）；小龙：20÷5=4（面）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "芳芳从第一页开始看一本故事书，她每天看6页，看了8天。芳芳第9天应该从第{{blank:1}}页看起。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["49"] }],
+        "explanation": "8天共看6×8=48页，第9天从第49页看起。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级复习4 - 四、看图列式计算",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级复习", "看图列式", "解决问题", "待验收"],
+    "commonStem": "看图列式计算。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "content": {
+          "materials": [
+            {
+              "type": "image",
+              "title": "第（1）题线段图",
+              "url": "http://localhost:3000/uploads/1781093310515-a0c8a217-42d1-47dd-b46c-91a4e379d6be.jpg"
+            }
+          ]
+        },
+        "stem": "（1）{{blank:1}}{{blank:2}}{{blank:3}}={{blank:4}}（朵）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["36"] },
+          {
+            "slot_key": "blank_2",
+            "slot_type": "compare_symbol",
+            "correct_answer": ["÷"],
+            "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+          },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "线段图表示36朵平均分成4份，求每份是多少：36÷4=9（朵）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "content": {
+          "materials": [
+            {
+              "type": "image",
+              "title": "第（2）题线段图",
+              "url": "http://localhost:3000/uploads/1781093310526-44a3ed02-623f-4748-b9c7-72abea64d255.jpg"
+            }
+          ]
+        },
+        "stem": "（2）{{blank:1}}{{blank:2}}{{blank:3}}{{blank:4}}{{blank:5}}={{blank:6}}（箱）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["48"] },
+          {
+            "slot_key": "blank_2",
+            "slot_type": "compare_symbol",
+            "correct_answer": ["+"],
+            "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+          },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["52"] },
+          {
+            "slot_key": "blank_4",
+            "slot_type": "compare_symbol",
+            "correct_answer": ["-"],
+            "answer_rule": { "allowed_values": ["+", "-", "×", "÷"], "display_shape": "circle" }
+          },
+          { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["20"] },
+          { "slot_key": "blank_6", "slot_type": "number", "correct_answer": ["80"] }
+        ],
+        "explanation": "线段图表示西瓜箱数比苹果和梨的总数少20箱：48+52-20=80（箱）。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级复习4 - 五、应用题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级复习", "有余数除法", "租船问题", "待验收"],
+    "commonStem": "杨老师和林老师带领38名同学去体验手摇船，老师和同学们同时上船。大船限乘客6人，小船限乘客4人。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "如果都租大船，那么他们至少需要租{{blank:1}}条大船。",
+        "answer_slots": [{ "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["7"] }],
+        "explanation": "一共有38+2=40人，40÷6=6（条）……4（人），所以至少租7条大船。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "若租大船和小船，要正好坐满且租的船数最少，应租大船{{blank:1}}条、小船{{blank:2}}条，共{{blank:3}}条船。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["7"] }
+        ],
+        "explanation": "6条大船坐36人，再租1条小船坐4人，正好40人，共7条船。"
+      }
+    ]
+  }
+]

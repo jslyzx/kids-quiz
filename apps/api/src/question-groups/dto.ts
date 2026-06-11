@@ -4,6 +4,8 @@
   gradeLevel?: string;
   difficulty?: number;
   tags?: string[];
+  importBatchId?: string | number;
+  knowledgePointIds?: Array<string | number>;
   question: {
     question_type: string;
     stem: string;
@@ -24,6 +26,8 @@ export type FrontCalculationGroupDraft = {
   gradeLevel?: string;
   difficulty?: number;
   tags?: string[];
+  importBatchId?: string | number;
+  knowledgePointIds?: Array<string | number>;
   columns?: number;
   items: Array<{ stem: string; answer: string | number }>;
 };
@@ -34,6 +38,8 @@ export type FrontCompositeGroupDraft = {
   gradeLevel?: string;
   difficulty?: number;
   tags?: string[];
+  importBatchId?: string | number;
+  knowledgePointIds?: Array<string | number>;
   commonStem?: string;
   table?: unknown;
   materials?: unknown;

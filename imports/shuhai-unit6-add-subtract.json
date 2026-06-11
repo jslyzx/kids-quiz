@@ -1,0 +1,182 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元 二下 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "两三位数加减法", "口算", "待验收"],
+    "columns": 4,
+    "items": [
+      { "stem": "85-50=", "answer": "35" },
+      { "stem": "45-17=", "answer": "28" },
+      { "stem": "80+50=", "answer": "130" },
+      { "stem": "1000+20=", "answer": "1020" },
+      { "stem": "78-59=", "answer": "19" },
+      { "stem": "32+19=", "answer": "51" },
+      { "stem": "150-70=", "answer": "80" },
+      { "stem": "10000-4000=", "answer": "6000" },
+      { "stem": "45+15=", "answer": "60" },
+      { "stem": "70-13=", "answer": "57" },
+      { "stem": "90+20=", "answer": "110" },
+      { "stem": "60+500=", "answer": "560" },
+      { "stem": "56+36=", "answer": "92" },
+      { "stem": "95-48=", "answer": "47" },
+      { "stem": "600+500=", "answer": "1100" },
+      { "stem": "400+7000=", "answer": "7400" }
+    ]
+  },
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元 二下 - 二、竖式计算，带※的要验算",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "两三位数加减法", "竖式计算", "待验收"],
+    "columns": 3,
+    "items": [
+      { "stem": "85+509=", "answer": "594" },
+      { "stem": "348+225=", "answer": "573" },
+      { "stem": "※ 113+177=", "answer": "290" },
+      { "stem": "728+145=", "answer": "873" },
+      { "stem": "224+729=", "answer": "953" },
+      { "stem": "※ 129+63=", "answer": "192" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元 二下 - 三、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "两三位数加减法", "填空题", "待验收"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "{{blank:1}}比75少17，90比{{blank:2}}多23。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["58"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["67"] }
+        ],
+        "explanation": "75-17=58；90比一个数多23，这个数是90-23=67。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "学校旁边的书店进了两批新书，第一批进了73本，第二批进了145本，一共进了{{blank:1}}本。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["218"] }
+        ],
+        "explanation": "73+145=218（本）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "青青超市今天进了243瓶饮料，比昨天少进了89瓶，这两天一共进了{{blank:1}}瓶饮料。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["575"] }
+        ],
+        "explanation": "昨天进了243+89=332瓶；两天一共243+332=575瓶。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "笑笑每天看126页书，看了两天后，第三天应该从第{{blank:1}}页开始看。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["253"] }
+        ],
+        "explanation": "两天看了126+126=252页，第三天从第253页开始看。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小明家和小军家在同一条街上，他们约定在两家之间的书店门口集合。两人都从家出发，小军走了40米后发现忘记带钱，返回家去取。小军一共走了480米后和小明同时到达书店门口，此时小明走了300米。小明和小军家相距{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["700"] }
+        ],
+        "explanation": "小军往返取钱多走40+40=80米，小军家到书店的距离是480-80=400米。书店在两家之间，所以两家相距400+300=700米。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元 二下 - 四、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "两三位数加减法", "解决问题", "待验收"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "森林里有老虎45只，狐狸比老虎多138只，兔子比狐狸多215只，狐狸有{{blank:1}}只，兔子有{{blank:2}}只。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["183"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["398"] }
+        ],
+        "explanation": "狐狸：45+138=183（只）；兔子：183+215=398（只）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "花店上午卖出113朵百合花，下午卖出58朵百合花，全天正好卖掉原来的一半。花店原来有{{blank:1}}朵百合花。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["342"] }
+        ],
+        "explanation": "全天卖出113+58=171朵，这是原来的一半，所以原来有171+171=342朵。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "李叔叔家养了421只鸭，鹅比鸭多。鹅和鸭至少共有{{blank:1}}只。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["843"] }
+        ],
+        "explanation": "鹅比鸭多，至少比鸭多1只，所以鹅至少有421+1=422只；鹅和鸭至少421+422=843只。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "数海探索 第六单元 二下 - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "两三位数加减法", "数字谜", "待验收", "需格式方案"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "把2、3、4、6、7、8填入方框里，使算式成立。",
+      "content": {
+        "interaction": "column_arithmetic",
+        "columnArithmetic": {
+          "operation": "addition",
+          "columns": 4,
+          "allowedDigits": ["2", "3", "4", "6", "7", "8"],
+          "uniqueDigits": true,
+          "rows": [
+            {
+              "role": "operand",
+              "cells": [null, { "slot": "a_h" }, { "slot": "a_t" }, { "slot": "a_o" }]
+            },
+            {
+              "role": "operand",
+              "operator": "+",
+              "cells": [null, { "slot": "b_h" }, { "slot": "b_t" }, { "slot": "b_o" }]
+            },
+            {
+              "role": "result",
+              "cells": [{ "text": "1" }, { "text": "1" }, { "text": "1" }, { "text": "0" }]
+            }
+          ],
+          "validation": {
+            "mode": "expression",
+            "operands": [
+              ["a_h", "a_t", "a_o"],
+              ["b_h", "b_t", "b_o"]
+            ],
+            "result": ["1", "1", "1", "0"]
+          }
+        }
+      },
+      "answer_slots": [
+        { "slot_key": "a_h", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "a_t", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "a_o", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "b_h", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "b_t", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "b_o", "slot_type": "number", "correct_answer": [] }
+      ],
+      "explanation": "每一位相加都要进位：个位两个数相加得10，十位两个数相加得10，百位两个数相加得10。可以把数字配成2和8、3和7、4和6三组，再分别放到百位、十位、个位。例如246+864=1110。"
+    }
+  }
+]

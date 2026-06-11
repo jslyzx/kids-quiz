@@ -1,0 +1,371 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "二年级下数学第一次单元作业 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级下", "第一次单元作业", "口算", "长度", "时间", "倍数", "待验收"],
+    "columns": 5,
+    "items": [
+      { "stem": "32+16=", "answer": "48" },
+      { "stem": "54-9=", "answer": "45" },
+      { "stem": "48-36=", "answer": "12" },
+      { "stem": "54+16=", "answer": "70" },
+      { "stem": "77-29=", "answer": "48" },
+      { "stem": "64÷8=", "answer": "8" },
+      { "stem": "9×8=", "answer": "72" },
+      { "stem": "44+37=", "answer": "81" },
+      { "stem": "64-18=", "answer": "46" },
+      { "stem": "19+43=", "answer": "62" },
+      { "stem": "6×4=", "answer": "24" },
+      { "stem": "0÷9=", "answer": "0" },
+      { "stem": "84+15=", "answer": "99" },
+      { "stem": "54÷9=", "answer": "6" },
+      { "stem": "66-24=", "answer": "42" },
+      { "stem": "38+55=", "answer": "93" },
+      { "stem": "26-17=", "answer": "9" },
+      { "stem": "34-24=", "answer": "10" },
+      { "stem": "58-41=", "answer": "17" },
+      { "stem": "27÷9=", "answer": "3" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第一次单元作业 - 二、填空题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第一次单元作业", "填空题", "长度单位", "时间单位", "倍数", "待验收"],
+    "commonStem": "二、填空题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "圆圆是小学二年级的学生，身高约130{{blank:1}}。圆圆家离学校大约900{{blank:2}}，今天早上她步行上学，途中过马路等红灯用了45{{blank:3}}，圆圆走到学校大约用了12{{blank:4}}。学校一节课的时间是40{{blank:5}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["厘米"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["米"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["秒"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["分钟", "分"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["分钟", "分"] }
+        ],
+        "explanation": "根据生活经验选择合适的单位：身高用厘米，路程用米，等红灯用秒，走路和一节课用分钟。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在括号里填合适的数：3.12米={{blank:1}}厘米；2米15厘米={{blank:2}}米；136厘米={{blank:3}}米{{blank:4}}厘米={{blank:5}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["312"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["2.15"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["1"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["36"] },
+          { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["1.36"] }
+        ],
+        "explanation": "1米=100厘米。3.12米=312厘米，2米15厘米=2.15米，136厘米=1米36厘米=1.36米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "把下面的长度按从小到大的顺序排一排。（填序号）①1.25米 ②60厘米 ③2米 ④3米12厘米 ⑤0.7米\n{{blank:1}}<{{blank:2}}<{{blank:3}}<{{blank:4}}<{{blank:5}}",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["②"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["⑤"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["①"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["③"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["④"] }
+        ],
+        "explanation": "统一成米：②60厘米=0.6米，⑤0.7米，①1.25米，③2米，④3米12厘米=3.12米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在圆圈里填上“>”“<”或“=”。\n5分{{blank:1}}50秒；60秒{{blank:2}}1分；100分{{blank:3}}3时；1分{{blank:4}}100秒；2分{{blank:5}}20秒；9时{{blank:6}}90分。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_2", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_3", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_4", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_5", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_6", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "比较前先统一单位：1分=60秒，1时=60分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一根彩带连续对折2次后每段长4厘米，原来彩带的长度相当于对折后的{{blank:1}}倍，是{{blank:2}}厘米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["16"] }
+        ],
+        "explanation": "连续对折2次会分成4段，每段4厘米，所以原长是4×4=16厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一条12米长的彩带，剪了3次，平均每段长{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "剪3次可以分成4段，12÷4=3米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小雨今年6岁，妈妈今年36岁。去年妈妈的年龄是小雨的{{blank:1}}倍；小雨出生时，妈妈{{blank:2}}岁。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["7"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["30"] }
+        ],
+        "explanation": "去年小雨5岁，妈妈35岁，35÷5=7。妈妈和小雨相差36-6=30岁，小雨出生时妈妈30岁。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "钟面上，分针从12走到8，经过了{{blank:1}}分钟；时针从6走到8，经过了{{blank:2}}小时。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["40"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["2"] }
+        ],
+        "explanation": "分针每走一个大格是5分钟，从12到8走8个大格，是40分钟。时针从6到8经过2小时。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "李老师乘火车出差，火车正点到站时间是8时55分，停靠10分钟，但此列火车晚点10分钟，现在这列火车{{blank:1}}时{{blank:2}}分发车。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["15"] }
+        ],
+        "explanation": "晚点10分钟到站是9时05分，再停靠10分钟，9时15分发车。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "天天从家到学校要用15分钟，每天8时开始上早读课，他早上最迟{{blank:1}}从家里出发，才不会迟到。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["7时45分", "7:45"] }
+        ],
+        "explanation": "8时往前推15分钟，是7时45分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "学校有7面黄旗和72面红旗。\n（1）若红旗的数量不变，要使红旗的数量是黄旗的9倍，需要增加{{blank:1}}面黄旗。\n（2）若黄旗的数量不变，要使红旗的数量是黄旗的9倍，需要减少{{blank:2}}面红旗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["1"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "72÷9=8，黄旗要变成8面，需要增加1面。7×9=63，红旗要从72面减少到63面，需要减少9面。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "乐乐有19块糖果，送给小亮4块后，乐乐的糖果数量是小亮糖果数量的3倍，小亮现在有{{blank:1}}块糖果。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "乐乐送出4块后剩19-4=15块，15÷3=5块，所以小亮现在有5块。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第一次单元作业 - 三、选择题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第一次单元作业", "选择题", "时间", "长度", "倍数", "待验收"],
+    "commonStem": "三、选择题。（将正确答案的序号填在括号里）",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "single_choice",
+        "stem": "秒针走4个大格的时间可以完成的事情是（ ）。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "从1数到20" },
+            { "key": "②", "text": "跑完1000米" },
+            { "key": "③", "text": "吃一顿丰盛的午餐" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["①"] }
+        ],
+        "explanation": "秒针走1个大格是5秒，走4个大格是20秒，比较适合完成从1数到20。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "用下面这把尺子，量一次不能直接量出的长度是（ ）厘米。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "尺子刻度图", "url": "http://localhost:3000/uploads/unit1_choice_q2_ruler.jpg" }
+          ],
+          "options": [
+            { "key": "①", "text": "2" },
+            { "key": "②", "text": "4" },
+            { "key": "③", "text": "6" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["①"] }
+        ],
+        "explanation": "尺子上能直接利用0、3、4、9这些刻度量出4厘米和6厘米，不能一次直接量出2厘米。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "豆豆连续走两步，全长大约是1米。照这样，豆豆从房间的前面走到后面一共走了8步，大约一共走了（ ）米。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "4" },
+            { "key": "②", "text": "8" },
+            { "key": "③", "text": "16" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["①"] }
+        ],
+        "explanation": "2步约1米，8步里面有4个2步，所以约4米。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "根据下面的线段图，下列说法错误的是（ ）。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "线段图", "url": "http://localhost:3000/uploads/unit1_choice_q4_line.jpg" }
+          ],
+          "options": [
+            { "key": "①", "text": "甲比乙的3倍多3" },
+            { "key": "②", "text": "甲比乙的3倍少3" },
+            { "key": "③", "text": "甲比乙的4倍少2" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["②"] }
+        ],
+        "explanation": "线段图表示甲比乙的3倍多3，也可以看作比乙的4倍少2，所以错误的是②。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "科技小组有27人，科技小组的人数是体育小组的3倍，体育小组有（ ）人。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "3" },
+            { "key": "②", "text": "9" },
+            { "key": "③", "text": "27" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["②"] }
+        ],
+        "explanation": "27÷3=9，所以体育小组有9人。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第一次单元作业 - 四、操作题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第一次单元作业", "操作题", "时间", "倍数", "待验收"],
+    "commonStem": "四、操作题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "在下面的方框里涂色，使没涂色的方框个数是涂色的2倍。共有6个方框，应涂色{{blank:1}}个方框。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["2"] }
+        ],
+        "explanation": "没涂色的是涂色的2倍，总数就是3份。6÷3=2，所以涂色2个。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "写出下面三个钟面所表示的时刻：第1个{{blank:1}}，第2个{{blank:2}}，第3个{{blank:3}}。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "三个钟面", "url": "http://localhost:3000/uploads/unit1_operation_clocks.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["1时20分", "1:20"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["9时55分", "9:55"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["1时30分", "1:30"] }
+        ],
+        "explanation": "第1个钟面是1时20分，第2个钟面是9时55分，第3个钟面是1时30分。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第一次单元作业 - 五、解答题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第一次单元作业", "解答题", "倍数应用题", "时间", "长度", "待验收"],
+    "commonStem": "五、解答题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "幸福小区车棚里停放了8辆自行车，停放的电动车数量比自行车的3倍多3辆。车棚里停放电动车{{blank:1}}辆。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["27"] }
+        ],
+        "explanation": "8×3+3=27辆。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小冬从第1页开始看一本105页的故事书，第一天看了9页，第二天看的页数是第一天的2倍，第三天应该从第{{blank:1}}页开始看。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["28"] }
+        ],
+        "explanation": "第二天看9×2=18页，两天共看9+18=27页，第三天从第28页开始看。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "天天的身高1.2米，站在一个凳子上，从地面到天天头顶的高度是1米60厘米。这个凳子高{{blank:1}}厘米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["40"] }
+        ],
+        "explanation": "1.2米=120厘米，1米60厘米=160厘米，160-120=40厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈带小宇（身高1.15米）和小雪（身高1.32米）一起去科技馆参观。妈妈拿30元去买门票，够吗？{{blank:1}}",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "科技馆门票价格", "url": "http://localhost:3000/uploads/unit1_answer_q4_ticket.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["不够", "不够。"] }
+        ],
+        "explanation": "小宇1.15米，不到1米20厘米，免票；小雪1.32米，需要10元；妈妈成人票22元，共10+22=32元，30元不够。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "二年级报名参加管乐小组的有18人，报名参加舞蹈小组的比参加管乐小组的多12人，报名参加编程小组的有6人。\n（1）报名参加舞蹈小组的有{{blank:1}}人。\n（2）报名参加舞蹈小组的人数是报名参加编程小组的{{blank:2}}倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["30"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "舞蹈小组18+12=30人，30÷6=5，所以是编程小组的5倍。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第一次单元作业 - 附加题：智慧屋",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级下", "第一次单元作业", "附加题", "倍数应用题", "待验收"],
+    "commonStem": "附加题：智慧屋。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "有两匹同样长的布，第一匹卖出34米，第二匹卖出7米，剩下的布中，第二匹的长度是第一匹的4倍，原来每匹布长{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["43"] }
+        ],
+        "explanation": "设原来每匹布长x米，则x-7=4×(x-34)，解得x=43。也可用差倍法：两匹剩下的布相差34-7=27米，对应4-1=3份，每份9米，第一匹剩9米，原长9+34=43米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一只蜗牛沿着6米深的井壁往上爬，它白天往上爬400厘米，夜里往下爬200厘米。这只蜗牛爬到井口需要{{blank:1}}天。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["2"] }
+        ],
+        "explanation": "6米=600厘米。第一天白天爬到400厘米，夜里滑到200厘米；第二天再爬400厘米，正好到600厘米，到井口后不再下滑，所以需要2天。"
+      }
+    ]
+  }
+]

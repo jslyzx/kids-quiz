@@ -27,6 +27,23 @@ function Invoke-Pnpm($Arguments, $FailureMessage) {
   }
 }
 
+function Stop-ProjectApiProcesses {
+  $projectPath = [Regex]::Escape($root.Path)
+  $processes = Get-CimInstance Win32_Process | Where-Object {
+    $_.Name -match 'node|cmd|powershell' -and
+    $_.CommandLine -match $projectPath -and
+    ($_.CommandLine -match 'nest.*start|apps\\api\\dist\\main|pnpm dev:api')
+  }
+
+  foreach ($process in $processes) {
+    if ($process.ProcessId -eq $PID) {
+      continue
+    }
+    Write-Host "[KidsQuiz] 停止旧 API 进程 $($process.ProcessId)，避免 Prisma query_engine-windows.dll.node 被锁定。" -ForegroundColor Yellow
+    Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+  }
+}
+
 Ensure-EnvFile ".env"
 Ensure-EnvFile "prisma/.env"
 
@@ -34,6 +51,8 @@ if (-not (Test-Path "node_modules")) {
   Write-Host "[KidsQuiz] 首次启动，正在安装依赖..." -ForegroundColor Yellow
   Invoke-Pnpm @("install") "依赖安装失败，请检查 pnpm install 的输出。"
 }
+
+Stop-ProjectApiProcesses
 
 Write-Host "[KidsQuiz] 同步数据库结构..." -ForegroundColor Yellow
 Invoke-Pnpm @("db:push") "数据库同步失败。请确认 MySQL 已启动，并且 .env / prisma/.env 中的 DATABASE_URL 正确。"
