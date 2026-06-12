@@ -644,6 +644,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
   const current = questions[index];
   const answeredCount = questions.filter((item) => questionAnswered(item, answers)).length;
   const progress = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const currentAnswered = current ? questionAnswered(current, answers) : false;
   const practiceContext = useMemo(() => !paperId ? readQuestionPracticeContext() : null, [paperId, questionGroupId]);
   const nextGroupId = useMemo(() => {
     if (!questionGroupId || !practiceContext?.ids?.length) return null;
@@ -829,6 +830,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
 
   return <div className="practice-layout">
     <div className="practice-topbar">
+      <button className="practice-home-btn" onClick={onHome} aria-label="回到孩子首页">首页</button>
       <div className="practice-progress-info">
         <b className="practice-title">{paper?.title || group?.title || '练习'}</b>
         {!paperId && <div className="practice-source-pills">
@@ -854,12 +856,17 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
                   <path d="M7 15.5 15.8 6.7a1.8 1.8 0 0 1 2.55 0l.95.95a1.8 1.8 0 0 1 0 2.55L10.5 19H7v-3.5Z" />
                   <path d="m14.7 7.8 2.5 2.5" />
                 </svg>}
+                <span className="practice-draft-label">{draftOpen ? '收起草稿' : '草稿'}</span>
               </button>
-              <b>{questionAnswered(current, answers) ? '已完成' : '待作答'}</b>
+              <b>{currentAnswered ? '已完成' : '待作答'}</b>
             </div>
           </div>
           <PracticeQuestionMaterial item={current} />
           <CurrentQuestion item={current} answers={answers} setAnswer={setAnswer} />
+          <div className={`practice-answer-hint ${currentAnswered ? 'done' : ''}`}>
+            <b>{currentAnswered ? '这一题完成啦' : '先完成这一题'}</b>
+            <span>{currentAnswered ? (index >= questions.length - 1 ? '可以提交练习，看一看星星奖励。' : '可以点“下一题”继续。') : '填写答案后，下面的按钮会带你去下一步。'}</span>
+          </div>
         </> : <p className="tip">这套练习还没有题目。</p>}
       </section>
     </main>

@@ -217,6 +217,31 @@ pnpm smoke:e2e
 
 烟测会自动完成：新建题目 → 组卷 → 提交错题 → 错题本解析验证 → 清理测试数据。
 
+完整回归烟测：
+
+```bash
+pnpm smoke:all
+```
+
+完整烟测会先运行生产构建，再启动构建后的 API，并依次验证端到端题目流程、导入批次、数据隔离、奖励兑换、娱乐中心和浏览器 UI 流程。
+
+部署 smoke：
+
+```bash
+WEB_BASE=https://quiz.example.com API_BASE=https://quiz.example.com/api pnpm smoke:deployment
+```
+
+部署 smoke 用于生产式 Nginx/API 分离验收，会检查 API 健康、前端静态资源、SPA 深链 fallback、`/uploads` 代理路径，以及跨域部署时的 CORS 预检。提供 `DEPLOY_SMOKE_ADMIN_USERNAME` 和 `DEPLOY_SMOKE_ADMIN_PASSWORD` 时，还会验证管理员登录。
+
+浏览器 UI 烟测：
+
+```bash
+pnpm smoke:ui
+```
+
+UI 烟测会自动创建临时账号，验证导入页校验提示、真实 Excel 文件上传、导入批次列表、验收试卷生成和奖励申请/审批流程，结束后清理测试数据。
+它使用本机 Chrome/Edge；如果脚本找不到浏览器，可以通过 `CHROME_PATH` 指定浏览器可执行文件。
+
 ## 数据库备份
 
 运行：
@@ -393,9 +418,6 @@ pnpm run build
 
 ## 后续可继续开发
 
-- Excel 导入
-- 学习报告打印
-- 星星兑换奖励
 - 更细的知识点体系
 - 正式部署到服务器
 

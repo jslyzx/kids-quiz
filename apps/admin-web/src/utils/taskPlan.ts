@@ -1,3 +1,5 @@
+import { API_BASE } from '../api/client';
+
 export type TaskPlanSettings = {
   requireWrongFirst: boolean;
   targetAccuracy: number;
@@ -9,7 +11,6 @@ export type TaskPlanSettings = {
 };
 
 export const TASK_PLAN_KEY = 'kidsQuiz.taskPlanSettings';
-const API_BASE = 'http://localhost:3000';
 export const ENTERTAINMENT_GAME_KEYS = ['2048', '24', 'sudoku', 'gomoku', 'memory'] as const;
 export const ENTERTAINMENT_MIN_LIMIT_SECONDS = 60;
 export const ENTERTAINMENT_MAX_LIMIT_SECONDS = 30 * 60;

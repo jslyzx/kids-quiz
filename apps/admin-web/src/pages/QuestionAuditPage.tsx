@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { bulkAddQuestionGroupTags, bulkApplyQuestionGroupDefaults, bulkNormalizeLegacyQuestionGroups, bulkRemoveQuestionGroupTags, bulkUpdateQuestionGroupStatus, exportQuestionBank } from '../api/questionGroups';
 import { addPaperQuestionGroup, createPaper } from '../api/papers';
+import { looksLikeMojibake } from '../utils/textQuality';
 
 type Severity = 'critical' | 'warning' | 'info';
 
@@ -19,6 +20,7 @@ type Props = {
   onBack: () => void;
   onEdit: (id: string, repairQueue?: string[]) => void;
   onImportJson: () => void;
+  onOpenImportBatches: () => void;
   onOpenPaper: (paperId: string) => void;
   onStartPaper: (paperId: string) => void;
 };
@@ -134,10 +136,6 @@ function collectUrls(value: unknown, urls: string[] = []) {
     else collectUrls(item, urls);
   }
   return urls;
-}
-
-function looksLikeMojibake(value: unknown) {
-  return /锛|绗|涓|瀵|棰|鈥|馃|浜屽勾|鏁板/.test(textOf(value));
 }
 
 function mentionsVisualMaterial(value: unknown) {
@@ -511,7 +509,7 @@ type Recommendation = {
   filter: () => void;
 };
 
-export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenPaper, onStartPaper }: Props) {
+export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenImportBatches, onOpenPaper, onStartPaper }: Props) {
   const [bank, setBank] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -915,6 +913,7 @@ export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenPaper, o
         </div>
         <div className="page-actions">
           <button className="btn btn-outline btn-sm" onClick={onImportJson}>导入题目 JSON</button>
+          <button className="btn btn-outline btn-sm" onClick={onOpenImportBatches}>导入批次</button>
           <button className="btn btn-outline btn-sm" onClick={() => void copyAuditSummary()} disabled={!result.issues.length}>复制摘要</button>
           <button className="btn btn-secondary btn-sm" onClick={exportReport} disabled={!result.issues.length}>导出体检报告</button>
           <button className="btn btn-primary btn-sm" onClick={() => void refresh()} disabled={loading}>{loading ? '扫描中...' : '重新扫描'}</button>

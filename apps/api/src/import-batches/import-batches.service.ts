@@ -21,6 +21,57 @@ export class ImportBatchesService {
     return jsonSafe(rows.map((row) => ({ ...row, groupCount: row._count.questionGroups })));
   }
 
+  async get(ownerId: bigint, id: number) {
+    if (!id || Number.isNaN(id)) throw new BadRequestException('Invalid import batch id');
+    const row = await this.prisma.importBatch.findFirst({
+      where: { id: BigInt(id), ownerId },
+      include: {
+        questionGroups: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            knowledgePoint: {
+              select: { id: true, name: true, path: true },
+            },
+            knowledgePointLinks: {
+              include: {
+                knowledgePoint: {
+                  select: { id: true, name: true, path: true },
+                },
+              },
+            },
+            questions: {
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                questionType: true,
+                stem: true,
+                explanation: true,
+                difficulty: true,
+                gradeLevel: true,
+                tags: true,
+                status: true,
+                createdAt: true,
+                knowledgePoint: {
+                  select: { id: true, name: true, path: true },
+                },
+                knowledgePointLinks: {
+                  include: {
+                    knowledgePoint: {
+                      select: { id: true, name: true, path: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        _count: { select: { questionGroups: true } },
+      },
+    });
+    if (!row) throw new BadRequestException('Import batch not found');
+    return jsonSafe({ ...row, groupCount: row._count.questionGroups });
+  }
+
   async create(ownerId: bigint, dto: CreateImportBatchDto) {
     const title = dto?.title?.trim() || `导入批次 ${new Date().toLocaleString()}`;
     const row = await this.prisma.importBatch.create({

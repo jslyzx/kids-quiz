@@ -9,6 +9,8 @@ import './index.css';
 const QuestionEditorPage = lazy(() => import('./pages/QuestionEditorPage').then((module) => ({ default: module.QuestionEditorPage })));
 const QuestionListPage = lazy(() => import('./pages/QuestionListPage').then((module) => ({ default: module.QuestionListPage })));
 const QuestionAuditPage = lazy(() => import('./pages/QuestionAuditPage').then((module) => ({ default: module.QuestionAuditPage })));
+const ImportBatchListPage = lazy(() => import('./pages/ImportBatchListPage').then((module) => ({ default: module.ImportBatchListPage })));
+const ImportBatchDetailPage = lazy(() => import('./pages/ImportBatchDetailPage').then((module) => ({ default: module.ImportBatchDetailPage })));
 const BatchFillBlankPage = lazy(() => import('./pages/BatchFillBlankPage').then((module) => ({ default: module.BatchFillBlankPage })));
 const QuestionJsonImportPage = lazy(() => import('./pages/QuestionJsonImportPage').then((module) => ({ default: module.QuestionJsonImportPage })));
 const PaperListPage = lazy(() => import('./pages/PaperListPage').then((module) => ({ default: module.PaperListPage })));
@@ -102,6 +104,7 @@ function QuestionListRoute() {
     onOpenTaskSettings={() => navigate('/parent/tasks')}
     onBatchFillBlank={() => navigate('/parent/questions/batch-fill')}
     onImportJson={() => navigate('/parent/questions/import-json')}
+    onOpenImportBatches={() => navigate('/parent/questions/import-batches')}
   />;
 }
 
@@ -117,6 +120,7 @@ function QuestionJsonImportRoute() {
     onOpenPaper={(paperId) => navigate(`/parent/papers/preview/${paperId}`)}
     onStartPaper={(paperId) => navigate(`/kid/practice/paper/${paperId}`)}
     onOpenAudit={() => navigate('/parent/questions/audit')}
+    onOpenImportBatches={() => navigate('/parent/questions/import-batches')}
   />;
 }
 
@@ -126,8 +130,34 @@ function QuestionAuditRoute() {
     onBack={() => navigate('/parent/questions')}
     onEdit={(id, repairQueue) => navigate(`/parent/questions/edit/${id}${repairQueue?.length ? `?repairQueue=${encodeURIComponent(repairQueue.join(','))}` : ''}`)}
     onImportJson={() => navigate('/parent/questions/import-json')}
+    onOpenImportBatches={() => navigate('/parent/questions/import-batches')}
     onOpenPaper={(paperId) => navigate(`/parent/papers/preview/${paperId}`)}
     onStartPaper={(paperId) => navigate(`/kid/practice/paper/${paperId}`)}
+  />;
+}
+
+function ImportBatchListRoute() {
+  const navigate = useNavigate();
+  return <ImportBatchListPage
+    onBack={() => navigate('/parent/questions')}
+    onImportJson={() => navigate('/parent/questions/import-json')}
+    onOpenAudit={() => navigate('/parent/questions/audit')}
+    onOpenPaper={(paperId) => navigate(`/parent/papers/preview/${paperId}`)}
+    onStartPaper={(paperId) => navigate(`/kid/practice/paper/${paperId}`)}
+    onOpenBatch={(batchId) => navigate(`/parent/questions/import-batches/${batchId}`)}
+  />;
+}
+
+function ImportBatchDetailRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return <ImportBatchDetailPage
+    batchId={id!}
+    onBack={() => navigate('/parent/questions/import-batches')}
+    onOpenAudit={() => navigate('/parent/questions/audit')}
+    onOpenPaper={(paperId) => navigate(`/parent/papers/preview/${paperId}`)}
+    onStartPaper={(paperId) => navigate(`/kid/practice/paper/${paperId}`)}
+    onEditQuestion={(groupId) => navigate(`/parent/questions/edit/${groupId}`)}
   />;
 }
 
@@ -317,6 +347,8 @@ function AppRoutes() {
           <Route path="questions/new" element={<QuestionEditorRoute />} />
           <Route path="questions/batch-fill" element={<BatchFillBlankRoute />} />
           <Route path="questions/import-json" element={<QuestionJsonImportRoute />} />
+          <Route path="questions/import-batches" element={<ImportBatchListRoute />} />
+          <Route path="questions/import-batches/:id" element={<ImportBatchDetailRoute />} />
           <Route path="questions/audit" element={<QuestionAuditRoute />} />
           <Route path="questions/edit/:id" element={<QuestionEditorRoute />} />
           <Route path="papers" element={<PaperListRoute />} />

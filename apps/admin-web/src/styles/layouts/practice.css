@@ -19,6 +19,7 @@
   min-height: 80px;
   display: flex;
   align-items: center;
+  gap: var(--space-4);
   padding: var(--space-3) clamp(18px, 5vw, 70px);
   background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid var(--border-light);
@@ -148,16 +149,20 @@
 }
 
 .practice-draft-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
+  min-width: 84px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
   background: var(--bg-card);
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   transition: all var(--transition-fast);
+  font-weight: 900;
+  touch-action: manipulation;
 }
 
 .practice-draft-btn:hover {
@@ -181,6 +186,10 @@
   fill: none;
 }
 
+.practice-draft-label {
+  font-size: var(--text-xs);
+}
+
 /* ---- 题干 ---- */
 .practice-stem {
   font-size: var(--text-2xl);
@@ -190,14 +199,65 @@
   white-space: pre-wrap;
 }
 
+.practice-home-btn {
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  min-width: 72px;
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  font-weight: 900;
+  box-shadow: var(--shadow-xs);
+  touch-action: manipulation;
+}
+
+.practice-home-btn:hover,
+.practice-home-btn:focus-visible {
+  color: var(--color-primary);
+  border-color: var(--blue-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.practice-answer-hint {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid var(--orange-100);
+  background: var(--orange-50);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-4);
+  color: var(--orange-600);
+}
+
+.practice-answer-hint b {
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+.practice-answer-hint span {
+  color: var(--text-secondary);
+  font-weight: 800;
+  text-align: right;
+}
+
+.practice-answer-hint.done {
+  border-color: var(--color-success-border);
+  background: var(--emerald-50);
+  color: var(--emerald-700);
+}
+
 /* ---- 填空输入 ---- */
 .practice-blank-input {
   display: inline-block;
-  min-width: 100px;
+  min-width: 112px;
+  min-height: 52px;
   border: 2px solid var(--blue-200);
   border-radius: var(--radius-lg);
-  padding: 6px 12px;
-  font-size: var(--text-lg);
+  padding: 8px 14px;
+  font-size: var(--text-xl);
   margin: 6px var(--space-1);
   background: var(--blue-50);
   vertical-align: middle;
@@ -303,6 +363,7 @@
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-lg);
   background: var(--blue-50);
+  min-height: 56px;
 }
 
 .practice-wide-input:focus {
@@ -322,12 +383,14 @@
   border-radius: var(--radius-2xl);
   background: var(--bg-card);
   padding: var(--space-5);
+  min-height: 96px;
   display: flex;
   align-items: center;
   gap: var(--space-4);
   text-align: left;
   font-size: var(--text-lg);
   transition: all var(--transition-fast);
+  touch-action: manipulation;
 }
 
 .practice-option:hover {
@@ -400,10 +463,12 @@
   border-radius: var(--radius-xl);
   background: var(--bg-card);
   padding: var(--space-4);
-  font-size: var(--text-md);
+  min-height: 64px;
+  font-size: var(--text-lg);
   font-weight: 700;
   transition: all var(--transition-fast);
   width: 100%;
+  touch-action: manipulation;
 }
 
 .practice-match button.selected {
@@ -596,7 +661,7 @@
   grid-template-columns: 120px 1fr 140px;
   gap: var(--space-3);
   align-items: center;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-6) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   background: rgba(255, 255, 255, 0.88);
   border-top: 1px solid var(--border-light);
   backdrop-filter: blur(12px);
@@ -606,6 +671,8 @@
   font-size: var(--text-md);
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-xl);
+  min-height: 56px;
+  touch-action: manipulation;
 }
 
 .practice-dots {
@@ -623,8 +690,8 @@
 }
 
 .practice-dot {
-  min-width: 32px;
-  height: 32px;
+  min-width: 40px;
+  height: 40px;
   border-radius: 50%;
   padding: 0;
   background: var(--slate-200);
@@ -636,6 +703,19 @@
   justify-content: center;
   transition: all var(--transition-fast);
   flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+@media (pointer: coarse) {
+  .practice-home-btn,
+  .practice-draft-btn,
+  .practice-option,
+  .practice-match button,
+  .practice-char-pool button,
+  .practice-bottombar .btn,
+  .practice-dot {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 .practice-dot.done {
@@ -827,6 +907,143 @@
   word-break: break-word;
 }
 
+/* ---- 2026 practice UI polish ---- */
+.practice-layout {
+  background:
+    linear-gradient(150deg, rgba(20, 184, 166, 0.1), transparent 32%),
+    linear-gradient(210deg, rgba(249, 115, 22, 0.11), transparent 34%),
+    linear-gradient(180deg, #f8fafc 0%, #eef6ff 52%, #fffaf3 100%);
+}
+
+.practice-topbar,
+.practice-bottombar {
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.practice-home-btn {
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+
+.practice-title {
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.practice-progress-track {
+  height: 10px;
+  background: rgba(226, 232, 240, 0.9);
+}
+
+.practice-progress-fill {
+  background: linear-gradient(90deg, #0f766e, var(--blue-500), var(--orange-500));
+}
+
+.practice-question-card {
+  border-color: rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.practice-question-meta {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.practice-meta-title {
+  max-width: 100%;
+  line-height: 1.45;
+}
+
+.practice-question-status b {
+  min-width: 72px;
+  text-align: center;
+}
+
+.practice-draft-btn {
+  border-radius: var(--radius-lg);
+}
+
+.practice-stem {
+  color: #172033;
+}
+
+.practice-blank-input,
+.practice-wide-input,
+.practice-column-cell.input {
+  caret-color: var(--color-primary);
+}
+
+.practice-blank-input,
+.operatorSymbolButton {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.82), 0 5px 14px rgba(37, 99, 235, 0.08);
+}
+
+.practice-option {
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  border-color: rgba(203, 213, 225, 0.9);
+}
+
+.practice-option b {
+  line-height: 1.55;
+}
+
+.practice-option.selected {
+  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+}
+
+.practice-match-tools {
+  border-radius: var(--radius-xl);
+}
+
+.practice-answer-hint {
+  box-shadow: inset 4px 0 0 var(--orange-400);
+}
+
+.practice-answer-hint.done {
+  box-shadow: inset 4px 0 0 var(--emerald-500);
+}
+
+.practice-bottombar .btn {
+  font-weight: 900;
+}
+
+.practice-dots {
+  scrollbar-width: thin;
+}
+
+.practice-dot {
+  border: 1px solid transparent;
+}
+
+.practice-dot.active {
+  background: linear-gradient(135deg, var(--blue-600), #0f766e);
+}
+
+.practice-result {
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.result-stat {
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+
+.result-answer-card {
+  box-shadow: var(--shadow-xs);
+}
+
+.result-answer-row {
+  border-radius: var(--radius-lg);
+}
+
+.result-answer-row strong:first-of-type {
+  color: var(--text-secondary);
+}
+
+.result-answer-row.wrong strong:last-child {
+  color: var(--rose-600);
+}
+
 /* ========================================================
    响应式与 iPad / 手机端特定适配
    ======================================================== */
@@ -836,6 +1053,10 @@
   .practice-topbar {
     min-height: 72px;
     padding: var(--space-3) var(--space-5);
+  }
+
+  .practice-home-btn {
+    min-width: 64px;
   }
 
   .practice-stage {
@@ -848,9 +1069,13 @@
     border-radius: var(--radius-2xl);
   }
 
+  .practice-question-meta {
+    align-items: flex-start;
+  }
+
   .practice-stem {
-    font-size: var(--text-xl);
-    line-height: 1.8;
+    font-size: var(--text-2xl);
+    line-height: 1.95;
   }
 
   /* 在 iPad 平板上，选择题选项依然保持优雅的 2 列并排，触控体验更优 */
@@ -867,7 +1092,7 @@
   }
 
   .practice-bottombar {
-    grid-template-columns: 90px 1fr 110px;
+    grid-template-columns: 112px 1fr 132px;
     padding: var(--space-3) var(--space-4);
     min-height: 76px;
   }
@@ -896,10 +1121,23 @@
     padding: var(--space-3);
   }
 
+  .practice-home-btn {
+    width: 100%;
+  }
+
   .practice-question-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2);
+  }
+
+  .practice-question-status {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .practice-draft-btn {
+    min-width: 76px;
   }
 
   /* 手机端由于宽度极窄，选择题降级为单列 */
@@ -944,6 +1182,7 @@
 
   .practice-blank-input {
     min-width: 80px;
+    min-height: 48px;
     padding: 5px 10px;
     font-size: var(--text-md);
     margin: 4px 2px;
@@ -954,6 +1193,15 @@
     padding: var(--space-3) var(--space-4);
     font-size: var(--text-md);
     border-radius: var(--radius-md);
+  }
+
+  .practice-answer-hint {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .practice-answer-hint span {
+    text-align: left;
   }
 }
 
@@ -985,7 +1233,7 @@
   justify-self: center;
   padding: var(--space-4);
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
 }
 
@@ -1003,7 +1251,7 @@
 
 .practice-column-row.row-carry,
 .practice-column-row.row-borrow {
-  color: var(--primary);
+  color: var(--color-primary);
   font-size: var(--text-sm);
 }
 

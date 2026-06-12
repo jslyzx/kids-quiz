@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { confirmRewardRedemption, getChildRewards, getRewards, requestRewardRedemption, saveRewardCatalog, type RewardCatalogItem } from '../api/student';
+import { confirmRewardRedemption, getChildRewards, getRewards, requestRewardRedemption, saveRewardCatalog, type RewardCatalogItem, type RewardRedemption } from '../api/student';
 import { badgeLabels, readRewardState, type RewardState } from '../utils/rewards';
 import { useSelectedStudentId } from '../utils/useSelectedStudent';
 
@@ -11,6 +11,28 @@ type Props = {
 
 const allBadges = Object.entries(badgeLabels);
 
+function redemptionStatusText(status: RewardRedemption['status']) {
+  if (status === 'PENDING') return '待审批';
+  if (status === 'APPROVED') return '已批准';
+  return '已拒绝';
+}
+
+function csvCell(value: unknown) {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
   const location = useLocation();
   const isKidRoute = location.pathname.startsWith('/kid');
@@ -19,6 +41,8 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [catalogDraft, setCatalogDraft] = useState({ title: '', cost: '20', description: '' });
+  const [redemptionStatusFilter, setRedemptionStatusFilter] = useState<'ALL' | RewardRedemption['status']>('ALL');
+  const [redemptionKeyword, setRedemptionKeyword] = useState('');
   const refreshSeqRef = useRef(0);
 
   const refresh = () => {
@@ -48,6 +72,27 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
   const starPercent = Math.min(100, Math.round((reward.stars / nextStarTarget) * 100));
   const catalog = reward.catalog ?? [];
   const redemptions = reward.redemptions ?? [];
+  const filteredRedemptions = useMemo(() => {
+    const keyword = redemptionKeyword.trim().toLowerCase();
+    return redemptions.filter((item) => {
+      const matchStatus = redemptionStatusFilter === 'ALL' || item.status === redemptionStatusFilter;
+      const haystack = [item.id, item.rewardId, item.title, item.status].join(' ').toLowerCase();
+      return matchStatus && (!keyword || haystack.includes(keyword));
+    });
+  }, [redemptionKeyword, redemptionStatusFilter, redemptions]);
+  const redemptionSummary = useMemo(() => {
+    return redemptions.reduce((acc, item) => {
+      acc.total += 1;
+      acc.stars += Number(item.cost || 0);
+      if (item.status === 'PENDING') acc.pending += 1;
+      if (item.status === 'APPROVED') {
+        acc.approved += 1;
+        acc.approvedStars += Number(item.cost || 0);
+      }
+      if (item.status === 'REJECTED') acc.rejected += 1;
+      return acc;
+    }, { total: 0, pending: 0, approved: 0, rejected: 0, stars: 0, approvedStars: 0 });
+  }, [redemptions]);
 
   const applyRewardData = (data: any) => {
     const next = {
@@ -111,6 +156,23 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
       enabled: true,
     }]);
     setCatalogDraft({ title: '', cost: '20', description: '' });
+  };
+
+  const exportRedemptions = () => {
+    const rows = [
+      ['兑换 ID', '奖励 ID', '奖励名称', '星星', '状态', '申请时间', '处理时间'],
+      ...filteredRedemptions.map((item) => [
+        item.id,
+        item.rewardId,
+        item.title,
+        String(item.cost),
+        redemptionStatusText(item.status),
+        item.requestedAt ? new Date(item.requestedAt).toLocaleString() : '',
+        item.confirmedAt ? new Date(item.confirmedAt).toLocaleString() : '',
+      ]),
+    ];
+    downloadCsv(`reward-redemptions-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+    setMessage(`已导出 ${filteredRedemptions.length} 条兑换记录`);
   };
 
   return (
@@ -195,19 +257,35 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
 
         {!isKidRoute && <section className="card reward-redemption-card">
           <h2 className="card-title">兑换审批</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+            <div className="editor-check-card info"><b>{redemptionSummary.total}</b><span>全部申请</span></div>
+            <div className="editor-check-card warning"><b>{redemptionSummary.pending}</b><span>待审批</span></div>
+            <div className="editor-check-card success"><b>{redemptionSummary.approved}</b><span>已批准</span></div>
+            <div className="editor-check-card info"><b>{redemptionSummary.approvedStars}</b><span>已兑现星星</span></div>
+          </div>
+          <div className="filter-bar" style={{ display: 'grid', gridTemplateColumns: '1fr 140px auto', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+            <input placeholder="按奖励名称 / ID 搜索" value={redemptionKeyword} onChange={(event) => setRedemptionKeyword(event.target.value)} />
+            <select value={redemptionStatusFilter} onChange={(event) => setRedemptionStatusFilter(event.target.value as any)}>
+              <option value="ALL">全部状态</option>
+              <option value="PENDING">待审批</option>
+              <option value="APPROVED">已批准</option>
+              <option value="REJECTED">已拒绝</option>
+            </select>
+            <button className="btn btn-outline btn-sm" disabled={!filteredRedemptions.length} onClick={exportRedemptions}>导出 CSV</button>
+          </div>
           <div className="reward-redemption-list">
-            {redemptions.map((item) => <div className={`reward-redemption-item ${item.status.toLowerCase()}`} key={item.id}>
+            {filteredRedemptions.map((item) => <div className={`reward-redemption-item ${item.status.toLowerCase()}`} key={item.id}>
               <div>
                 <b>{item.title}</b>
                 <span>{item.cost} 星 / {new Date(item.requestedAt).toLocaleString()}</span>
               </div>
-              <em>{item.status === 'PENDING' ? '待审批' : item.status === 'APPROVED' ? '已批准' : '已拒绝'}</em>
+              <em>{redemptionStatusText(item.status)}</em>
               {item.status === 'PENDING' && <div className="reward-redemption-actions">
                 <button className="btn btn-primary btn-sm" disabled={saving} onClick={() => void confirm(item.id, 'APPROVED')}>批准</button>
                 <button className="btn btn-secondary btn-sm" disabled={saving} onClick={() => void confirm(item.id, 'REJECTED')}>拒绝</button>
               </div>}
             </div>)}
-            {!redemptions.length && <p className="loginEmpty">暂无兑换申请</p>}
+            {!filteredRedemptions.length && <p className="loginEmpty">{redemptions.length ? '当前筛选下没有兑换申请' : '暂无兑换申请'}</p>}
           </div>
 
           <div className="reward-catalog-form">

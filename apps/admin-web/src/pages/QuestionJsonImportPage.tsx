@@ -3,6 +3,7 @@ import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kid
 import { exportQuestionBank, saveQuestionGroup } from '../api/questionGroups';
 import { addPaperQuestionGroup, createPaper } from '../api/papers';
 import { createImportBatch, finishImportBatch } from '../api/importBatches';
+import { collectMojibakeSnippets } from '../utils/textQuality';
 
 const SAMPLE_JSON = `[
   {
@@ -778,6 +779,10 @@ function validateDraft(draft: any): { errors: string[]; warnings: string[] } {
   if (!allowedTypes.has(draft.type)) errors.push(`不支持的 type：${draft.type || '空'}`);
   if (!String(draft.title ?? '').trim()) warnings.push('标题为空，导入时会使用题干自动生成标题');
   if (draft.difficulty && (Number(draft.difficulty) < 1 || Number(draft.difficulty) > 5)) warnings.push('难度建议在 1-5 之间');
+  const mojibakeSnippets = collectMojibakeSnippets(draft);
+  if (mojibakeSnippets.length) {
+    warnings.push(`疑似中文乱码：${mojibakeSnippets.join(' / ')}。请检查文件编码、OCR 输出或复制来源`);
+  }
 
   if (draft.type === 'question') {
     const result = validateQuestion(draft.question);
@@ -802,6 +807,22 @@ function validateDraft(draft: any): { errors: string[]; warnings: string[] } {
   return { errors: Array.from(new Set(errors)), warnings: Array.from(new Set(warnings)) };
 }
 
+function lineColumnFromPosition(text: string, position: number) {
+  const before = text.slice(0, Math.max(0, position));
+  const lines = before.split(/\r?\n/);
+  return { line: lines.length, column: (lines[lines.length - 1]?.length ?? 0) + 1 };
+}
+
+function formatParseError(error: unknown, sourceText: string) {
+  const message = error instanceof Error ? error.message : String(error);
+  const lineColumnMatch = message.match(/line\s+(\d+)\s+column\s+(\d+)/i);
+  if (lineColumnMatch) return `${message}（第 ${lineColumnMatch[1]} 行第 ${lineColumnMatch[2]} 列附近）`;
+  const positionMatch = message.match(/position\s+(\d+)/i);
+  if (!positionMatch) return message;
+  const { line, column } = lineColumnFromPosition(sourceText, Number(positionMatch[1]));
+  return `${message}（第 ${line} 行第 ${column} 列附近）`;
+}
+
 function parseImportText(text: string): { items: ImportItem[]; parseError: string } {
   if (!text.trim()) return { items: [], parseError: '' };
   try {
@@ -813,7 +834,7 @@ function parseImportText(text: string): { items: ImportItem[]; parseError: strin
     });
     return { items, parseError: '' };
   } catch (error) {
-    return { items: [], parseError: error instanceof Error ? error.message : String(error) };
+    return { items: [], parseError: formatParseError(error, text) };
   }
 }
 
@@ -856,7 +877,7 @@ function ImportPreview({ draft }: { draft: any }) {
   return <div className="empty-state"><p className="empty-state-title">暂不能预览</p></div>;
 }
 
-export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOpenAudit }: { onBack: () => void; onOpenPaper: (paperId: string) => void; onStartPaper: (paperId: string) => void; onOpenAudit?: () => void }) {
+export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOpenAudit, onOpenImportBatches }: { onBack: () => void; onOpenPaper: (paperId: string) => void; onStartPaper: (paperId: string) => void; onOpenAudit?: () => void; onOpenImportBatches?: () => void }) {
   const [text, setText] = useState(SAMPLE_JSON);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [message, setMessage] = useState('');
@@ -869,6 +890,13 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
   const [existingMap, setExistingMap] = useState<Map<string, string[]>>(() => new Map());
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [duplicateLoading, setDuplicateLoading] = useState(false);
+  const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false);
+  const [sourceType, setSourceType] = useState('json');
+  const [sourceName, setSourceName] = useState('手动粘贴 JSON');
+  const [latestBatchId, setLatestBatchId] = useState('');
+  const [latestBatchTitle, setLatestBatchTitle] = useState('');
+  const [latestBatchStatus, setLatestBatchStatus] = useState<'COMPLETED' | 'FAILED' | ''>('');
+  const [latestBatchStats, setLatestBatchStats] = useState<Record<string, unknown> | null>(null);
   const parsedBase = useMemo(() => parseImportText(text), [text]);
   const parsed = useMemo(() => ({
     ...parsedBase,
@@ -884,6 +912,9 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
   const invalidItems = parsed.items.filter((item) => item.errors.length);
   const selected = parsed.items[selectedIndex] ?? parsed.items[0];
   const duplicateCount = parsed.items.filter((item) => item.duplicateGroupIds?.length).length;
+  const warningCount = parsed.items.filter((item) => item.warnings.length).length;
+  const attentionItems = parsed.items.filter((item) => item.errors.length || item.warnings.length || item.duplicateGroupIds?.length);
+  const visibleItems = showNeedsAttentionOnly ? attentionItems : parsed.items;
 
   useEffect(() => {
     setItemEditText(selected ? JSON.stringify(selected.draft, null, 2) : '');
@@ -918,6 +949,16 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     return Array.from(map.entries()).map(([label, count]) => `${label} ${count}`).join(' / ') || '暂无题目';
   }, [parsed.items]);
 
+  const resetImportOutcome = () => {
+    setSavedIds([]);
+    setPaperId('');
+    setFailures([]);
+    setLatestBatchId('');
+    setLatestBatchTitle('');
+    setLatestBatchStatus('');
+    setLatestBatchStats(null);
+  };
+
   const onFile = async (file?: File | null) => {
     if (!file) return;
     const lowerName = file.name.toLowerCase();
@@ -925,19 +966,24 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
         const drafts = await readExcelFile(file);
         setText(JSON.stringify(drafts, null, 2));
-        setMessage(`已读取 Excel 文件：${file.name}，转换 ${drafts.length} 道题`);
+        setSourceType('excel');
+        setSourceName(file.name);
+        setMessage(drafts.length ? `已读取 Excel 文件：${file.name}，转换 ${drafts.length} 道题` : `未从 ${file.name} 读取到题目，请检查第一个工作表和表头`);
       } else if (lowerName.endsWith('.csv') || lowerName.endsWith('.tsv')) {
         const drafts = parseDelimitedText(await file.text()).map(excelRowToDraft);
         setText(JSON.stringify(drafts, null, 2));
-        setMessage(`已读取表格文件：${file.name}，转换 ${drafts.length} 道题`);
+        setSourceType(lowerName.endsWith('.tsv') ? 'tsv' : 'csv');
+        setSourceName(file.name);
+        setMessage(drafts.length ? `已读取表格文件：${file.name}，转换 ${drafts.length} 道题` : `未从 ${file.name} 读取到题目，请检查表头和分隔符`);
       } else {
         setText(await file.text());
+        setSourceType('json');
+        setSourceName(file.name);
         setMessage(`已读取文件：${file.name}`);
       }
       setSelectedIndex(0);
-      setSavedIds([]);
-      setPaperId('');
-      setFailures([]);
+      resetImportOutcome();
+      setShowNeedsAttentionOnly(false);
     } catch (error) {
       setMessage(`文件读取失败：${error instanceof Error ? error.message : String(error)}`);
     }
@@ -969,10 +1015,10 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
 
   const restoreSample = () => {
     setText(SAMPLE_JSON);
+    setSourceType('json');
+    setSourceName('示例 JSON');
     setSelectedIndex(0);
-    setSavedIds([]);
-    setPaperId('');
-    setFailures([]);
+    resetImportOutcome();
     setMessage('已恢复示例 JSON');
   };
 
@@ -982,10 +1028,11 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       const nextItem = JSON.parse(itemEditText);
       const nextText = replaceItemInJsonText(text, selected.index, nextItem);
       setText(nextText);
+      setSourceType('json');
+      setSourceName('手动编辑 JSON');
       setSelectedIndex(selected.index);
-      setSavedIds([]);
-      setPaperId('');
-      setFailures([]);
+      resetImportOutcome();
+      setShowNeedsAttentionOnly(false);
       setMessage(`已更新第 ${selected.index + 1} 道题，请查看校验结果。`);
     } catch (error) {
       setMessage(`当前题 JSON 解析失败：${error instanceof Error ? error.message : String(error)}`);
@@ -997,10 +1044,11 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     try {
       const nextText = replaceItemInJsonText(text, selected.index, selected.draft);
       setText(nextText);
+      setSourceType('json');
+      setSourceName('规范化后的 JSON');
       setSelectedIndex(selected.index);
-      setSavedIds([]);
-      setPaperId('');
-      setFailures([]);
+      resetImportOutcome();
+      setShowNeedsAttentionOnly(false);
       setMessage(`已把第 ${selected.index + 1} 道题写回为规范格式。`);
     } catch (error) {
       setMessage(`规范化写回失败：${error instanceof Error ? error.message : String(error)}`);
@@ -1010,18 +1058,19 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
   const importValid = async () => {
     if (!validItems.length) { setMessage(skipDuplicates && duplicateCount ? '没有可导入的新题：有效题都被判定为重复。你可以关闭“跳过重复题”后再导入。' : '没有可导入的题目，请先修正 JSON。'); return; }
     setSaving(true);
-    setSavedIds([]);
-    setPaperId('');
-    setFailures([]);
+    resetImportOutcome();
     const ids: string[] = [];
     const failed: string[] = [];
     try {
+      const batchTitle = `JSON 导入 ${new Date().toLocaleString()}`;
       const batch = await createImportBatch({
-        title: `JSON 导入 ${new Date().toLocaleString()}`,
-        sourceType: 'json',
-        sourceName: 'QuestionJsonImportPage',
+        title: batchTitle,
+        sourceType,
+        sourceName,
       });
       const importBatchId = String(batch.id);
+      setLatestBatchId(importBatchId);
+      setLatestBatchTitle(batchTitle);
       for (const [index, item] of validItems.entries()) {
         try {
           const saved = await saveQuestionGroup(withImportReviewTag({ ...item.draft, importBatchId }));
@@ -1033,22 +1082,38 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       }
       setFailures(failed);
       const skippedDuplicateCount = skipDuplicates ? duplicateCount : 0;
+      const batchStatus = failed.length ? 'FAILED' : 'COMPLETED';
+      const batchStats = {
+        total: validItems.length,
+        saved: ids.length,
+        failed: failed.length,
+        invalid: invalidItems.length,
+        duplicateSkipped: skippedDuplicateCount,
+        groupIds: ids,
+      };
+      setLatestBatchStatus(batchStatus);
+      setLatestBatchStats(batchStats);
       await finishImportBatch(importBatchId, {
-        status: failed.length ? 'FAILED' : 'COMPLETED',
-        stats: {
-          total: validItems.length,
-          saved: ids.length,
-          failed: failed.length,
-          invalid: invalidItems.length,
-          duplicateSkipped: skippedDuplicateCount,
-          groupIds: ids,
-        },
+        status: batchStatus,
+        stats: batchStats,
+        notes: failed.length ? failed.slice(0, 5).join('\n') : undefined,
       });
       setMessage(`导入完成：成功 ${ids.length} 道，保存失败 ${failed.length} 道，跳过 ${invalidItems.length} 道校验失败题目，跳过 ${skippedDuplicateCount} 道重复题。`);
       if (ids.length) void refreshDuplicateMap();
     } finally {
       setSaving(false);
     }
+  };
+
+  const focusFirstAttentionItem = () => {
+    const item = attentionItems[0];
+    if (!item) {
+      setMessage('当前没有需要处理的题目。');
+      return;
+    }
+    setSelectedIndex(item.index);
+    setShowNeedsAttentionOnly(true);
+    setMessage(`已定位第 ${item.index + 1} 道需处理题。`);
   };
 
   const createCheckPaper = async () => {
@@ -1063,6 +1128,14 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
         await addPaperQuestionGroup(String(paper.id), groupId);
       }
       setPaperId(String(paper.id));
+      if (latestBatchId) {
+        const nextStats = { ...(latestBatchStats ?? {}), reviewPaperId: String(paper.id), groupIds: savedIds };
+        setLatestBatchStats(nextStats);
+        await finishImportBatch(latestBatchId, {
+          status: latestBatchStatus || (failures.length ? 'FAILED' : 'COMPLETED'),
+          stats: nextStats,
+        });
+      }
       setMessage(`已生成验收试卷：${paper.id}，共加入 ${savedIds.length} 个题组。`);
     } catch (error) {
       setMessage(`生成验收试卷失败：${error instanceof Error ? error.message : String(error)}`);
@@ -1085,6 +1158,7 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
           上传 JSON/Excel
           <input type="file" accept=".json,.xlsx,.xls,.csv,.tsv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/tab-separated-values" style={{ display: 'none' }} onChange={(e) => void onFile(e.target.files?.[0])} />
         </label>
+        {onOpenImportBatches && <button className="btn btn-outline btn-sm" onClick={onOpenImportBatches}>最近导入批次</button>}
         <button className="btn btn-outline btn-sm" onClick={() => void downloadExcelTemplate()}>下载 Excel 模板</button>
         <button className="btn btn-outline btn-sm" onClick={downloadTemplate}>下载 JSON 模板</button>
         <button className="btn btn-soft btn-sm" onClick={restoreSample}>恢复示例</button>
@@ -1096,6 +1170,18 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     </header>
 
     {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
+    {latestBatchId && latestBatchStats && <div className="message-banner info" style={{ marginBottom: 'var(--space-4)', alignItems: 'flex-start' }}>
+      <b>{latestBatchTitle || `导入批次 ${latestBatchId}`}</b>
+      <span>
+        批次 ID：{latestBatchId}，状态：{latestBatchStatus === 'FAILED' ? '有失败' : '已完成'}，
+        成功 {Number(latestBatchStats.saved ?? 0)}，失败 {Number(latestBatchStats.failed ?? 0)}，
+        跳过校验失败 {Number(latestBatchStats.invalid ?? 0)}，跳过重复 {Number(latestBatchStats.duplicateSkipped ?? 0)}。
+      </span>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        {onOpenImportBatches && <button className="btn btn-outline btn-sm" onClick={onOpenImportBatches}>查看批次列表</button>}
+        {onOpenAudit && <button className="btn btn-secondary btn-sm" onClick={onOpenAudit}>去体检中心</button>}
+      </div>
+    </div>}
     {savedIds.length > 0 && <div className="message-banner info" style={{ marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
       <span>已导入题组 ID：{savedIds.join('、')}</span>
       <button className="btn btn-outline btn-sm" disabled={creatingPaper} onClick={() => void createCheckPaper()}>{creatingPaper ? '生成中...' : '生成验收试卷'}</button>
@@ -1117,9 +1203,9 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
           <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>1. 导入内容</h2>
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
             <button className="btn btn-outline btn-sm" onClick={() => void copyNormalizedJson()} disabled={!parsed.items.length || Boolean(parsed.parseError)}>复制规范化 JSON</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => { setText(''); setSelectedIndex(0); setSavedIds([]); setPaperId(''); setFailures([]); }}>清空</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setText(''); setSourceType('json'); setSourceName('手动粘贴 JSON'); setSelectedIndex(0); resetImportOutcome(); setShowNeedsAttentionOnly(false); }}>清空</button>
           </div>
-          <textarea style={{ minHeight: 320 }} value={text} onChange={(e) => { setText(e.target.value); setSelectedIndex(0); setSavedIds([]); setPaperId(''); setFailures([]); }} />
+          <textarea style={{ minHeight: 320 }} value={text} onChange={(e) => { setText(e.target.value); setSourceType('json'); setSourceName('手动编辑 JSON'); setSelectedIndex(0); resetImportOutcome(); }} />
           <p className="tip">支持 JSON 对象/数组，也支持 Excel、CSV、TSV 表格上传。Excel 表头可用 title、gradeLevel、difficulty、tags、question_type、stem、answer、options、explanation。</p>
         </div>
 
@@ -1127,23 +1213,30 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
           <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>2. 校验结果</h2>
           {parsed.parseError && <div className="message-banner danger" style={{ marginBottom: 'var(--space-3)' }}>JSON 解析失败：{parsed.parseError}</div>}
           {!parsed.parseError && <div className={invalidItems.length ? 'editor-check-card warning' : 'editor-check-card success'}>
-            <b>{parsed.items.length} 道题 / {validItems.length} 道可导入 / {invalidItems.length} 道需修正 / {duplicateCount} 道疑似重复</b>
+            <b>{parsed.items.length} 道题 / {validItems.length} 道可导入 / {invalidItems.length} 道需修正 / {warningCount} 道有提醒 / {duplicateCount} 道疑似重复</b>
             <span>{stats}{skipDuplicates && duplicateCount ? '。已开启跳过重复题。' : ''}</span>
+          </div>}
+          {!parsed.parseError && parsed.items.length > 0 && <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', margin: 'var(--space-3) 0' }}>
+            <button className="btn btn-outline btn-sm" disabled={!attentionItems.length} onClick={focusFirstAttentionItem}>定位第一道需处理题</button>
+            <button className="btn btn-soft btn-sm" disabled={!attentionItems.length} onClick={() => setShowNeedsAttentionOnly((value) => !value)}>
+              {showNeedsAttentionOnly ? '显示全部题目' : `只看需处理 ${attentionItems.length} 道`}
+            </button>
           </div>}
           <label className="import-dedupe-toggle">
             <input type="checkbox" checked={skipDuplicates} onChange={(e) => setSkipDuplicates(e.target.checked)} />
             <span>导入时跳过疑似重复题</span>
           </label>
           <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
-            {parsed.items.map((item, index) => <button
-              key={index}
+            {visibleItems.map((item) => <button
+              key={item.index}
               type="button"
               className={`import-item-card ${item.errors.length ? 'bad' : item.duplicateGroupIds?.length ? 'duplicate' : 'ok'} ${selected?.index === item.index ? 'active' : ''}`}
-              onClick={() => setSelectedIndex(index)}
+              onClick={() => setSelectedIndex(item.index)}
             >
-              <b>{index + 1}. {item.draft?.title || '未命名'} <em>{typeLabel(item.draft)}</em></b>
+              <b>{item.index + 1}. {item.draft?.title || '未命名'} <em>{typeLabel(item.draft)}</em></b>
               {item.errors.length ? <span>错误：{item.errors.join('；')}</span> : <span>校验通过{item.warnings.length ? `，提醒：${item.warnings.join('；')}` : ''}</span>}
             </button>)}
+            {showNeedsAttentionOnly && !visibleItems.length && <p className="tip">当前没有需要处理的题目。</p>}
             {!parsed.items.length && !parsed.parseError && <p className="tip">暂无题目，请粘贴 JSON。</p>}
           </div>
         </div>

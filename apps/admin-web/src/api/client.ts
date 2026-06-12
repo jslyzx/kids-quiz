@@ -1,4 +1,9 @@
-export const API_BASE = 'http://localhost:3000';
+function normalizeApiBase(value: string | undefined) {
+  const next = value?.trim();
+  return (next || 'http://localhost:3000').replace(/\/+$/, '');
+}
+
+export const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE_URL);
 
 const TOKEN_KEY = 'kidsQuiz.adminToken';
 const USER_KEY = 'kidsQuiz.adminUser';

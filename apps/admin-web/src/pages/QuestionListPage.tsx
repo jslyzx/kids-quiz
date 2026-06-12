@@ -11,6 +11,7 @@ type Props = {
   onOpenTaskSettings: () => void;
   onBatchFillBlank: () => void;
   onImportJson: () => void;
+  onOpenImportBatches: () => void;
 };
 
 const typeLabel: Record<string, string> = {
@@ -45,7 +46,7 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
-export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBook, onOpenKidHome, onOpenTaskSettings, onBatchFillBlank, onImportJson }: Props) {
+export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBook, onOpenKidHome, onOpenTaskSettings, onBatchFillBlank, onImportJson, onOpenImportBatches }: Props) {
   const [groups, setGroups] = useState<any[]>([]);
   const [keyword, setKeyword] = useState('');
   const [type, setType] = useState('ALL');
@@ -183,6 +184,9 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
           </button>
           <button className="btn btn-outline btn-sm" onClick={onImportJson}>
             导入题目 JSON
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={onOpenImportBatches}>
+            最近导入批次
           </button>
           <button className="btn btn-primary btn-sm" onClick={onCreate}>
             新建题目

@@ -73,6 +73,13 @@ const TXT = {
   report: '\u5b66\u4e60\u62a5\u544a',
   allRecords: '\u5168\u90e8\u8bb0\u5f55',
   games: '娱乐中心',
+  todayPlan: '今天可以这样做',
+  doRecommended: '先做推荐练习',
+  clearWrong: '再清理错题',
+  relaxAfterStudy: '完成后再放松',
+  noWrongGreat: '没有错题，保持住',
+  minutes: '分钟',
+  tapToStart: '点这里开始',
   home: '\u9996\u9875',
   practice: '\u7ec3\u4e60',
   wrong: '\u9519\u9898',
@@ -172,6 +179,10 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
 
   useEffect(() => { void refresh(); }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+
   const saveProfile = () => {
     const nextName = studentName.trim() || TXT.child;
     const nextAvatar = avatarUrl.trim();
@@ -242,7 +253,10 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
   const renderPaperCard = (paper: any) => {
     const stat = statsMap[String(paper.id)];
     return <button className="kid-practice-card animate-fadeInUp" key={paper.id} onClick={() => onStartPaper(String(paper.id))}>
-      <b>{paper.title}</b>
+      <span className="kid-practice-card-top">
+        <b>{paper.title}</b>
+        <em>{TXT.tapToStart}</em>
+      </span>
       <small>{paper.description || TXT.clickStart}</small>
       <span>{paper.itemCount ?? paper.items?.length ?? 0} {TXT.bigQuestions} {'\u00b7'} {stat ? `${TXT.accuracy} ${stat.accuracy}%` : TXT.notPracticed}</span>
     </button>;
@@ -280,6 +294,26 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <button className="kid-quick-btn animate-fadeInUp stagger-3" onClick={() => setActiveTab('reward')}><b>{TXT.myStars}</b><span>{rewardState.stars} {TXT.stars}</span></button>
           {entertainmentSettings.enabled && <button className="kid-quick-btn animate-fadeInUp stagger-4" onClick={onOpenGames}><b>{TXT.games}</b><span>{entertainmentMinutes} 分钟</span></button>}
         </div>
+        <section className="kid-today-plan animate-fadeInUp stagger-4">
+          <div className="kid-section-header compact"><div><span className="kid-section-tag">{TXT.todayPlan}</span><h2 className="kid-section-title">一步一步来</h2></div></div>
+          <div className="kid-plan-list">
+            <button className="kid-plan-item primary" onClick={() => recommended ? onStartPaper(String(recommended.id)) : setActiveTab('practice')} disabled={!recommended && !papers.length}>
+              <span>1</span>
+              <b>{TXT.doRecommended}</b>
+              <small>{recommended ? recommended.title : TXT.noPractice}</small>
+            </button>
+            <button className="kid-plan-item warning" onClick={() => wrongAnswers.length ? onRetryWrong() : setActiveTab('wrong')}>
+              <span>2</span>
+              <b>{wrongAnswers.length ? TXT.clearWrong : TXT.noWrongGreat}</b>
+              <small>{wrongAnswers.length ? `${wrongAnswers.length} ${TXT.items}${TXT.wrong}` : '可以继续挑战新题'}</small>
+            </button>
+            {entertainmentSettings.enabled && <button className="kid-plan-item soft" onClick={onOpenGames}>
+              <span>3</span>
+              <b>{TXT.relaxAfterStudy}</b>
+              <small>{entertainmentMinutes} {TXT.minutes}</small>
+            </button>}
+          </div>
+        </section>
       </div>}
 
       {activeTab === 'practice' && <section className="kid-panel">
@@ -331,9 +365,9 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           </div>
           <div className="card-grid card-grid-auto">
             {filteredQuestionGroups.map((group) => <button className="kid-practice-card" key={group.id} onClick={() => startQuestionGroup(String(group.id))}>
-              <b>{group.title || '\u672a\u547d\u540d\u9898\u76ee'}</b>
+              <span className="kid-practice-card-top"><b>{group.title || '\u672a\u547d\u540d\u9898\u76ee'}</b><em>{'\u5f00\u59cb'}</em></span>
               <small>{group.gradeLevel || '\u672a\u8bbe\u7f6e\u5e74\u7ea7'} {'\u00b7'} {typeLabels[group.groupType] || group.groupType || '\u9898\u76ee'} {'\u00b7'} {'\u96be\u5ea6'} {group.difficulty ?? '-'}</small>
-              <span>{Array.isArray(group.tags) && group.tags.length ? group.tags.join('\u3001') : '\u6682\u65e0\u6807\u7b7e'}<em className="badge badge-primary" style={{ marginLeft: '8px' }}>{'\u5f00\u59cb\u7ec3\u4e60'}</em></span>
+              <span>{Array.isArray(group.tags) && group.tags.length ? group.tags.join('\u3001') : '\u6682\u65e0\u6807\u7b7e'}</span>
             </button>)}
             {!filteredQuestionGroups.length && <div className="empty-state"><span className="empty-state-icon">🔍</span><p className="empty-state-title">{'\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u9898\u76ee\u3002'}</p></div>}
           </div>

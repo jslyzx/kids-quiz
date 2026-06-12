@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: '管理', section: true },
   { to: '/parent', icon: '📊', label: '仪表盘' },
   { to: '/parent/questions', icon: '📚', label: '题库管理' },
+  { to: '/parent/questions/import-batches', icon: '🧾', label: '导入批次' },
   { to: '/parent/questions/audit', icon: '🩺', label: '题库体检' },
   { to: '/parent/papers', icon: '📝', label: '试卷管理' },
   { label: '教学', section: true },

@@ -34,6 +34,7 @@ Required production values:
 - `ADMIN_PASSWORD`
 - `UPLOAD_DIR`
 - `PUBLIC_API_BASE_URL`
+- `VITE_API_BASE_URL`
 
 Use a long random `JWT_SECRET`. Do not reuse local development passwords.
 
@@ -118,14 +119,40 @@ server {
 ```
 
 Set `PUBLIC_API_BASE_URL=https://quiz.example.com/api` if uploads should return public API URLs through Nginx.
+Set `VITE_API_BASE_URL=/api` before building the frontend when Nginx serves the web app and proxies `/api/` to the API.
 
-## 7. Release Checklist
+## 7. Deployment Smoke
+
+After Nginx and PM2 are running, verify the production-like web/API split:
+
+```bash
+WEB_BASE=https://quiz.example.com API_BASE=https://quiz.example.com/api pnpm smoke:deployment
+```
+
+The smoke checks:
+
+- API `/health` through the configured API base.
+- Frontend index and first static asset.
+- SPA deep-link fallback under `/parent/*`.
+- `/uploads/*` proxy path is not serving the frontend HTML.
+- CORS preflight when the API is on a different origin from the web app.
+
+To include admin login verification:
+
+```bash
+WEB_BASE=https://quiz.example.com API_BASE=https://quiz.example.com/api \
+DEPLOY_SMOKE_ADMIN_USERNAME=admin DEPLOY_SMOKE_ADMIN_PASSWORD='replace-me' \
+pnpm smoke:deployment
+```
+
+## 8. Release Checklist
 
 Before switching traffic:
 
 - `pnpm run build` passes.
 - `pnpm smoke:e2e` passes against the built API.
 - `pnpm smoke:isolation` passes against the built API.
+- `pnpm smoke:deployment` passes against the Nginx public URL.
 - `.env` and `prisma/.env` contain production values.
 - Database backup exists.
 - `UPLOAD_DIR` exists and is writable by the API process.

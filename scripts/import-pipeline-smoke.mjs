@@ -147,6 +147,14 @@ try {
   });
   assert(finished.status === 'COMPLETED', 'import batch was not completed');
 
+  const detail = await request(`/admin/import-batches/${batch.id}`, { method: 'GET' });
+  assert(detail.id === String(batch.id), 'import batch detail returned the wrong id');
+  assert(detail.groupCount === 1, 'import batch detail returned the wrong group count');
+  assert(detail.questionGroups?.[0]?.id === String(group.id), 'import batch detail missing imported group');
+  assert(detail.questionGroups?.[0]?.questions?.[0]?.questionType === 'SINGLE_CHOICE', 'import batch detail missing question summary');
+  assert(detail.questionGroups?.[0]?.knowledgePointLinks?.[0]?.knowledgePoint?.name === knowledgePoint.name, 'import batch detail missing group knowledge point summary');
+  assert(detail.questionGroups?.[0]?.questions?.[0]?.knowledgePointLinks?.[0]?.knowledgePoint?.name === knowledgePoint.name, 'import batch detail missing question knowledge point summary');
+
   console.log(JSON.stringify({
     ok: true,
     groupId: group.id,

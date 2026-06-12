@@ -23,11 +23,16 @@
     "smoke:e2e": "node scripts/e2e-smoke.mjs",
     "smoke:import": "node scripts/import-pipeline-smoke.mjs",
     "smoke:isolation": "node scripts/isolation-smoke.mjs",
-    "smoke:entertainment": "node scripts/entertainment-smoke.mjs"
+    "smoke:rewards": "node scripts/reward-smoke.mjs",
+    "smoke:ui": "node scripts/ui-smoke.mjs",
+    "smoke:entertainment": "node scripts/entertainment-smoke.mjs",
+    "smoke:deployment": "node scripts/deployment-smoke.mjs",
+    "smoke:all": "node scripts/smoke-all.mjs"
   },
   "devDependencies": {
     "@prisma/client": "6.19.3",
     "@types/katex": "^0.16.8",
+    "playwright-core": "^1.60.0",
     "prisma": "6.19.3",
     "typescript": "^5.8.3"
   },

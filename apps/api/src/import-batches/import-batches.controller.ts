@@ -13,6 +13,11 @@ export class ImportBatchesController {
     return this.service.list(user.id);
   }
 
+  @Get(':id')
+  get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.service.get(user.id, Number(id));
+  }
+
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateImportBatchDto) {
     return this.service.create(user.id, dto);

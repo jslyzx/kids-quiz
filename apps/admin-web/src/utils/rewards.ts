@@ -1,3 +1,5 @@
+import { API_BASE } from '../api/client';
+
 export type RewardState = {
   stars: number;
   streakDays: number;
@@ -17,7 +19,6 @@ export type RewardGrant = {
 };
 
 const REWARD_KEY = 'kidsQuiz.rewardState';
-const API_BASE = 'http://localhost:3000';
 
 export const badgeLabels: Record<string, string> = {
   first_practice: '第一次练习',
