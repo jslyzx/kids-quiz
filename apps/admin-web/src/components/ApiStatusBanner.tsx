@@ -24,7 +24,7 @@ export function ApiStatusBanner() {
 
   if (!visible || health?.ok) return null;
 
-  return <div className="apiStatusBanner">
+  return <div className="api-status-banner">
     <div>
       <b>后端 API 未连接</b>
       <span>{health?.message || '请先启动后端服务'}</span>

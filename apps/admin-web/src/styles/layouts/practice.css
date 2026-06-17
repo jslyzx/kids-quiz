@@ -76,6 +76,7 @@
 }
 
 .practice-progress-fill {
+  width: var(--practice-progress, 0%);
   height: 100%;
   background: linear-gradient(90deg, var(--blue-400), var(--violet-500));
   border-radius: var(--radius-full);
@@ -249,6 +250,13 @@
   color: var(--emerald-700);
 }
 
+.practice-answer-hint.missing {
+  border-color: var(--orange-300);
+  background: #fff7ed;
+  color: var(--orange-700);
+  box-shadow: inset 4px 0 0 var(--orange-500);
+}
+
 /* ---- 填空输入 ---- */
 .practice-blank-input {
   display: inline-block;
@@ -371,6 +379,15 @@
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
+.practice-blank-input.missing,
+.practice-wide-input.missing,
+.operatorSymbolButton.missing,
+.practice-column-cell.input.missing {
+  border-color: var(--color-orange);
+  background: var(--orange-50);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
+}
+
 /* ---- 选择题选项 ---- */
 .practice-options {
   display: grid;
@@ -424,6 +441,15 @@
 
 .practice-option b {
   font-weight: 700;
+}
+
+.practice-options.missing,
+.practice-match.missing,
+.practice-poem.missing {
+  border: 2px dashed var(--color-orange);
+  border-radius: var(--radius-2xl);
+  background: rgba(255, 247, 237, 0.72);
+  padding: var(--space-3);
 }
 
 /* ---- 连线题 ---- */
@@ -507,6 +533,11 @@
 
 .practice-match-tools .btn {
   white-space: nowrap;
+}
+
+.practice-match-reset {
+  margin-top: var(--space-3);
+  pointer-events: auto;
 }
 
 /* ---- 古诗题 ---- */
@@ -723,6 +754,13 @@
   color: var(--emerald-700);
 }
 
+.practice-dot.missing {
+  background: var(--orange-100);
+  color: var(--orange-700);
+  border-color: var(--orange-300);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.14);
+}
+
 .practice-dot.active {
   background: var(--color-accent);
   color: var(--text-inverse);
@@ -742,6 +780,10 @@
   animation: bounceIn 0.5s var(--ease-spring);
   max-height: calc(100vh - 48px);
   overflow: auto;
+}
+
+.practice-save-warning {
+  margin-bottom: var(--space-4);
 }
 
 .result-emoji {
@@ -805,6 +847,10 @@
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #fff, #f8fafc);
 }
 
 .result-review-header b {
@@ -827,11 +873,13 @@
 .result-answer-card.wrong {
   border-color: var(--color-danger-border);
   background: var(--rose-50);
+  box-shadow: inset 5px 0 0 var(--rose-500), var(--shadow-xs);
 }
 
 .result-answer-card.ok {
   border-color: var(--color-success-border);
   background: var(--emerald-50);
+  box-shadow: inset 5px 0 0 var(--emerald-500), var(--shadow-xs);
 }
 
 .result-answer-head {
@@ -877,7 +925,7 @@
 
 .result-answer-row {
   display: grid;
-  grid-template-columns: 72px 1fr 1fr;
+  grid-template-columns: 82px minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-2);
   align-items: center;
   border-radius: var(--radius-md);
@@ -905,6 +953,20 @@
 .result-answer-row strong {
   font-weight: 700;
   word-break: break-word;
+  min-width: 0;
+}
+
+.result-actions .btn {
+  min-height: 48px;
+  border-radius: var(--radius-lg);
+}
+
+.result-answer-card .question-explanation {
+  margin-top: var(--space-4);
+}
+
+.result-answer-card .explanation-actions .btn {
+  min-height: 38px;
 }
 
 /* ---- 2026 practice UI polish ---- */
@@ -1017,6 +1079,11 @@
 
 .practice-dot.active {
   background: linear-gradient(135deg, var(--blue-600), #0f766e);
+}
+
+.practice-dot.active.missing {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-600));
+  color: #fff;
 }
 
 .practice-result {

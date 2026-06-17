@@ -142,6 +142,14 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
     };
   }, [results]);
 
+  const retryProgress = useMemo(() => {
+    const total = visibleRecords.reduce((sum, record) => sum + (record.details || []).length, 0);
+    const answered = visibleRecords.reduce((sum, record) => {
+      return sum + (record.details || []).filter((detail: any) => normalize(answers[retryKey(String(record.id), detail.slotKey)]).length > 0).length;
+    }, 0);
+    return { total, answered };
+  }, [answers, visibleRecords]);
+
   const setAnswer = (key: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
     setResults(null);
@@ -230,10 +238,10 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
   };
 
   return <div className="wrong-retry-page animate-fadeIn">
-    <header className="page-header" style={{ marginBottom: 'var(--space-5)' }}>
+    <header className="page-header">
       <div className="page-header-left">
         <h1 className="page-title">Kids Quiz 错题重练</h1>
-        <p className="page-subtitle">只练之前做错的题，做对就说明已经掌握。</p>
+        <p className="page-subtitle">只练之前做错的题，做对就说明已经掌握。填写进度会实时保存到本次重练状态。</p>
       </div>
     </header>
     <div className="single-main">
@@ -245,7 +253,7 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
           <button className="btn btn-primary btn-sm" onClick={submit} disabled={!visibleRecords.length}>提交重练</button>
           <button className="btn btn-secondary btn-sm" onClick={reset}>清空答案</button>
         </div>
-        {message && <p className="message">{message}</p>}
+        {message && <div className="message-banner info page-message">{message}</div>}
 
         <div className="filter-bar">
           <label>练习数量
@@ -267,7 +275,7 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
               {Array.from(new Set(records.flatMap(recordTags))).map((tag) => <option value={tag} key={tag}>{tag}</option>)}
             </select>
           </label>
-          <span style={{ alignSelf: 'end', marginBottom: 'var(--space-2)', fontWeight: 800, color: 'var(--color-primary)' }}>本次将练习 {visibleRecords.length} 道错题</span>
+          <span className="retry-count-pill">本次 {visibleRecords.length} 道 · 已填 {retryProgress.answered}/{retryProgress.total || 0} 空</span>
         </div>
 
         {stats && <div className="wrong-retry-overview">
@@ -284,8 +292,8 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
 
         {!!stats?.papers?.length && <details className="wrong-paper-focus">
           <summary>按试卷查看待掌握错题</summary>
-          <div style={{ marginTop: 'var(--space-2)' }}>
-            {stats.papers.map((paper) => <span key={paper.paperId} style={{ marginRight: 'var(--space-2)' }}>{paper.title}：{paper.wrongSlots} 个空</span>)}
+          <div className="wrong-paper-focus-list">
+            {stats.papers.map((paper) => <span key={paper.paperId}>{paper.title}：{paper.wrongSlots} 个空</span>)}
           </div>
         </details>}
 
@@ -307,18 +315,18 @@ export function WrongRetryPage({ onBack, onHome, initialTag }: Props) {
           </div>}
         </div>}
 
-        <div className="retryList" style={{ marginTop: 'var(--space-4)' }}>
+        <div className="retryList">
           {visibleRecords.map((record, index) => <section className="preview-paper preview-paper-block retryCard" key={record.id}>
             <h2>{index + 1}. {record.paper?.title || `试卷 ${record.paperId}`}</h2>
             <div className="kq-stem">{renderRetryStem(record.question?.stem || `题目 ${record.questionId}`, record, answers, results, setAnswer)}</div>
-            <details className="retryHistory" style={{ marginTop: 'var(--space-3)' }}>
-              <summary style={{ cursor: 'pointer', fontWeight: 800 }}>查看上次错误</summary>
-              <div style={{ marginTop: 'var(--space-2)' }}>
-                {(record.details || []).map((detail: any) => <div className="recordDetailRow" key={detail.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 60px', gap: 'var(--space-2)', borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                  <span>{detail.slotKey}</span>
-                  <span>上次答案：{renderMathText(displayValue(detail.studentValue))}</span>
-                  <span>正确答案：{renderMathText(displayValue(detail.correctValue))}</span>
-                  <b className="resultBad" style={{ color: 'var(--rose-600)' }}>错</b>
+            <details className="retryHistory">
+              <summary>查看上次错误</summary>
+              <div className="retry-history-list">
+                {(record.details || []).map((detail: any) => <div className="recordDetailRow" key={detail.id}>
+                  <span className="retry-history-slot">{detail.slotKey}</span>
+                  <span className="retry-history-answer previous">上次答案：{renderMathText(displayValue(detail.studentValue))}</span>
+                  <span className="retry-history-answer correct">正确答案：{renderMathText(displayValue(detail.correctValue))}</span>
+                  <b className="resultBad">错</b>
                 </div>)}
               </div>
             </details>

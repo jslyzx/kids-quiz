@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { AnswerSlot, QuestionDraft } from '@kids-quiz/shared-types';
 import { getStudentPaper as getPaper } from '../api/papers';
 import { getStudentQuestionGroup as getQuestionGroup } from '../api/questionGroups';
@@ -277,7 +277,7 @@ function PracticeQuestionMaterial({ item }: { item: PracticeQuestion }) {
   </div>;
 }
 
-function BlankInput({ id, slot, value, setAnswer }: { id: string; slot: AnswerSlot; value: StudentAnswerValue | undefined; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function BlankInput({ id, slot, value, missing, setAnswer }: { id: string; slot: AnswerSlot; value: StudentAnswerValue | undefined; missing?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const shapeClass = slot.answer_rule?.display_shape === 'circle' ? 'operator-circle' : '';
   if (slot.slot_type === 'compare_symbol') {
     const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
@@ -287,7 +287,7 @@ function BlankInput({ id, slot, value, setAnswer }: { id: string; slot: AnswerSl
       return <button
         type="button"
         data-answer-id={id}
-        className={`operatorSymbolButton ${current ? 'filled' : ''}`}
+        className={`operatorSymbolButton ${current ? 'filled' : ''} ${missing ? 'missing' : ''}`}
         aria-label={`选择运算符，当前${current || '未选择'}`}
         title={`点击切换：${allowed.join(' ')}`}
         onClick={() => setAnswer(id, next)}
@@ -295,15 +295,15 @@ function BlankInput({ id, slot, value, setAnswer }: { id: string; slot: AnswerSl
         {current || ''}
       </button>;
     }
-    return <select className={`practice-blank-input ${shapeClass}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)}>
+    return <select className={`practice-blank-input ${shapeClass} ${missing ? 'missing' : ''}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)}>
       <option value="">选择</option>
       {allowed.map((item) => <option value={item} key={item}>{item}</option>)}
     </select>;
   }
-  return <input className="practice-blank-input" value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)} inputMode="text" />;
+  return <input className={`practice-blank-input ${missing ? 'missing' : ''}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)} inputMode="text" />;
 }
 
-function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, setAnswer: (id: string, value: StudentAnswerValue) => void) {
+function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void) {
   const parts: ReactNode[] = [];
   let last = 0;
   const re = /\{\{blank:(\d+)\}\}/g;
@@ -314,7 +314,7 @@ function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: str
     const slot = question.answer_slots.find((item) => item.slot_key === slotKey);
     if (slot) {
       const id = answerKey(itemId, questionIndex, slotKey);
-      parts.push(<BlankInput key={`${slotKey}-${match.index}`} id={id} slot={slot} value={answers[id]} setAnswer={setAnswer} />);
+      parts.push(<BlankInput key={`${slotKey}-${match.index}`} id={id} slot={slot} value={answers[id]} missing={missingAnswerIds.has(id)} setAnswer={setAnswer} />);
     }
     last = re.lastIndex;
   }
@@ -322,11 +322,11 @@ function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: str
   return parts;
 }
 
-function renderStemWithBlanks(question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, setAnswer: (id: string, value: StudentAnswerValue) => void) {
-  return renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, setAnswer);
+function renderStemWithBlanks(question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void) {
+  return renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer);
 }
 
-function TableFillQuestion({ question, itemId, questionIndex, answers, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function TableFillQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const table = (question.content?.tableFill ?? {}) as { headers?: string[]; rows?: string[][] };
   const headers = table.headers ?? [];
   const rows = table.rows ?? [];
@@ -337,7 +337,7 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, setAnswer
         {headers.length > 0 && <thead><tr>{headers.map((header, index) => <th key={`${header}-${index}`}>{renderMathText(header)}</th>)}</tr></thead>}
         <tbody>{rows.map((row, rowIndex) => (
           <tr key={rowIndex}>{row.map((cell, cellIndex) => (
-            <td key={`${rowIndex}-${cellIndex}`}>{renderTextWithBlanks(String(cell ?? ''), question, itemId, questionIndex, answers, setAnswer)}</td>
+            <td key={`${rowIndex}-${cellIndex}`}>{renderTextWithBlanks(String(cell ?? ''), question, itemId, questionIndex, answers, missingAnswerIds, setAnswer)}</td>
           ))}</tr>
         ))}</tbody>
       </table>
@@ -345,14 +345,15 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, setAnswer
   </div>;
 }
 
-function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const config = getColumnArithmetic(question);
   const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
   const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
   const slotKeys = getColumnArithmeticSlotKeys(question);
+  const boardStyle = { '--column-count': columns } as CSSProperties;
   return <div className="practice-column-question">
     {question.stem && <div className="practice-stem">{renderMathText(question.stem)}</div>}
-    <div className="practice-column-board" style={{ ['--column-count' as string]: columns }}>
+    <div className="practice-column-board" style={boardStyle}>
       {rows.map((row, rowIndex) => <div className={`practice-column-row row-${row.role ?? 'operand'}`} key={rowIndex}>
         <span className="practice-column-operator">{row.operator ?? ''}</span>
         {Array.from({ length: columns }).map((_, cellIndex) => {
@@ -362,7 +363,7 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, se
           if (cell.slot) {
             const id = answerKey(itemId, questionIndex, cell.slot);
             return <input
-              className="practice-column-cell input"
+              className={`practice-column-cell input ${missingAnswerIds.has(id) ? 'missing' : ''}`}
               key={cell.slot}
               value={normalize(answers[id])}
               onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
@@ -378,7 +379,7 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, se
   </div>;
 }
 
-function ChoiceQuestion({ question, id, answers, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function ChoiceQuestion({ question, id, answers, missing, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; missing?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const options = (question.content?.options ?? []) as Array<{ key: string; text: string }>;
   const current = answers[id];
   const values: string[] = Array.isArray(current) ? current.filter((item): item is string => typeof item === 'string') : normalize(current) ? [normalize(current)] : [];
@@ -386,14 +387,14 @@ function ChoiceQuestion({ question, id, answers, setAnswer }: { question: Questi
     if (question.question_type === 'single_choice') setAnswer(id, key);
     else setAnswer(id, values.includes(key) ? values.filter((item) => item !== key) : [...values, key]);
   };
-  return <div className="practice-options">
+  return <div className={`practice-options ${missing ? 'missing' : ''}`}>
     {options.map((option) => <button className={`practice-option ${values.includes(option.key) ? 'selected' : ''}`} key={option.key} onClick={() => toggle(option.key)}>
       <span className="practice-option-key">{option.key}</span><b>{renderMathText(option.text)}</b>
     </button>)}
   </div>;
 }
 
-function MatchingQuestion({ question, id, answers, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function MatchingQuestion({ question, id, answers, missing, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; missing?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const left = (question.content?.left ?? []) as Array<{ key: string; text: string }>;
   const right = (question.content?.right ?? []) as Array<{ key: string; text: string }>;
   const pairs = Array.isArray(answers[id]) ? (answers[id] as MatchPair[]) : [];
@@ -493,7 +494,7 @@ function MatchingQuestion({ question, id, answers, setAnswer }: { question: Ques
   return (
     <div 
       ref={containerRef} 
-      className="practice-match" 
+      className={`practice-match ${missing ? 'missing' : ''}`} 
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
@@ -559,8 +560,7 @@ function MatchingQuestion({ question, id, answers, setAnswer }: { question: Ques
         )}
         {pairs.length > 0 && (
           <button 
-            className="btn btn-secondary btn-sm" 
-            style={{ marginTop: 'var(--space-3)', pointerEvents: 'auto' }} 
+            className="btn btn-secondary btn-sm practice-match-reset" 
             onClick={() => { setAnswer(id, []); setSelectedLeft(null); }}
           >
             重置连线
@@ -571,7 +571,7 @@ function MatchingQuestion({ question, id, answers, setAnswer }: { question: Ques
   );
 }
 
-function PoemCharFillQuestion({ question, id, answers, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function PoemCharFillQuestion({ question, id, answers, missing, setAnswer }: { question: QuestionDraft; id: string; answers: StudentAnswers; missing?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const slot = question.answer_slots[0];
   const poem = (question.content?.poem ?? {}) as { title?: string; author?: string; dynasty?: string; lines?: string[] };
   const lines = Array.isArray(poem.lines) ? poem.lines : [];
@@ -589,7 +589,7 @@ function PoemCharFillQuestion({ question, id, answers, setAnswer }: { question: 
     setAnswer(id, `${picked.join('')}${ch}`);
   };
   let cursor = 0;
-  return <div className="practice-poem">
+  return <div className={`practice-poem ${missing ? 'missing' : ''}`}>
     <h2>{poem.title || '古诗填空'}</h2>
     <p className="practice-poem-author">{[poem.dynasty, poem.author].filter(Boolean).join(' \u00b7 ')}</p>
     <div className="practice-poem-lines">
@@ -606,23 +606,30 @@ function PoemCharFillQuestion({ question, id, answers, setAnswer }: { question: 
   </div>;
 }
 
-function CurrentQuestion({ item, answers, setAnswer }: { item: PracticeQuestion; answers: StudentAnswers; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function CurrentQuestion({ item, answers, missingAnswerIds, setAnswer }: { item: PracticeQuestion; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
   const { question, itemId, questionIndex } = item;
   const slot = question.answer_slots[0];
   const id = answerKey(itemId, questionIndex, slot?.slot_key || 'answer');
-  if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} setAnswer={setAnswer} />;
-  if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillQuestion question={question} id={id} answers={answers} setAnswer={setAnswer} />;
-  if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} setAnswer={setAnswer} />;
+  const missing = missingAnswerIds.has(id);
+  if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} />;
+  if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} />;
+  if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} />;
   return <>
-    <div className="practice-stem">{question.question_type === 'fill_blank' ? renderStemWithBlanks(question, itemId, questionIndex, answers, setAnswer) : renderMathText(question.stem)}</div>
-    {(question.question_type === 'single_choice' || question.question_type === 'multiple_choice') && <ChoiceQuestion question={question} id={id} answers={answers} setAnswer={setAnswer} />}
-    {question.question_type === 'ordering' && <input className="practice-wide-input" value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)} placeholder="按顺序填写序号，例如：①,②,③" />}
-    {question.question_type === 'matching' && <MatchingQuestion question={question} id={id} answers={answers} setAnswer={setAnswer} />}
+    <div className="practice-stem">{question.question_type === 'fill_blank' ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer) : renderMathText(question.stem)}</div>
+    {(question.question_type === 'single_choice' || question.question_type === 'multiple_choice') && <ChoiceQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} />}
+    {question.question_type === 'ordering' && <input className={`practice-wide-input ${missing ? 'missing' : ''}`} value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)} placeholder="按顺序填写序号，例如：①,②,③" />}
+    {question.question_type === 'matching' && <MatchingQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} />}
   </>;
 }
 
 function questionAnswered(item: PracticeQuestion, answers: StudentAnswers) {
   return item.question.answer_slots.every((slot) => isAnswered(answers[answerKey(item.itemId, item.questionIndex, slot.slot_key)]));
+}
+
+function missingIdsForQuestion(item: PracticeQuestion, answers: StudentAnswers) {
+  return item.question.answer_slots
+    .map((slot) => answerKey(item.itemId, item.questionIndex, slot.slot_key))
+    .filter((key) => !isAnswered(answers[key]));
 }
 
 export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, onRetryWrong, onContinueQuestionGroup }: Props) {
@@ -635,6 +642,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const [draftOpen, setDraftOpen] = useState(false);
+  const [missingAnswerIds, setMissingAnswerIds] = useState<Set<string>>(() => new Set());
   const [summary, setSummary] = useState<FinishSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -644,7 +652,9 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
   const current = questions[index];
   const answeredCount = questions.filter((item) => questionAnswered(item, answers)).length;
   const progress = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const progressStyle = { '--practice-progress': `${progress}%` } as CSSProperties;
   const currentAnswered = current ? questionAnswered(current, answers) : false;
+  const currentHasMissing = current ? missingIdsForQuestion(current, answers).some((id) => missingAnswerIds.has(id)) : false;
   const practiceContext = useMemo(() => !paperId ? readQuestionPracticeContext() : null, [paperId, questionGroupId]);
   const nextGroupId = useMemo(() => {
     if (!questionGroupId || !practiceContext?.ids?.length) return null;
@@ -658,6 +668,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     setIndex(0);
     setMessage('');
     setDraftOpen(false);
+    setMissingAnswerIds(new Set());
     setSummary(null);
     setSaveWarning('');
     setStartedAt(Date.now());
@@ -697,12 +708,19 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
 
   const setAnswer = (id: string, value: StudentAnswerValue) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
+    setMissingAnswerIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setMessage('');
   };
 
   const next = () => {
     if (!current) return;
     if (!questionAnswered(current, answers)) {
+      setMissingAnswerIds(new Set(missingIdsForQuestion(current, answers)));
       setMessage('这一题还没有完成哦，先答完再继续。');
       return;
     }
@@ -716,6 +734,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     const firstMissing = questions.findIndex((item) => !questionAnswered(item, answers));
     if (firstMissing >= 0) {
       setIndex(firstMissing);
+      setMissingAnswerIds(new Set(missingIdsForQuestion(questions[firstMissing], answers)));
       setMessage('还有题目没完成，先补完这一题。');
       return;
     }
@@ -783,7 +802,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     const explanationCount = wrongRecords.filter((record) => record.explanationHtml).length;
     return <div className="practice-layout">
     <div className="practice-result">
-      {saveWarning && <div className="message-banner warning" style={{ marginBottom: 'var(--space-4)' }}>{saveWarning}</div>}
+      {saveWarning && <div className="message-banner warning practice-save-warning">{saveWarning}</div>}
       <div className="result-emoji">{summary.accuracy >= 90 ? '🌟' : summary.accuracy >= 70 ? '👍' : '💪'}</div>
       <h1>{summary.accuracy >= 90 ? '太棒啦！' : '完成练习啦！'}</h1>
       <p>答对 {summary.correct} / {summary.total}，正确率 {summary.accuracy}%</p>
@@ -840,7 +859,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
           {nextGroupId && <em className="practice-source-pill">完成后可继续同类题</em>}
         </div>}
         <span className="practice-status">第 {questions.length ? index + 1 : 0} / {questions.length} 题 · 已完成 {answeredCount} 题 · 用时 {formatDuration(Math.floor((now - startedAt) / 1000))}</span>
-        <i className="practice-progress-track"><em className="practice-progress-fill" style={{ width: `${progress}%` }} /></i>
+        <i className="practice-progress-track" style={progressStyle}><em className="practice-progress-fill" /></i>
       </div>
     </div>
 
@@ -862,10 +881,10 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
             </div>
           </div>
           <PracticeQuestionMaterial item={current} />
-          <CurrentQuestion item={current} answers={answers} setAnswer={setAnswer} />
-          <div className={`practice-answer-hint ${currentAnswered ? 'done' : ''}`}>
+          <CurrentQuestion item={current} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} />
+          <div className={`practice-answer-hint ${currentAnswered ? 'done' : ''} ${currentHasMissing ? 'missing' : ''}`}>
             <b>{currentAnswered ? '这一题完成啦' : '先完成这一题'}</b>
-            <span>{currentAnswered ? (index >= questions.length - 1 ? '可以提交练习，看一看星星奖励。' : '可以点“下一题”继续。') : '填写答案后，下面的按钮会带你去下一步。'}</span>
+            <span>{currentHasMissing ? '橙色标记的位置还没有填。' : currentAnswered ? (index >= questions.length - 1 ? '可以提交练习，看一看星星奖励。' : '可以点“下一题”继续。') : '填写答案后，下面的按钮会带你去下一步。'}</span>
           </div>
         </> : <p className="tip">这套练习还没有题目。</p>}
       </section>
@@ -877,7 +896,10 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
 
     <footer className="practice-bottombar">
       <button className="btn btn-secondary" disabled={index <= 0} onClick={() => { setDraftOpen(false); setIndex((value) => Math.max(0, value - 1)); }}>上一题</button>
-      <div className="practice-dots">{questions.map((item, dotIndex) => <button key={`${item.itemId}-${item.questionIndex}`} className={`practice-dot ${dotIndex === index ? 'active' : ''} ${questionAnswered(item, answers) ? 'done' : ''}`} onClick={() => { setDraftOpen(false); setIndex(dotIndex); }}>{dotIndex + 1}</button>)}</div>
+      <div className="practice-dots">{questions.map((item, dotIndex) => {
+        const hasMissing = missingIdsForQuestion(item, answers).some((id) => missingAnswerIds.has(id));
+        return <button key={`${item.itemId}-${item.questionIndex}`} className={`practice-dot ${dotIndex === index ? 'active' : ''} ${questionAnswered(item, answers) ? 'done' : ''} ${hasMissing ? 'missing' : ''}`} onClick={() => { setDraftOpen(false); setIndex(dotIndex); }}>{dotIndex + 1}</button>;
+      })}</div>
       {index >= questions.length - 1 ? <button className="btn btn-primary" onClick={finish} disabled={loading || submitting || !questions.length}>{submitting ? '提交中...' : '完成练习'}</button> : <button className="btn btn-primary" onClick={next} disabled={loading}>下一题</button>}
     </footer>
   </div>;

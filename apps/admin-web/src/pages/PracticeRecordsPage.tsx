@@ -94,14 +94,14 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
   return (
     <div className="practice-records-page animate-fadeIn">
       {/* 头部区域 */}
-      <header className="page-header" style={{ marginBottom: 'var(--space-5)' }}>
+      <header className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">{paperId ? '试卷练习记录' : '全部练习记录'}</h1>
           <p className="page-subtitle">
             {paperId ? '按这套试卷的每一次提交进行汇总，支持展开查看每一道题的作答明细。' : '汇总所有试卷练习和错题重练的记录，方便追踪孩子的练习表现与进步轨迹。'}
           </p>
         </div>
-        <div className="page-actions" style={{ gap: 'var(--space-2)' }}>
+        <div className="page-actions">
           <button className="btn btn-secondary btn-sm" onClick={onBack}>
             {paperId ? '返回试卷管理' : '返回上一页'}
           </button>
@@ -123,10 +123,10 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
       </header>
 
       {/* 消息提示 */}
-      {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
+      {message && <div className="message-banner success page-message">{message}</div>}
 
       {/* 练习记录统计网格 */}
-      <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-1" style={{ marginBottom: 'var(--space-5)' }}>
+      <div className="stat-grid stat-grid-auto page-stat-grid animate-fadeInUp stagger-1">
         <div className="stat-card"><span className="stat-value">{summary.attempts}</span><span className="stat-label">提交次数</span></div>
         <div className="stat-card"><span className="stat-value">{summary.total}</span><span className="stat-label">累计题次</span></div>
         <div className="stat-card"><span className="stat-value success">{summary.correct}</span><span className="stat-label">答对题数</span></div>
@@ -135,84 +135,63 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
         <div className="stat-card"><span className="stat-value orange">{formatDuration(summary.duration)}</span><span className="stat-label">练习累计用时</span></div>
       </div>
 
-      <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, margin: '0 0 var(--space-4)', color: 'var(--text-primary)' }}>
+      <h2 className="review-section-title">
         {wrongOnly ? '⚠️ 有错题的提交记录' : '📝 练习提交历史'}
       </h2>
 
       {/* 提交卡片流 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="animate-fadeInUp stagger-2">
+      <div className="review-card-list animate-fadeInUp stagger-2">
         {visibleAttempts.map((attempt) => {
           const isBad = Number(attempt.wrongCount || 0) > 0;
           const expanded = expandedAttemptId === String(attempt.id);
           const details = attemptDetails[String(attempt.id)]?.answers || [];
           return (
             <div 
-              className="card card-hover" 
-              style={{ 
-                borderLeft: isBad ? '5px solid var(--color-danger)' : '5px solid var(--color-success)',
-                background: isBad ? 'linear-gradient(180deg, var(--bg-card) 0%, rgba(244, 63, 94, 0.01) 100%)' : 'linear-gradient(180deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.01) 100%)',
-                padding: 'var(--space-5)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-                textAlign: 'left'
-              }} 
+              className={`card card-hover review-card ${isBad ? 'is-wrong' : 'is-correct'}`} 
               key={attempt.id}
             >
               {/* 卡片头部 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <div className="review-card-head">
+                <div className="review-card-title-block">
+                  <h3 className="review-card-title">
                     {attempt.paper?.title || `试卷 ${attempt.paperId}`}
                   </h3>
-                  <small style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 500 }}>
-                    <span className="badge badge-muted" style={{ marginRight: '6px' }}>{sourceLabel(attempt.source)}</span>
-                    学生：<b style={{ color: 'var(--text-primary)' }}>{attempt.student?.name || attempt.studentId}</b>
-                    <span style={{ margin: '0 6px', color: 'var(--border-default)' }}>|</span>
-                    提交时间：{attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : '-'}
+                  <small className="review-card-subtitle">
+                    <span className="badge badge-muted">{sourceLabel(attempt.source)}</span>
+                    <span>学生：<b>{attempt.student?.name || attempt.studentId}</b></span>
+                    <span>提交时间：{attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : '-'}</span>
                   </small>
                 </div>
-                
-                <span className={`badge badge-lg ${isBad ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: 'var(--text-lg)', padding: '6px 14px' }}>
+                 
+                <span className={`badge badge-lg review-status-badge ${isBad ? 'badge-danger' : 'badge-success'}`}>
                   {Number(attempt.accuracy || 0)}% 正确率
                 </span>
               </div>
 
               {/* 卡片元数据表格 */}
-              <div 
-                style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(4, 1fr)', 
-                  gap: 'var(--space-3)', 
-                  padding: 'var(--space-3) var(--space-4)', 
-                  background: 'var(--slate-50)', 
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border-light)'
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>答对题数 / 总题数</span>
-                  <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{attempt.correctCount} / {attempt.totalCount} 道</b>
+              <div className="review-meta-grid review-meta-grid-four">
+                <div className="review-meta-item">
+                  <span>答对题数 / 总题数</span>
+                  <b>{attempt.correctCount} / {attempt.totalCount} 道</b>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>错题数目</span>
-                  <b style={{ fontSize: 'var(--text-base)', color: isBad ? 'var(--color-danger)' : 'var(--text-primary)' }}>{attempt.wrongCount} 道</b>
+                <div className="review-meta-item">
+                  <span>错题数目</span>
+                  <b className={isBad ? 'danger' : undefined}>{attempt.wrongCount} 道</b>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>练习得分</span>
-                  <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{attempt.score} / {attempt.maxScore} 分</b>
+                <div className="review-meta-item">
+                  <span>练习得分</span>
+                  <b>{attempt.score} / {attempt.maxScore} 分</b>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>练习耗时</span>
-                  <b style={{ fontSize: 'var(--text-base)', color: 'var(--color-orange)' }}>{formatDuration(attempt.durationSeconds)}</b>
+                <div className="review-meta-item">
+                  <span>练习耗时</span>
+                  <b className="orange">{formatDuration(attempt.durationSeconds)}</b>
                 </div>
               </div>
 
               {/* 展开/折叠按钮 */}
-              <div>
+              <div className="review-card-actions">
                 <button 
                   className={`btn btn-sm ${expanded ? 'btn-secondary' : 'btn-soft'}`} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   onClick={() => void toggleAttempt(String(attempt.id))}
                 >
                   {expanded ? '▲ 收起作答明细' : '▼ 展开单题答题明细'}
@@ -221,81 +200,45 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
 
               {/* 展开的单题详情区块 */}
               {expanded && (
-                <div 
-                  style={{ 
-                    borderTop: '1px solid var(--border-light)', 
-                    paddingTop: 'var(--space-4)', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: 'var(--space-3)' 
-                  }}
-                >
+                <div className="attempt-detail-panel">
                   {detailLoadingId === String(attempt.id) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '20px 0', color: 'var(--text-muted)', justifyContent: 'center' }}>
-                      <span className="btn-loading" style={{ color: 'var(--color-primary)' }} />
+                    <div className="attempt-detail-loading">
+                      <span className="btn-loading" />
                       正在加载本次练习详情...
                     </div>
                   )}
-                  
+                   
                   {details.map((record: any) => (
                     <div 
                       key={record.id} 
-                      style={{ 
-                        border: '1px solid var(--border-default)', 
-                        borderRadius: 'var(--radius-lg)', 
-                        background: 'var(--bg-card)', 
-                        overflow: 'hidden' 
-                      }}
+                      className="attempt-question-card"
                     >
                       {/* 题目头部 */}
-                      <div 
-                        style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center', 
-                          padding: 'var(--space-3) var(--space-4)', 
-                          background: record.isCorrect ? 'rgba(16, 185, 129, 0.05)' : 'rgba(244, 63, 94, 0.05)',
-                          borderBottom: '1px solid var(--border-light)'
-                        }}
-                      >
-                        <b style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '16px' }}>{record.isCorrect ? '✅' : '❌'}</span>
+                      <div className={`attempt-question-head ${record.isCorrect ? 'is-correct' : 'is-wrong'}`}>
+                        <b>
+                          <span>{record.isCorrect ? '✅' : '❌'}</span>
                           {record.question?.stem || `题目 ${record.questionId}`}
                         </b>
                         <span className={`badge ${record.isCorrect ? 'badge-success' : 'badge-danger'}`}>
                           {record.isCorrect ? '本题答对' : '本题答错'}
                         </span>
                       </div>
-                      
+                       
                       {/* 输入空（Slot）作答表格行 */}
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div className="review-detail-table is-flat">
                         {(record.details || []).map((detail: any) => (
                           <div 
                             key={detail.id} 
-                            style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: '120px 1.5fr 1.5fr 60px', 
-                              gap: 'var(--space-3)', 
-                              alignItems: 'center', 
-                              padding: 'var(--space-2) var(--space-4)', 
-                              borderBottom: '1px solid var(--border-light)',
-                              fontSize: 'var(--text-sm)'
-                            }}
+                            className={`review-detail-row ${detail.isCorrect ? 'is-correct' : 'is-wrong'}`}
                           >
-                            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>填空位: {detail.slotKey}</span>
-                            <span style={{ color: detail.isCorrect ? 'var(--text-primary)' : 'var(--rose-600)', textDecoration: detail.isCorrect ? 'none' : 'line-through' }}>
+                            <span className="review-detail-slot">填空位: {detail.slotKey}</span>
+                            <span className="review-detail-answer student">
                               学生答案：<b>{formatValue(detail.studentValue)}</b>
                             </span>
-                            <span style={{ color: 'var(--emerald-600)' }}>
+                            <span className="review-detail-answer correct">
                               正确答案：<b>{formatValue(detail.correctValue)}</b>
                             </span>
-                            <span 
-                              style={{ 
-                                fontWeight: 800, 
-                                textAlign: 'right', 
-                                color: detail.isCorrect ? 'var(--color-success)' : 'var(--color-danger)' 
-                              }}
-                            >
+                            <span className="review-detail-status">
                               {detail.isCorrect ? '正确' : '错误'}
                             </span>
                           </div>
@@ -303,7 +246,7 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
                         
                         {/* 无小空 */}
                         {!(record.details || []).length && (
-                          <div style={{ padding: 'var(--space-3) var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                          <div className="review-detail-empty">
                             本题型直接匹配答案正误，暂无更深空位填报。
                           </div>
                         )}
@@ -311,7 +254,7 @@ export function PracticeRecordsPage({ paperId, onBack, onPreview }: Props) {
                     </div>
                   ))}
                   
-                  {!details.length && <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', margin: '14px 0' }}>暂无单题作答细节明细。</p>}
+                  {!details.length && <p className="attempt-detail-empty">暂无单题作答细节明细。</p>}
                 </div>
               )}
             </div>

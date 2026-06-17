@@ -80,6 +80,11 @@ const TXT = {
   noWrongGreat: '没有错题，保持住',
   minutes: '分钟',
   tapToStart: '点这里开始',
+  overview: '学习概览',
+  practicedPapers: '已练套数',
+  recentRecords: '最近记录',
+  keepGoing: '继续挑战新题',
+  switchStudent: '切换学生',
   home: '\u9996\u9875',
   practice: '\u7ec3\u4e60',
   wrong: '\u9519\u9898',
@@ -204,6 +209,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
     const correct = list.reduce((sum, item: any) => sum + Number(item.correct || 0), 0);
     return { total, correct, accuracy: total ? Math.round((correct / total) * 100) : 0 };
   }, [statsMap]);
+  const practicedPaperCount = useMemo(() => Object.values(statsMap).filter((item: any) => Number(item.total || 0) > 0).length, [statsMap]);
 
 
   const typeLabels: Record<string, string> = {
@@ -275,7 +281,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
     </header>
 
     <main className="kid-content">
-      {homeMessage && <div className="message-banner info" style={{ marginBottom: 'var(--space-4)' }}>{homeMessage}</div>}
+      {homeMessage && <div className="message-banner info kid-message">{homeMessage}</div>}
       {activeTab === 'home' && <div className="kid-home-grid">
         <section className="kid-hero-card animate-fadeInUp">
           <span className="kid-hero-tag">{TXT.todayRecommend}</span>
@@ -284,7 +290,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <div className="kid-hero-stats">
             <div className="kid-hero-stat"><b>{rewardState.stars}</b><small>{TXT.stars}</small></div>
             <div className="kid-hero-stat"><b>{rewardState.streakDays}</b><small>{TXT.streak}</small></div>
-            <div className="kid-hero-stat"><b>{totalStats.accuracy || '-'}</b><small>{TXT.accuracy}</small></div>
+            <div className="kid-hero-stat"><b>{totalStats.total ? `${totalStats.accuracy}%` : '-'}</b><small>{TXT.accuracy}</small></div>
           </div>
           {recommended ? <button className="kid-hero-action" onClick={() => onStartPaper(String(recommended.id))}>{TXT.startToday}</button> : <button className="kid-hero-action" disabled>{TXT.none}</button>}
         </section>
@@ -305,13 +311,21 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
             <button className="kid-plan-item warning" onClick={() => wrongAnswers.length ? onRetryWrong() : setActiveTab('wrong')}>
               <span>2</span>
               <b>{wrongAnswers.length ? TXT.clearWrong : TXT.noWrongGreat}</b>
-              <small>{wrongAnswers.length ? `${wrongAnswers.length} ${TXT.items}${TXT.wrong}` : '可以继续挑战新题'}</small>
+              <small>{wrongAnswers.length ? `${wrongAnswers.length} ${TXT.items}${TXT.wrong}` : TXT.keepGoing}</small>
             </button>
             {entertainmentSettings.enabled && <button className="kid-plan-item soft" onClick={onOpenGames}>
               <span>3</span>
               <b>{TXT.relaxAfterStudy}</b>
               <small>{entertainmentMinutes} {TXT.minutes}</small>
             </button>}
+          </div>
+        </section>
+        <section className="kid-overview-panel animate-fadeInUp stagger-5">
+          <div className="kid-section-header compact"><div><span className="kid-section-tag">{TXT.overview}</span><h2 className="kid-section-title">{TXT.recentRecords}</h2></div></div>
+          <div className="kid-overview-grid">
+            <button onClick={() => setActiveTab('practice')}><b>{practicedPaperCount}</b><span>{TXT.practicedPapers}</span></button>
+            <button onClick={() => setActiveTab('wrong')}><b>{wrongAnswers.length}</b><span>{TXT.needReview}</span></button>
+            <button onClick={() => setActiveTab('mine')}><b>{recentAttempts.length}</b><span>{TXT.records}</span></button>
           </div>
         </section>
       </div>}
@@ -323,7 +337,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <button className={practiceMode === 'question' ? 'active' : ''} onClick={() => setPracticeMode('question')}>{'\u9898\u76ee\u7ec3\u4e60'}</button>
         </div>
         {practiceMode === 'paper' ? <div className="card-grid card-grid-auto">{papers.map(renderPaperCard)}{!papers.length && <div className="empty-state"><span className="empty-state-icon">📄</span><p className="empty-state-title">{TXT.noPaper}</p></div>}</div> : <>
-          <div className="stat-grid stat-grid-3" style={{ marginBottom: '14px' }}>
+          <div className="stat-grid stat-grid-3 kid-question-stats">
             <div className="stat-card"><span className="stat-value">{questionGroups.length}</span><span className="stat-label">{'\u9898\u5e93\u9898\u7ec4'}</span></div>
             <div className="stat-card"><span className="stat-value accent">{filteredQuestionGroups.length}</span><span className="stat-label">{'\u7b5b\u9009\u7ed3\u679c'}</span></div>
             <div className="stat-card"><span className="stat-value">{gradeOptions.length || '-'}</span><span className="stat-label">{'\u5e74\u7ea7'}</span></div>
@@ -357,7 +371,7 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
               ['SINGLE', '\u5355\u9898', questionTypeCounts.SINGLE],
             ] as Array<[string, string, number]>).map(([key, label, count]) => <button key={key} className={typeFilter === key ? 'active' : ''} onClick={() => setTypeFilter(key)}><b>{label}</b><span>{count}</span></button>)}
           </div>
-          <div className="filter-bar" style={{ gridTemplateColumns: '150px 150px 150px 1fr' }}>
+          <div className="filter-bar kid-question-filter-bar">
             <select value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)}><option value="ALL">{'\u5168\u90e8\u79d1\u76ee'}</option><option value={'\u6570\u5b66'}>{'\u6570\u5b66'}</option><option value={'\u8bed\u6587'}>{'\u8bed\u6587'}</option><option value={'\u82f1\u8bed'}>{'\u82f1\u8bed'}</option><option value={'\u5176\u4ed6'}>{'\u5176\u4ed6'}</option></select>
             <select value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)}><option value="">{'\u5168\u90e8\u5e74\u7ea7'}</option>{gradeOptions.map((grade) => <option key={grade} value={grade}>{grade}</option>)}</select>
             <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="ALL">{'\u5168\u90e8\u9898\u578b'}</option><option value="CALCULATION">{'\u53e3\u7b97\u9898\u7ec4'}</option><option value="COMPOSITE">{'\u590d\u5408\u9898'}</option><option value="SINGLE">{'\u5355\u9898'}</option></select>
@@ -375,23 +389,23 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
       </section>}
 
       {activeTab === 'wrong' && <section className="kid-panel animate-fadeInUp">
-        <div className="card card-warning" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', padding: '24px', borderRadius: 'var(--radius-2xl)', marginBottom: '18px' }}>
-          <div><span className="badge badge-warning badge-lg">{TXT.wrongReview}</span><h2 style={{ fontSize: 'var(--text-3xl)', margin: '6px 0' }}>{TXT.wrongRemainPrefix}{wrongAnswers.length}{TXT.wrongRemainSuffix}</h2><p style={{ margin: 0 }}>{TXT.wrongTip}</p></div>
+        <div className="kid-wrong-hero">
+          <div><span className="badge badge-warning badge-lg">{TXT.wrongReview}</span><h2>{TXT.wrongRemainPrefix}{wrongAnswers.length}{TXT.wrongRemainSuffix}</h2><p>{TXT.wrongTip}</p></div>
           <button className="btn btn-warning btn-lg" onClick={onRetryWrong} disabled={!wrongAnswers.length}>{TXT.startWrongRetry}</button>
         </div>
         <div className="kid-quick-grid"><button className="btn btn-soft btn-lg btn-block" onClick={onOpenWrongBook}>{TXT.openWrongBook}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.viewRecords}</button></div>
       </section>}
 
-      {activeTab === 'reward' && <section className="kid-panel animate-bounceIn" style={{ textAlign: 'center', display: 'grid', justifyItems: 'center', alignContent: 'center', gap: '16px' }}>
-        <div className="reward-planet" style={{ width: '120px', height: '120px' }}>{'\u2B50'}</div>
-        <h2 style={{ fontSize: 'var(--text-4xl)', color: 'var(--amber-600)', margin: 0 }}>{rewardState.stars} {TXT.stars}</h2>
-        <p style={{ fontSize: 'var(--text-lg)', color: 'var(--amber-600)', fontWeight: 800 }}>{TXT.continuousPractice} {rewardState.streakDays} {TXT.days}，{TXT.badgesGot} {rewardState.badges.length} {TXT.badges}</p>
-        <div className="kid-quick-grid" style={{ width: '100%', maxWidth: '400px' }}><button className="btn btn-accent btn-lg btn-block" onClick={onOpenRewards}>{TXT.rewardCenter}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenTaskCenter}>{TXT.goTask}</button></div>
+      {activeTab === 'reward' && <section className="kid-panel kid-reward-panel animate-bounceIn">
+        <div className="reward-planet kid-reward-planet">{'\u2B50'}</div>
+        <h2>{rewardState.stars} {TXT.stars}</h2>
+        <p>{TXT.continuousPractice} {rewardState.streakDays} {TXT.days}，{TXT.badgesGot} {rewardState.badges.length} {TXT.badges}</p>
+        <div className="kid-reward-actions"><button className="btn btn-accent btn-lg btn-block" onClick={onOpenRewards}>{TXT.rewardCenter}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenTaskCenter}>{TXT.goTask}</button></div>
       </section>}
 
-      {activeTab === 'mine' && <section className="kid-panel animate-fadeInUp" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="card" style={{ gridRow: 'span 2', display: 'grid', gap: '10px' }}>
-          <b style={{ fontSize: 'var(--text-xl)' }}>{TXT.myProfile}</b>
+      {activeTab === 'mine' && <section className="kid-panel kid-mine-grid animate-fadeInUp">
+        <div className="card kid-profile-card">
+          <b>{TXT.myProfile}</b>
           <input value={studentName} onChange={(event) => setStudentName(event.target.value)} placeholder={TXT.nickname} />
           <input value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder={TXT.avatarUrl} />
           <button className="btn btn-primary" onClick={saveProfile}>{TXT.saveProfile}</button>
@@ -401,11 +415,11 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <div className="stat-card"><span className="stat-value">{totalStats.accuracy || '-'}</span><span className="stat-label">{TXT.accuracy}</span></div>
           <div className="stat-card"><span className="stat-value">{recentAttempts.length}</span><span className="stat-label">{TXT.records}</span></div>
         </div>
-        <div className="card" style={{ display: 'grid', gap: '10px' }}>
-          {recentAttempts.slice(0, 3).map((item) => <div className="card card-flat card-compact" key={item.id}><b>{item.paper?.title || TXT.practice}</b><span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{shortDate(item.submittedAt)} {'\u00b7'} {item.isCorrect ? TXT.correct : TXT.needReview}</span></div>)}
-          {!recentAttempts.length && <div className="card card-flat card-compact"><b>{TXT.noRecords}</b><span style={{ color: 'var(--text-muted)' }}>{TXT.noRecordsTip}</span></div>}
+        <div className="card kid-recent-card">
+          {recentAttempts.slice(0, 3).map((item) => <div className="card card-flat card-compact kid-recent-item" key={item.id}><b>{item.paper?.title || TXT.practice}</b><span>{shortDate(item.submittedAt)} {'\u00b7'} {item.isCorrect ? TXT.correct : TXT.needReview}</span></div>)}
+          {!recentAttempts.length && <div className="card card-flat card-compact kid-recent-item"><b>{TXT.noRecords}</b><span>{TXT.noRecordsTip}</span></div>}
         </div>
-        <div className="kid-quick-grid" style={{ gridColumn: '1 / -1' }}><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button>{entertainmentSettings.enabled && <button className="btn btn-soft btn-lg btn-block" onClick={onOpenGames}>{TXT.games}</button>}<button className="btn btn-secondary btn-lg btn-block" onClick={onSwitchStudent}>切换学生</button></div>
+        <div className="kid-quick-grid kid-mine-actions"><button className="btn btn-soft btn-lg btn-block" onClick={onOpenReport}>{TXT.report}</button><button className="btn btn-soft btn-lg btn-block" onClick={onOpenRecords}>{TXT.allRecords}</button>{entertainmentSettings.enabled && <button className="btn btn-soft btn-lg btn-block" onClick={onOpenGames}>{TXT.games}</button>}<button className="btn btn-secondary btn-lg btn-block" onClick={onSwitchStudent}>{TXT.switchStudent}</button></div>
       </section>}
     </main>
 

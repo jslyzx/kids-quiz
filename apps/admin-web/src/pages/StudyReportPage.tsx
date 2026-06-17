@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useLocation } from 'react-router-dom';
 import { listPapers, listStudentPapers } from '../api/papers';
 import { getStudentWrongStats, getWrongStats, listPaperStats, listPracticeAttempts, listRecentAttempts, listStudentPaperStats, listStudentPracticeAttempts, listStudentRecentAttempts, listStudentTagStats, listStudentWrongAnswers, listTagStats, listWrongAnswers } from '../api/submissions';
@@ -138,7 +138,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
   return (
     <div className="study-report-page animate-fadeIn">
       {/* 头部区域 */}
-      <header className="page-header" style={{ marginBottom: 'var(--space-5)' }}>
+      <header className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">学习报告</h1>
           <p className="page-subtitle">汇总最近练习表现，分析各知识点和试卷掌握情况，助力孩子精准提升。</p>
@@ -154,7 +154,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
       </header>
 
       {/* 消息提示 */}
-      {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
+      {message && <div className="message-banner success page-message">{message}</div>}
 
       <section className="reportPrintMeta">
         <span><b>报告对象</b>{reportStudentLabel}</span>
@@ -163,7 +163,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
       </section>
 
       {/* 总体数据大卡片统计网格 */}
-      <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-1" style={{ marginBottom: 'var(--space-5)' }}>
+      <div className="stat-grid stat-grid-auto page-stat-grid animate-fadeInUp stagger-1">
         <div className="stat-card"><span className="stat-value">{summary.total}</span><span className="stat-label">累计题次</span></div>
         <div className="stat-card"><span className="stat-value accent">{summary.accuracy}%</span><span className="stat-label">总体正确率</span></div>
         <div className="stat-card"><span className="stat-value danger">{summary.wrong}</span><span className="stat-label">当前错题</span></div>
@@ -173,78 +173,82 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
       </div>
 
       {/* 掌握洞察 */}
-      <div className="report-insight-grid animate-fadeInUp stagger-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-        <div className="report-insight good" style={{ padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)' }}>
+      <div className="report-insight-grid animate-fadeInUp stagger-2">
+        <div className="report-insight good">
           <span className="badge badge-success">掌握最好</span>
-          <b style={{ fontSize: 'var(--text-lg)', margin: '10px 0 4px', display: 'block', color: 'var(--text-primary)' }}>{strongest?.paper.title || '暂无数据'}</b>
-          <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
+          <b>{strongest?.paper.title || '暂无数据'}</b>
+          <p>
             {strongest ? `正确率已达到 ${strongest.accuracy}%` : '孩子完成一次练习后会在此生成智能分析。'}
           </p>
         </div>
-        <div className="report-insight warn" style={{ padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)' }}>
+        <div className="report-insight warn">
           <span className="badge badge-warning">优先巩固</span>
-          <b style={{ fontSize: 'var(--text-lg)', margin: '10px 0 4px', display: 'block', color: 'var(--text-primary)' }}>{weakest?.paper.title || '暂无数据'}</b>
-          <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
+          <b>{weakest?.paper.title || '暂无数据'}</b>
+          <p>
             {weakest ? `正确率仅 ${weakest.accuracy}%，建议加入今日重点计划。` : '暂无明显薄弱的试卷，继续保持！'}
           </p>
         </div>
       </div>
 
-      <div className="message-banner info animate-fadeInUp stagger-2" style={{ marginBottom: 'var(--space-5)' }}>
+      <div className="message-banner info study-advice-banner animate-fadeInUp stagger-2">
         <b>今日建议：</b>
         <span>{dailyAdvice}</span>
         {summary.wrong > 0 ? <button className="btn btn-primary btn-sm" onClick={onWrongBook}>去错题本</button> : <button className="btn btn-primary btn-sm" onClick={onTaskCenter}>打开今日任务</button>}
       </div>
 
       {/* 知识点掌握情况 */}
-      <div className="tag-stats-grid animate-fadeInUp stagger-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
+      <div className="tag-stats-grid animate-fadeInUp stagger-3">
         {/* 薄弱点 */}
-        <div className="tag-stats-box warn" style={{ padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)' }}>
-          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: '0 0 var(--space-3)' }}>⚠️ 优先巩固薄弱项</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <div className="tag-stats-box warn">
+          <h3>⚠️ 优先巩固薄弱项</h3>
+          <div className="study-list">
             {weakTags.map((item) => (
-              <div className="tag-stat-row" key={item.tag} style={{ margin: 0, padding: 'var(--space-3)', border: '1px solid var(--border-default)', background: 'var(--bg-card)' }}>
+              <div className="tag-stat-row" key={item.tag}>
                 <b>{item.tag}</b>
-                <span className="stat-value danger" style={{ fontSize: 'var(--text-lg)' }}>{item.accuracy}%</span>
-                <small style={{ color: 'var(--text-secondary)' }}>{item.correct}/{item.total} 正确，待复习错题数：{item.wrong} 道</small>
+                <span className="stat-value danger">{item.accuracy}%</span>
+                <small>{item.correct}/{item.total} 正确，待复习错题数：{item.wrong} 道</small>
               </div>
             ))}
-            {!weakTags.length && <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', margin: '20px 0' }}>暂无知识点分析，录入题目标签后会逐步形成。</p>}
+            {!weakTags.length && <p className="study-empty-note">暂无知识点分析，录入题目标签后会逐步形成。</p>}
           </div>
         </div>
 
         {/* 优势点 */}
-        <div className="tag-stats-box good" style={{ padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)' }}>
-          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: '0 0 var(--space-3)' }}>🎉 掌握较好优势项</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <div className="tag-stats-box good">
+          <h3>🎉 掌握较好优势项</h3>
+          <div className="study-list">
             {strongTags.map((item) => (
-              <div className="tag-stat-row" key={item.tag} style={{ margin: 0, padding: 'var(--space-3)', border: '1px solid var(--border-default)', background: 'var(--bg-card)' }}>
+              <div className="tag-stat-row" key={item.tag}>
                 <b>{item.tag}</b>
-                <span className="stat-value success" style={{ fontSize: 'var(--text-lg)' }}>{item.accuracy}%</span>
-                <small style={{ color: 'var(--text-secondary)' }}>{item.correct}/{item.total} 正确，涵盖高频练习 {item.questionCount} 道题</small>
+                <span className="stat-value success">{item.accuracy}%</span>
+                <small>{item.correct}/{item.total} 正确，涵盖高频练习 {item.questionCount} 道题</small>
               </div>
             ))}
-            {!strongTags.length && <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center', margin: '20px 0' }}>练习同类标签超过 3 次且正确率优秀后在此展示。</p>}
+            {!strongTags.length && <p className="study-empty-note">练习同类标签超过 3 次且正确率优秀后在此展示。</p>}
           </div>
         </div>
       </div>
 
       {/* 柱状图活跃分析 */}
-      <div className="card animate-fadeInUp stagger-4" style={{ marginBottom: 'var(--space-5)', padding: 'var(--space-5)' }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: '0 0 var(--space-4)', color: 'var(--text-primary)' }}>📈 最近 7 天练习活跃趋势</h3>
-        <div className="week-report" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', padding: 'var(--space-2)' }}>
+      <div className="card study-section-card animate-fadeInUp stagger-4">
+        <h3 className="study-section-title">📈 最近 7 天练习活跃趋势</h3>
+        <div className="week-report">
           {last7Days.map((item) => {
             const rate = item.total ? Math.round((item.correct / item.total) * 100) : 0;
+            const barStyle = {
+              '--day-rate': `${Math.max(6, rate)}%`,
+              '--day-fill': rate >= 90 ? 'linear-gradient(180deg, var(--emerald-400), var(--emerald-500))' : 'linear-gradient(180deg, var(--blue-400), var(--violet-500))',
+            } as CSSProperties;
             return (
-              <div className="day-report" key={item.date.toISOString()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                <b style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{formatDate(item.date)}</b>
-                <div className="day-bar" style={{ height: '120px', width: '20px', background: 'var(--slate-100)', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
-                  <i style={{ height: `${Math.max(6, rate)}%`, width: '100%', background: rate >= 90 ? 'linear-gradient(180deg, var(--emerald-400), var(--emerald-500))' : 'linear-gradient(180deg, var(--blue-400), var(--violet-500))', borderRadius: 'var(--radius-full)' }} />
+              <div className="day-report" key={item.date.toISOString()}>
+                <b>{formatDate(item.date)}</b>
+                <div className="day-bar" style={barStyle}>
+                  <i />
                 </div>
-                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 800, color: item.total ? 'var(--color-primary)' : 'var(--text-muted)' }}>
+                <span className={item.total ? undefined : 'muted'}>
                   {item.total ? `${rate}%` : '未练'}
                 </span>
-                <small style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{item.total} 题次</small>
+                <small>{item.total} 题次</small>
               </div>
             );
           })}
@@ -252,46 +256,36 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
       </div>
 
       {/* 试卷掌握明细 */}
-      <div className="card animate-fadeInUp stagger-5" style={{ marginBottom: 'var(--space-5)', padding: 'var(--space-5)' }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: '0 0 var(--space-4)', color: 'var(--text-primary)' }}>📄 试卷掌握度列表</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      <div className="card study-section-card animate-fadeInUp stagger-5">
+        <h3 className="study-section-title">📄 试卷掌握度列表</h3>
+        <div className="study-list">
           {paperRows.map(({ paper, stat, accuracy, status }) => {
             const isOk = status === '已达标';
             const isWarn = status === '需巩固';
             return (
               <div 
                 key={paper.id} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: 'var(--space-3) var(--space-4)', 
-                  background: isOk ? 'var(--emerald-50)' : isWarn ? 'var(--orange-50)' : 'var(--bg-muted)', 
-                  borderRadius: 'var(--radius-lg)',
-                  borderLeft: isOk ? '4px solid var(--color-success)' : isWarn ? '4px solid var(--color-orange)' : '4px solid var(--slate-300)',
-                  transition: 'all var(--transition-normal)'
-                }}
+                className={`study-paper-row ${isOk ? 'is-ok' : isWarn ? 'is-warn' : 'is-idle'}`}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                  <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{paper.title}</b>
-                  <small style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{paper.description || '暂无说明'}</small>
+                <div className="study-paper-main">
+                  <b>{paper.title}</b>
+                  <small>{paper.description || '暂无说明'}</small>
                 </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)', marginRight: 'var(--space-4)' }}>
+                 
+                <div className="study-paper-stats">
                   <span className={`badge ${isOk ? 'badge-success' : isWarn ? 'badge-warning' : 'badge-muted'}`}>
                     {status}
                   </span>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, minWidth: '80px', color: 'var(--text-secondary)' }}>
+                  <span>
                     {stat ? `正确率 ${accuracy}%` : '正确率 -'}
                   </span>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, minWidth: '70px', color: 'var(--text-secondary)' }}>
+                  <span>
                     {stat ? `错题 ${stat.wrong} 道` : '未开始'}
                   </span>
                 </div>
-                
+                 
                 <button 
                   className="btn btn-soft btn-sm" 
-                  style={{ padding: '4px 10px' }}
                   onClick={() => onStartPaper(String(paper.id))}
                 >
                   {stat ? '再次巩固' : '开始练习'}
@@ -300,7 +294,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
             );
           })}
           {!paperRows.length && (
-            <div className="empty-state" style={{ padding: 'var(--space-6) 0' }}>
+            <div className="empty-state study-empty-state">
               <span className="empty-state-icon">📄</span>
               <p className="empty-state-title">暂无试卷</p>
               <p className="empty-state-desc">请前往家长后台创建试卷，给孩子安排今日练习。</p>
@@ -310,20 +304,20 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
       </div>
 
       {/* 最近记录 */}
-      <div className="card animate-fadeInUp stagger-6" style={{ padding: 'var(--space-5)' }}>
-        <div className="card-header" style={{ paddingBottom: 'var(--space-2)', borderBottom: '1px solid var(--border-light)', marginBottom: 'var(--space-4)' }}>
-          <h3 className="card-title" style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--text-primary)' }}>🕐 孩子最近做题记录</h3>
+      <div className="card study-section-card animate-fadeInUp stagger-6">
+        <div className="card-header study-card-header">
+          <h3 className="card-title">🕐 孩子最近做题记录</h3>
           <button className="btn btn-ghost btn-sm" onClick={onOpenRecords}>查看全部记录</button>
         </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+         
+        <div className="study-list">
           {recentAttempts.slice(0, 8).map((record) => (
-            <div key={record.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2) var(--space-3)', background: 'var(--bg-muted)', borderRadius: 'var(--radius-lg)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, marginRight: 'var(--space-3)' }}>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }} title={record.question?.stem || `题目 ${record.questionId}`}>
+            <div className="study-recent-row" key={record.id}>
+              <div className="study-recent-main">
+                <b title={record.question?.stem || `题目 ${record.questionId}`}>
                   {record.question?.stem || `题目 ${record.questionId}`}
                 </b>
-                <small style={{ color: 'var(--text-muted)' }}>
+                <small>
                   {sourceLabel(record.source)} / {record.paper?.title || `试卷 ${record.paperId}`} / {record.submittedAt ? new Date(record.submittedAt).toLocaleString() : '-'}
                 </small>
               </div>
@@ -332,7 +326,7 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
               </span>
             </div>
           ))}
-          {!recentAttempts.length && <p style={{ color: 'var(--text-muted)', textAlign: 'center', margin: '20px 0' }}>还没有任何练习记录。</p>}
+          {!recentAttempts.length && <p className="study-empty-note">还没有任何练习记录。</p>}
         </div>
       </div>
     </div>

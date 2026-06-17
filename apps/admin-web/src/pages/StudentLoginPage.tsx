@@ -56,6 +56,7 @@ export function StudentLoginPage() {
         <div className="loginBrand">
           <span>Kids Quiz</span>
           <b>孩子登录</b>
+          <small>选择自己的头像，进入今天的练习</small>
         </div>
 
         <label>
@@ -84,15 +85,17 @@ export function StudentLoginPage() {
                 <b>{student.name}</b>
                 <small>{[student.grade, student.pinEnabled ? '需要 PIN' : '免 PIN'].filter(Boolean).join(' · ')}</small>
               </span>
+              {String(student.id) === String(selectedId) && <em>已选择</em>}
             </button>
           ))}
           {!loading && !students.length && <p className="loginEmpty">没有可登录的学生</p>}
         </div>
 
         {selected?.pinEnabled && (
-          <label>
+          <label className="studentPinField">
             PIN
             <input value={pin} onChange={(event) => setPin(event.target.value)} type="password" inputMode="numeric" autoFocus />
+            <small>请输入家长设置的数字 PIN</small>
           </label>
         )}
 

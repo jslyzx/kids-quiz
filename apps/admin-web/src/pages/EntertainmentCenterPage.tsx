@@ -597,6 +597,7 @@ export function EntertainmentCenterPage({ onBack }: { onBack: () => void }) {
   const settingsLocked = !entertainmentEnabled || !allowedGames.length;
   const timeLocked = remainingSeconds <= 0;
   const locked = settingsLocked || timeLocked;
+  const sessionLabel = sessionSource === 'server' ? '已同步家长设置' : sessionSource === 'local' ? '使用本机设置' : '同步中';
 
   useEffect(() => {
     if (sessionSource !== 'server' || locked) return;
@@ -635,7 +636,11 @@ export function EntertainmentCenterPage({ onBack }: { onBack: () => void }) {
       <div>
         <span>娱乐中心</span>
         <h1>学习休息时间</h1>
-        <p>本次娱乐时间最多 30 分钟，到时会自动锁定。</p>
+        <p>完成学习后放松一下，到时会自动锁定。</p>
+        <div className="gameHeaderMeta">
+          <em>{sessionLabel}</em>
+          <em>{games.length} 个可玩项目</em>
+        </div>
       </div>
       <div className={locked ? 'gameTimer locked' : 'gameTimer'}>
         <b>{settingsLocked ? '未开启' : timeLocked ? '已结束' : formatLeft(remainingSeconds * 1000)}</b>
@@ -655,7 +660,9 @@ export function EntertainmentCenterPage({ onBack }: { onBack: () => void }) {
         {games.map((game) => <button key={game.key} className={active === game.key ? 'active' : ''} onClick={() => setActive(game.key)}>
           <b>{game.title}</b>
           <span>{game.desc}</span>
+          {active === game.key && <em>{locked ? '暂不可玩' : '正在玩'}</em>}
         </button>)}
+        {!games.length && <p className="gameMenuEmpty">暂无开放游戏</p>}
       </aside>
       {active === '2048' && <Game2048 locked={locked} />}
       {active === '24' && <Game24 locked={locked} />}

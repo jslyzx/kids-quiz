@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { listStudentPapers as listPapers } from '../api/papers';
+import type { CSSProperties } from 'react';
 import { listStudentPaperStats as listPaperStats, listStudentRecentAttempts as listRecentAttempts, listStudentTagStats as listTagStats, listStudentWrongAnswers as listWrongAnswers } from '../api/submissions';
 import { getChildTaskSettings as getTaskSettings } from '../api/student';
 import { readTaskPlanSettings, type TaskPlanSettings } from '../utils/taskPlan';
@@ -182,6 +183,9 @@ export function TaskCenterPage({ onHome, onStartPaper, onRetryWrong, onRetryTag,
   const reviewCount = tasks.filter((task) => task.kind === 'paper' && task.status === 'review').length;
   const newCount = tasks.filter((task) => task.kind === 'paper' && task.status === 'new').length;
   const completedTodayCount = tasks.filter((task) => task.completedToday).length;
+  const totalTodayCount = tasks.length || settings.dailyLimit || 1;
+  const progressPercent = Math.min(100, Math.round((completedTodayCount / totalTodayCount) * 100));
+  const progressStyle = { '--task-progress': `${progressPercent}%` } as CSSProperties;
 
   const startTask = (task: StudyTask) => {
     if (task.kind === 'wrong') onRetryWrong();
@@ -189,25 +193,37 @@ export function TaskCenterPage({ onHome, onStartPaper, onRetryWrong, onRetryTag,
     else onStartPaper(task.id);
   };
 
-  return <div className="app taskCenter">
-    <header>
-      <h1>Kids Quiz 今日任务</h1>
-      <p>按家长设置的规则自动安排：目标正确率 {settings.targetAccuracy}%，每天最多 {settings.dailyLimit} 项。</p>
+  return <div className="taskCenter">
+    <header className="taskCenterHeader">
+      <div>
+        <span className="taskCenterKicker">今日任务</span>
+        <h1>一步一步完成今天的练习</h1>
+        <p>目标正确率 {settings.targetAccuracy}%，每天最多 {settings.dailyLimit} 项。系统会优先安排错题、薄弱知识点和还没练过的内容。</p>
+      </div>
+      <div className="taskTodayProgress" style={progressStyle} aria-label={`今日完成 ${completedTodayCount} 项，共 ${totalTodayCount} 项`}>
+        <b>{completedTodayCount}<small>/{totalTodayCount}</small></b>
+        <span>今日完成</span>
+        <i><em /></i>
+      </div>
     </header>
-    <main className="singleMain">
-      <section className="panel">
-        <div className="toolbar">
+    <main className="taskCenterMain">
+      <section className="taskCenterPanel">
+        <div className="toolbar taskToolbar">
           <button onClick={onHome}>孩子首页</button>
           <button onClick={refresh}>{loading ? '加载中...' : '刷新任务'}</button>
           <button className="secondary" onClick={onOpenWrongBook}>查看错题本</button>
         </div>
-        {message && <p className="message">{message}</p>}
+        {message && <div className="message-banner info task-message">{message}</div>}
 
         <div className="taskHero">
           <div>
             <span className="taskBadge">下一步</span>
             <h2>{nextTask ? nextTask.title : '暂无任务'}</h2>
             <p>{nextTask ? taskReason(nextTask) : '先去家长后台新建一套试卷吧。'}</p>
+            {nextTask && <div className="taskHeroMeta">
+              <span>{statusLabel(nextTask)}</span>
+              <span>{nextTask.completedToday ? '今天已完成，可以再练一次' : '建议现在完成'}</span>
+            </div>}
           </div>
           {nextTask ? <button onClick={() => startTask(nextTask)}>开始当前任务</button> : <button disabled>暂无任务</button>}
         </div>
@@ -220,7 +236,10 @@ export function TaskCenterPage({ onHome, onStartPaper, onRetryWrong, onRetryTag,
           <div><b>{doneCount}</b><span>已达标</span></div>
         </div>
 
-        <h2>任务队列</h2>
+        <div className="taskListHeader">
+          <h2>任务队列</h2>
+          <span>{completedTodayCount} / {tasks.length || settings.dailyLimit} 今日完成</span>
+        </div>
         <div className="taskList">
           {tasks.map((task, index) => <div className={`taskCard ${task.completedToday ? 'completed' : task.kind === 'wrong' ? 'urgent' : task.kind === 'tag' ? 'review' : task.status}`} key={task.id}>
             <div className="taskIndex">{index + 1}</div>
@@ -240,7 +259,13 @@ export function TaskCenterPage({ onHome, onStartPaper, onRetryWrong, onRetryTag,
             </div>
             <button onClick={() => startTask(task)}>{task.completedToday ? '再做一次' : task.kind === 'wrong' ? '开始重练' : task.kind === 'tag' ? '专项重练' : task.status === 'done' ? '再练一次' : '开始练习'}</button>
           </div>)}
-          {!tasks.length && <p className="tip">暂无任务。请先到家长后台创建试卷并添加题目。</p>}
+          {!tasks.length && (
+            <div className="empty-state task-empty-state">
+              <span className="empty-state-icon">📌</span>
+              <p className="empty-state-title">暂无今日任务</p>
+              <p className="empty-state-desc">请先到家长后台创建试卷并添加题目。</p>
+            </div>
+          )}
         </div>
       </section>
     </main>

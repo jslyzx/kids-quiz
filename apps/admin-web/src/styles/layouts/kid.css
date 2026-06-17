@@ -84,6 +84,10 @@
   animation: fadeInUp 0.35s var(--ease-out-expo);
 }
 
+.kid-message {
+  margin-bottom: var(--space-4);
+}
+
 /* ---- 今日推荐卡 ---- */
 .kid-hero-card {
   background: linear-gradient(135deg, var(--blue-600), var(--violet-600));
@@ -351,6 +355,53 @@
   box-shadow: var(--shadow-sm);
 }
 
+.kid-overview-panel {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: var(--radius-2xl);
+  background: rgba(255, 255, 255, 0.86);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.kid-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.kid-overview-grid button {
+  min-height: 104px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  display: grid;
+  place-items: center;
+  gap: var(--space-1);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+  touch-action: manipulation;
+}
+
+.kid-overview-grid button:hover,
+.kid-overview-grid button:focus-visible {
+  border-color: var(--blue-300);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kid-overview-grid b {
+  font-size: var(--text-3xl);
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.kid-overview-grid span {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 900;
+}
+
 .kid-section-header.compact {
   margin-bottom: var(--space-3);
 }
@@ -417,6 +468,123 @@
 .kid-plan-item:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.kid-question-stats {
+  margin-bottom: var(--space-4);
+}
+
+.kid-question-filter-bar {
+  grid-template-columns: 150px 150px 150px 1fr;
+}
+
+.kid-wrong-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border: 1px solid var(--orange-200);
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(135deg, #fff7ed, #fff);
+  box-shadow: inset 5px 0 0 var(--orange-500), var(--shadow-sm);
+  margin-bottom: var(--space-5);
+}
+
+.kid-wrong-hero h2 {
+  font-size: var(--text-3xl);
+  margin: var(--space-2) 0;
+  line-height: 1.2;
+}
+
+.kid-wrong-hero p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.kid-wrong-hero .btn {
+  flex: none;
+  min-width: 180px;
+}
+
+.kid-reward-panel {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--space-4);
+}
+
+.kid-reward-planet {
+  width: 120px;
+  height: 120px;
+}
+
+.kid-reward-panel h2 {
+  font-size: var(--text-4xl);
+  color: var(--amber-600);
+  margin: 0;
+}
+
+.kid-reward-panel p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--amber-600);
+  font-size: var(--text-lg);
+  font-weight: 900;
+  line-height: 1.65;
+}
+
+.kid-reward-actions {
+  width: 100%;
+  max-width: 440px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.kid-mine-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--space-4);
+}
+
+.kid-profile-card {
+  grid-row: span 2;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.kid-profile-card > b {
+  font-size: var(--text-xl);
+}
+
+.kid-recent-card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.kid-recent-item b,
+.kid-recent-item span {
+  display: block;
+  min-width: 0;
+}
+
+.kid-recent-item b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kid-recent-item span {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.kid-mine-actions {
+  grid-column: 1 / -1;
 }
 
 /* ---- 2026 child UI polish ---- */
@@ -677,6 +845,32 @@
   .kid-plan-item {
     min-height: 88px;
   }
+
+  .kid-overview-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .kid-wrong-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .kid-wrong-hero .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .kid-mine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kid-profile-card {
+    grid-row: auto;
+  }
+
+  .kid-reward-actions {
+    max-width: none;
+  }
 }
 
 /* ---- 手机端/小屏特定适配断点 ---- */
@@ -700,6 +894,20 @@
 
   .kid-quick-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kid-hero-stats,
+  .kid-overview-grid,
+  .kid-reward-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .kid-hero-stats {
+    display: grid;
+  }
+
+  .kid-hero-stat {
+    min-width: 0;
   }
 
   .kid-bottom-tabs {

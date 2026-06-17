@@ -108,12 +108,12 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
   return (
     <div className="wrong-book-page animate-fadeIn">
       {/* 头部区域 */}
-      <header className="page-header" style={{ marginBottom: 'var(--space-5)' }}>
+      <header className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">错题复习本</h1>
           <p className="page-subtitle">汇总所有试卷与练习中的错题，支持按知识点和试卷智能聚类，助孩子集中复盘。</p>
         </div>
-        <div className="page-actions" style={{ gap: 'var(--space-2)' }}>
+        <div className="page-actions">
           <button className="btn btn-secondary btn-sm" onClick={onBack}>返回题库</button>
           <button className="btn btn-primary btn-sm" onClick={onRetryWrong} disabled={!records.length}>
             🚀 错题重练
@@ -128,16 +128,16 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
       </header>
 
       {/* 消息提示 */}
-      {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
+      {message && <div className="message-banner success page-message">{message}</div>}
 
       {/* 错题数据汇总大卡片 */}
-      <div className="stat-grid stat-grid-auto animate-fadeInUp stagger-1" style={{ marginBottom: 'var(--space-5)' }}>
+      <div className="stat-grid stat-grid-auto page-stat-grid animate-fadeInUp stagger-1">
         <div className="stat-card"><span className="stat-value danger">{records.length}</span><span className="stat-label">错题总数</span></div>
         <div className="stat-card"><span className="stat-value">{byPaper.length}</span><span className="stat-label">涉及试卷</span></div>
         <div className="stat-card"><span className="stat-value accent">{byTag.length}</span><span className="stat-label">涉及知识点</span></div>
         <div className="stat-card"><span className="stat-value success">{filtered.length}</span><span className="stat-label">当前显示</span></div>
         <div className="stat-card">
-          <span className="stat-value orange" style={{ fontSize: 'var(--text-lg)', paddingTop: '6px' }}>
+          <span className="stat-value orange stat-value-date">
             {records[0]?.submittedAt ? new Date(records[0].submittedAt).toLocaleDateString() : '-'}
           </span>
           <span className="stat-label">最近错题时间</span>
@@ -145,9 +145,9 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
       </div>
 
       {/* 搜索过滤框 */}
-      <div className="card animate-fadeInUp stagger-2" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+      <div className="card wrong-search-card animate-fadeInUp stagger-2">
         <input 
-          style={{ width: '100%', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-default)', fontSize: 'var(--text-base)', outline: 'none' }}
+          className="wrong-search-input"
           placeholder="🔍 输入题干、知识点、试卷或 ID 过滤检索错题..." 
           value={keyword} 
           onChange={(event) => setKeyword(event.target.value)} 
@@ -155,23 +155,23 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
       </div>
 
       {/* 左右聚类汇总分栏 */}
-      <div className="report-insight-grid animate-fadeInUp stagger-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-5)', marginBottom: 'var(--space-5)', alignItems: 'start' }}>
+      <div className="wrong-summary-grid animate-fadeInUp stagger-3">
         {/* 按知识点汇总 */}
         {!!byTag.length && (
-          <div className="card" style={{ padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: 0, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-2)' }}>
+          <div className="card wrong-summary-card">
+            <h3 className="wrong-summary-title">
               🏷️ 按知识点汇总
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <div className="wrong-summary-list">
               {byTag.map((item) => (
-                <div key={item.tag} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2) var(--space-3)', background: 'var(--bg-muted)', borderRadius: 'var(--radius-lg)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div className="wrong-summary-row" key={item.tag}>
+                  <div className="wrong-summary-main">
                     <span className="badge badge-primary">{item.tag}</span>
-                    <small style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{item.count} 道错题</small>
+                    <small>{item.count} 道错题</small>
                   </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button className="btn btn-ghost btn-sm" style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }} onClick={() => setKeyword(item.tag)}>查看</button>
-                    <button className="btn btn-soft btn-sm" style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }} onClick={() => onRetryTag(item.tag)}>重练</button>
+                  <div className="wrong-summary-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => setKeyword(item.tag)}>查看</button>
+                    <button className="btn btn-soft btn-sm" onClick={() => onRetryTag(item.tag)}>重练</button>
                   </div>
                 </div>
               ))}
@@ -181,20 +181,20 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
 
         {/* 按试卷汇总 */}
         {!!byPaper.length && (
-          <div className="card" style={{ padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 800, margin: 0, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-2)' }}>
+          <div className="card wrong-summary-card">
+            <h3 className="wrong-summary-title">
               📄 按试卷汇总
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <div className="wrong-summary-list">
               {byPaper.map((paper) => (
-                <div key={paper.paperId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2) var(--space-3)', background: 'var(--bg-muted)', borderRadius: 'var(--radius-lg)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <b style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }} title={paper.title}>{paper.title}</b>
-                    <small style={{ color: 'var(--rose-600)', fontWeight: 700, fontSize: 'var(--text-xs)' }}>{paper.count} 道错题</small>
+                <div className="wrong-summary-row" key={paper.paperId}>
+                  <div className="wrong-summary-paper">
+                    <b title={paper.title}>{paper.title}</b>
+                    <small>{paper.count} 道错题</small>
                   </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button className="btn btn-ghost btn-sm" style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }} onClick={() => onOpenPaperRecords(paper.paperId)}>记录</button>
-                    <button className="btn btn-soft btn-sm" style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }} onClick={() => onPracticePaper(paper.paperId)}>练习</button>
+                  <div className="wrong-summary-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => onOpenPaperRecords(paper.paperId)}>记录</button>
+                    <button className="btn btn-soft btn-sm" onClick={() => onPracticePaper(paper.paperId)}>练习</button>
                   </div>
                 </div>
               ))}
@@ -203,119 +203,83 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
         )}
       </div>
 
-      <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, margin: '0 0 var(--space-4)', color: 'var(--text-primary)' }}>
+      <h2 className="review-section-title">
         🔍 错题详情明细
       </h2>
 
       {/* 错题卡片流 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="animate-fadeInUp stagger-4">
+      <div className="review-card-list animate-fadeInUp stagger-4">
         {filtered.map((record) => (
           <div 
-            className="card card-hover" 
-            style={{ 
-              borderLeft: '5px solid var(--color-danger)',
-              background: 'linear-gradient(180deg, var(--bg-card) 0%, rgba(244, 63, 94, 0.01) 100%)',
-              padding: 'var(--space-5)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-4)',
-              textAlign: 'left'
-            }} 
+            className="card card-hover review-card is-wrong" 
             key={record.id}
           >
             {/* 卡片头部 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+            <div className="review-card-head">
+              <div className="review-card-title-block">
+                <h3 className="review-card-title">
                   {record.question?.stem || `题目 ${record.questionId}`}
                 </h3>
-                <small style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 500 }}>
-                  <span className="badge badge-danger" style={{ marginRight: '6px' }}>错题反馈</span>
-                  试卷：<b style={{ color: 'var(--text-primary)' }}>{record.paper?.title || record.paperId}</b>
-                  <span style={{ margin: '0 6px', color: 'var(--border-default)' }}>|</span>
-                  来源：{sourceLabel(record.source)}
-                  <span style={{ margin: '0 6px', color: 'var(--border-default)' }}>|</span>
-                  时间：{record.submittedAt ? new Date(record.submittedAt).toLocaleString() : '-'}
+                <small className="review-card-subtitle">
+                  <span className="badge badge-danger">错题反馈</span>
+                  <span>试卷：<b>{record.paper?.title || record.paperId}</b></span>
+                  <span>来源：{sourceLabel(record.source)}</span>
+                  <span>时间：{record.submittedAt ? new Date(record.submittedAt).toLocaleString() : '-'}</span>
                 </small>
               </div>
               
-              <span className="badge badge-danger badge-lg" style={{ fontSize: 'var(--text-sm)', padding: '5px 12px' }}>
+              <span className="badge badge-danger badge-lg review-status-badge">
                 需复习
               </span>
             </div>
 
             {/* 卡片元数据表格 */}
-            <div 
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(5, 1fr)', 
-                gap: 'var(--space-3)', 
-                padding: 'var(--space-3) var(--space-4)', 
-                background: 'var(--slate-50)', 
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-light)'
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>得分情况</span>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--color-danger)' }}>{record.score} / {record.maxScore} 分</b>
+            <div className="review-meta-grid review-meta-grid-five">
+              <div className="review-meta-item">
+                <span>得分情况</span>
+                <b className="danger">{record.score} / {record.maxScore} 分</b>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>作答耗时</span>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{formatDuration(record.durationSeconds)}</b>
+              <div className="review-meta-item">
+                <span>作答耗时</span>
+                <b>{formatDuration(record.durationSeconds)}</b>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>题目 ID</span>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{record.questionId}</b>
+              <div className="review-meta-item">
+                <span>题目 ID</span>
+                <b className="mono">{record.questionId}</b>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>关联试卷 ID</span>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{record.paperId}</b>
+              <div className="review-meta-item">
+                <span>关联试卷 ID</span>
+                <b className="mono">{record.paperId}</b>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 1' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>匹配知识点</span>
-                <b style={{ fontSize: 'var(--text-base)', color: 'var(--color-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={recordTags(record).join('、')}>
+              <div className="review-meta-item">
+                <span>匹配知识点</span>
+                <b className="accent truncate" title={recordTags(record).join('、')}>
                   {recordTags(record).join('、') || '暂无分类'}
                 </b>
               </div>
             </div>
 
             {/* 作答空位明细红批 */}
-            <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', background: 'var(--bg-card)', overflow: 'hidden' }}>
+            <div className="review-detail-table">
               {(record.details || []).map((detail: any) => (
                 <div 
                   key={detail.id} 
-                  style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '120px 1.5fr 1.5fr 60px', 
-                    gap: 'var(--space-3)', 
-                    alignItems: 'center', 
-                    padding: 'var(--space-2) var(--space-4)', 
-                    borderBottom: '1px solid var(--border-light)',
-                    fontSize: 'var(--text-sm)',
-                    background: detail.isCorrect ? 'transparent' : 'rgba(244, 63, 94, 0.02)'
-                  }}
+                  className={`review-detail-row ${detail.isCorrect ? 'is-correct' : 'is-wrong'}`}
                 >
-                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>填空位: {detail.slotKey}</span>
-                  <span style={{ color: detail.isCorrect ? 'var(--text-primary)' : 'var(--rose-600)', textDecoration: detail.isCorrect ? 'none' : 'line-through' }}>
+                  <span className="review-detail-slot">填空位: {detail.slotKey}</span>
+                  <span className="review-detail-answer student">
                     学生答案：<b>{renderMathText(formatValue(detail.studentValue))}</b>
                   </span>
-                  <span style={{ color: 'var(--emerald-600)' }}>
+                  <span className="review-detail-answer correct">
                     正确答案：<b>{renderMathText(formatValue(detail.correctValue))}</b>
                   </span>
-                  <span 
-                    style={{ 
-                      fontWeight: 800, 
-                      textAlign: 'right', 
-                      color: detail.isCorrect ? 'var(--color-success)' : 'var(--color-danger)' 
-                    }}
-                  >
+                  <span className="review-detail-status">
                     {detail.isCorrect ? '对' : '错'}
                   </span>
                 </div>
               ))}
               {!(record.details || []).length && (
-                <div style={{ padding: 'var(--space-3) var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                <div className="review-detail-empty">
                   本题型直接匹配答案正误，暂无更深空位填报。
                 </div>
               )}
