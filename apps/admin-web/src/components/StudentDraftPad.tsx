@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
+import { ConfirmDialog } from './Modal';
+import { useToast } from './ToastProvider';
 
 type Props = {
   storageKey: string;
@@ -8,21 +10,66 @@ type Props = {
   inline?: boolean;
 };
 
+const UNDO_LIMIT = 20;
+
 export function StudentDraftPad({ storageKey, open, onClose, inline = false }: Props) {
+  const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const undoStackRef = useRef<string[]>([]);
   const [color, setColor] = useState('#111827');
   const [lineWidth, setLineWidth] = useState(4);
-  const [message, setMessage] = useState('');
+  const [gridBg, setGridBg] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
 
   const pushUndo = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     try {
-      undoStackRef.current = [...undoStackRef.current.slice(-7), canvas.toDataURL('image/png')];
+      // 扩到 20 步，超出按先进先出丢弃
+      undoStackRef.current = [...undoStackRef.current.slice(-(UNDO_LIMIT - 1)), canvas.toDataURL('image/png')];
     } catch {
       // ignore snapshot failure
+    }
+  };
+
+  const drawBackground = (width: number, height: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    if (!inline) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+    }
+    if (!inline) {
+      // 横线背景
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      for (let y = 32; y < height; y += 32) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    } else if (gridBg) {
+      // 方格背景（便于列竖式），inline 模式可开关
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.18)';
+      ctx.lineWidth = 1;
+      const step = 36;
+      for (let x = step; x < width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = step; y < height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
     }
   };
 
@@ -35,7 +82,7 @@ export function StudentDraftPad({ storageKey, open, onClose, inline = false }: P
     img.onload = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);
       ctx.drawImage(img, 0, 0, rect.width, rect.height);
-      localStorage.setItem(storageKey, canvas.toDataURL('image/png'));
+      try { localStorage.setItem(storageKey, canvas.toDataURL('image/png')); } catch { /* ignore */ }
     };
     img.src = dataUrl;
   };
@@ -43,21 +90,20 @@ export function StudentDraftPad({ storageKey, open, onClose, inline = false }: P
   const undo = () => {
     const last = undoStackRef.current.pop();
     if (!last) {
-      setMessage('\u6ca1\u6709\u53ef\u64a4\u9500\u7684\u7b14\u8ff9');
+      toast.info('没有可撤销的笔画了');
       return;
     }
     restoreFromDataUrl(last);
-    setMessage('\u5df2\u64a4\u9500');
   };
 
-  const save = () => {
+  const save = (silent = true) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     try {
       localStorage.setItem(storageKey, canvas.toDataURL('image/png'));
-      setMessage('\u8349\u7a3f\u5df2\u4fdd\u5b58');
+      if (!silent) toast.success('草稿已保存');
     } catch {
-      setMessage('\u8349\u7a3f\u4fdd\u5b58\u5931\u8d25');
+      toast.danger('草稿保存失败');
     }
   };
 
@@ -75,22 +121,7 @@ export function StudentDraftPad({ storageKey, open, onClose, inline = false }: P
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.scale(dpr, dpr);
-    if (!inline) {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.clearRect(0, 0, width, height);
-    }
-    if (!inline) {
-      ctx.strokeStyle = '#e5e7eb';
-      ctx.lineWidth = 1;
-      for (let y = 32; y < height; y += 32) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-    }
+    drawBackground(width, height);
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       const img = new Image();
@@ -101,6 +132,7 @@ export function StudentDraftPad({ storageKey, open, onClose, inline = false }: P
 
   useEffect(() => {
     if (!open) return;
+    undoStackRef.current = [];
     const timer = window.setTimeout(resizeAndRestore, 30);
     return () => window.clearTimeout(timer);
   }, [open, storageKey, inline]);
@@ -168,33 +200,49 @@ export function StudentDraftPad({ storageKey, open, onClose, inline = false }: P
     save();
   };
 
-  const clear = () => {
+  const confirmClear = () => {
     pushUndo();
-    localStorage.removeItem(storageKey);
+    try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
     resizeAndRestore();
-    setMessage('\u8349\u7a3f\u5df2\u6e05\u7a7a');
+    setClearOpen(false);
+    toast.info('草稿已清空，可点撤销恢复');
   };
 
   return <div className="draft-overlay" onWheel={(event) => inline && event.preventDefault()}>
     <div className="draft-panel">
       <div className="draft-head-float">
-        <h2>{'\u8349\u7a3f'}</h2>
-        <button className="draft-close-btn" title={'\u5173\u95ed\u8349\u7a3f'} onClick={() => { save(); onClose(); }}>{'\u2715'}</button>
+        <h2>{'\u8349\u7a3f\u672c'}</h2>
+        <button className="draft-close-btn" title={'\u5173\u95ed\u8349\u7a3f'} aria-label="关闭草稿" onClick={() => { save(); onClose(); }}>{'\u2715'}</button>
       </div>
       <div className="draft-toolbar-float">
-        <button title={'\u9ed1\u7b14'} className={`draft-tool-btn penBlack ${color === '#111827' ? 'active' : ''}`} onClick={() => setColor('#111827')}>{'\u270E'}</button>
-        <button title={'\u84dd\u7b14'} className={`draft-tool-btn penBlue ${color === '#2563eb' ? 'active' : ''}`} onClick={() => setColor('#2563eb')}>{'\u270E'}</button>
-        <button title={'\u7ea2\u7b14'} className={`draft-tool-btn penRed ${color === '#dc2626' ? 'active' : ''}`} onClick={() => setColor('#dc2626')}>{'\u270E'}</button>
-        <button title={'\u6a61\u76ae'} className={`draft-tool-btn eraserIcon ${color === '#ffffff' ? 'active' : ''}`} onClick={() => { setColor('#ffffff'); setLineWidth(18); }}>{'\u{1F9FD}'}</button>
-        <button title={'\u64a4\u9500'} className="draft-tool-btn undoIcon" onClick={undo}>{'\u21B6'}</button>
-        <label title={'\u7c97\u7ec6'}>{'\u25CF'}<input type="range" min={2} max={18} value={lineWidth} onChange={(event) => setLineWidth(Number(event.target.value))} /></label>
-        <button title={'\u4fdd\u5b58'} className="draft-tool-btn" onClick={save}>{'\u{1F4BE}'}</button>
-        <button title={'\u6e05\u7a7a\u8349\u7a3f'} className="draft-tool-btn danger clearIcon" onClick={clear}>{'\u{1F9F9}'}</button>
-        {message && <span>{message}</span>}
+        <button title={'\u9ed1\u7b14'} aria-label="黑笔" className={`draft-tool-btn penBlack ${color === '#111827' ? 'active' : ''}`} onClick={() => setColor('#111827')}>{'\u270E'}</button>
+        <button title={'\u84dd\u7b14'} aria-label="蓝笔" className={`draft-tool-btn penBlue ${color === '#2563eb' ? 'active' : ''}`} onClick={() => setColor('#2563eb')}>{'\u270E'}</button>
+        <button title={'\u7ea2\u7b14'} aria-label="红笔" className={`draft-tool-btn penRed ${color === '#dc2626' ? 'active' : ''}`} onClick={() => setColor('#dc2626')}>{'\u270E'}</button>
+        <button title={'\u6a61\u76ae'} aria-label="橡皮" className={`draft-tool-btn eraserIcon ${color === '#ffffff' ? 'active' : ''}`} onClick={() => { setColor('#ffffff'); setLineWidth(18); }}>{'\u{1F9FD}'}</button>
+        <button title={'\u64a4\u9500'} aria-label="撤销" className="draft-tool-btn undoIcon" onClick={undo}>{'\u21B6'}</button>
+        <label title={'\u7c97\u7ec6'} className="draft-size-label">
+          <span aria-hidden="true">{'\u25CF'}</span>
+          <input type="range" min={2} max={18} value={lineWidth} aria-label="笔触粗细" onChange={(event) => setLineWidth(Number(event.target.value))} />
+        </label>
+        {inline && (
+          <button title={'\u65b9\u683c\u80cc\u666f'} aria-label="方格背景" className={`draft-tool-btn gridIcon ${gridBg ? 'active' : ''}`} onClick={() => { const next = !gridBg; setGridBg(next); pushUndo(); setTimeout(() => { drawBackground(window.innerWidth, window.innerHeight); }, 0); }}>{'\u{1F4D0}'}</button>
+        )}
+        <button title={'\u4fdd\u5b58'} aria-label="保存草稿" className="draft-tool-btn" onClick={() => save(false)}>{'\u{1F4BE}'}</button>
+        <button title={'\u6e05\u7a7a\u8349\u7a3f'} aria-label="清空草稿" className="draft-tool-btn danger clearIcon" onClick={() => setClearOpen(true)}>{'\u{1F9F9}'}</button>
       </div>
       <div className="draft-canvas-wrap">
         <canvas ref={canvasRef} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} />
       </div>
     </div>
+
+    <ConfirmDialog
+      open={clearOpen}
+      title="清空草稿"
+      danger
+      confirmText="清空"
+      description="确定要清空当前草稿吗？清空后仍可点击「撤销」按钮恢复（最多保留最近 20 步）。"
+      onConfirm={confirmClear}
+      onCancel={() => setClearOpen(false)}
+    />
   </div>;
 }

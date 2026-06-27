@@ -142,6 +142,7 @@ export function QuestionPreview({ question }: { question: QuestionDraft }) {
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillPreview question={question} />;
   if (question.content?.tableFill) return <TableFillPreview question={question} />;
   if (question.question_type === 'ordering') return <OrderingPreview question={question} />;
+  if (question.question_type === 'sentence_build') return <SentenceBuildPreview question={question} />;
   if (question.question_type === 'matching') return <MatchingPreview question={question} />;
   if (['single_choice', 'multiple_choice', 'true_false'].includes(question.question_type)) return <ChoicePreview question={question} />;
   return (
@@ -208,6 +209,29 @@ function OrderingPreview({ question }: { question: QuestionDraft }) {
             <span className="kq-order-slot">第{index + 1}个</span>
             {index < answer.length - 1 && <b>{separator}</b>}
           </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SentenceBuildPreview({ question }: { question: QuestionDraft }) {
+  const tokens = (question.content?.tokens ?? []) as Array<{ key: string; text: string; isPunct?: boolean }>;
+  const tokenMap = new Map(tokens.map((t) => [String(t.key), t]));
+  const answerKeys = ((question.answer_slots[0]?.correct_answer ?? []) as unknown[]).map((k) => String(k));
+  // 按答案顺序展示；无答案时按 tokens 原序
+  const ordered = answerKeys.length
+    ? answerKeys.map((k) => tokenMap.get(k)).filter(Boolean) as typeof tokens
+    : tokens;
+  return (
+    <div className="kq-question">
+      <div className="kq-stem">{renderMathText(question.stem)}</div>
+      <div className="kq-pills kq-sentence-pills">
+        {ordered.map((token, index) => (
+          <span
+            key={token.key}
+            className={token.isPunct ? 'kq-pill kq-pill-punct' : 'kq-pill'}
+          >{token.text}</span>
         ))}
       </div>
     </div>

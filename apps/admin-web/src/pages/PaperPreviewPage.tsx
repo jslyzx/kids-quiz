@@ -407,6 +407,27 @@ function InteractiveQuestion({ question, itemId, questionIndex, answers, results
       <div className="kq-pills">{items.map((item) => <span key={item.key}>{item.label} {item.value}</span>)}</div>
       <input data-answer-id={id} className={`studentWideInput ${results ? (results[id] ? 'correct' : 'wrong') : !isAnswered(answers[id]) ? 'missing' : ''}`} value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)} placeholder="\u6309\u987a\u5e8f\u586b\u5199\u5e8f\u53f7\uff0c\u4f8b\u5982\uff1a\u2460,\u2461,\u2462" />
     </div>;
+  } else if (question.question_type === 'sentence_build') {
+    const tokens = (question.content?.tokens ?? []) as Array<{ key: string; text: string; isPunct?: boolean }>;
+    const tokenByKey = new Map(tokens.map((t) => [String(t.key), t]));
+    const picked = (Array.isArray(answers[id]) ? answers[id] : normalize(answers[id]).split(',').filter(Boolean)) as string[];
+    const pickedSet = new Set(picked.map(String));
+    const pool = tokens.filter((t) => !pickedSet.has(String(t.key)));
+    body = <div className="studentQuestion">
+      <div className="kq-stem">{renderMathText(question.stem)}</div>
+      <div className="practice-sentence-track">
+        {picked.length === 0 && <span className="practice-sentence-hint">点下面的词排成一句话</span>}
+        {picked.map((key) => {
+          const token = tokenByKey.get(String(key));
+          if (!token) return null;
+          return <button type="button" key={key} className={`practice-sentence-token ${token.isPunct ? 'is-punct' : ''}`} onClick={() => setAnswer(id, picked.filter((k) => k !== key))}>{token.text}</button>;
+        })}
+      </div>
+      <div className="practice-sentence-pool">
+        {pool.map((token) => <button type="button" key={token.key} className={`practice-sentence-pool-token ${token.isPunct ? 'is-punct' : ''}`} onClick={() => setAnswer(id, [...picked, token.key])}>{token.text}</button>)}
+      </div>
+      {results && <p className={results[id] ? 'resultOk' : 'resultBad'}>{results[id] ? '\u56de\u7b54\u6b63\u786e' : `\u56de\u7b54\u9519\u8bef\uff0c\u6b63\u786e\u7b54\u6848\uff1a${(slot?.correct_answer as unknown[]).map((k) => tokenByKey.get(String(k))?.text ?? k).join('')}`}</p>}
+    </div>;
   } else if (question.question_type === 'matching') {
     body = <MatchingQuestion question={question} id={id} answers={answers} results={results} setAnswer={setAnswer} />;
   } else {

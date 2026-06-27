@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { createManagedStudent, deleteManagedStudent, listManagedStudents, updateManagedStudent, updateManagedStudentPin, type ManagedStudent } from '../api/student';
 import { notifyStudentsChanged } from '../utils/selectedStudent';
+import { useToast } from '../components/ToastProvider';
+import { ConfirmDialog } from '../components/Modal';
 
 type Draft = {
   id?: string;
@@ -36,20 +38,20 @@ function formatDate(value?: string | null) {
 }
 
 export function StudentManagementPage() {
+  const { toast } = useToast();
   const [students, setStudents] = useState<ManagedStudent[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<ManagedStudent | null>(null);
 
   async function refresh() {
     setLoading(true);
-    setMessage('');
     try {
       setStudents(await listManagedStudents());
       notifyStudentsChanged();
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,6 @@ export function StudentManagementPage() {
     event.preventDefault();
     if (!draft.name.trim()) return;
     setSaving(true);
-    setMessage('');
     try {
       if (draft.id) {
         await updateManagedStudent(draft.id, {
@@ -73,7 +74,7 @@ export function StudentManagementPage() {
           status: draft.status,
         });
         if (draft.pin.trim()) await updateManagedStudentPin(draft.id, draft.pin);
-        setMessage('学生信息已更新');
+        toast.success('学生信息已更新');
       } else {
         await createManagedStudent({
           name: draft.name,
@@ -81,12 +82,12 @@ export function StudentManagementPage() {
           grade: draft.grade,
           pin: draft.pin,
         });
-        setMessage('学生已新增');
+        toast.success('学生已新增');
       }
       setDraft(emptyDraft);
       await refresh();
     } catch (error) {
-      setMessage(`保存失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`保存失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSaving(false);
     }
@@ -94,29 +95,28 @@ export function StudentManagementPage() {
 
   async function clearPin(student: ManagedStudent) {
     setSaving(true);
-    setMessage('');
     try {
       await updateManagedStudentPin(String(student.id), '');
-      setMessage(`${student.name} 的 PIN 已清除`);
+      toast.success(`${student.name} 的 PIN 已清除`);
       await refresh();
     } catch (error) {
-      setMessage(`清除失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`清除失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSaving(false);
     }
   }
 
-  async function removeStudent(student: ManagedStudent) {
-    if (!window.confirm(`确认删除学生「${student.name}」？历史练习记录会保留，但学生将不再显示。`)) return;
+  async function confirmDeleteStudent() {
+    if (!deleteTarget) return;
+    const student = deleteTarget;
     setSaving(true);
-    setMessage('');
     try {
       await deleteManagedStudent(String(student.id));
-      setMessage('学生已删除');
+      toast.success('学生已删除');
       await refresh();
       if (draft.id && String(draft.id) === String(student.id)) setDraft(emptyDraft);
     } catch (error) {
-      setMessage(`删除失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`删除失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSaving(false);
     }
@@ -134,8 +134,6 @@ export function StudentManagementPage() {
           <button className="btn btn-secondary btn-sm" onClick={() => setDraft(emptyDraft)}>新增学生</button>
         </div>
       </header>
-
-      {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
 
       <div className="studentManageGrid">
         <section className="card studentManageForm">
@@ -196,13 +194,24 @@ export function StudentManagementPage() {
               <div className="studentManageActions">
                 <button className="btn btn-soft btn-sm" onClick={() => setDraft(toDraft(student))}>编辑</button>
                 {student.pinEnabled && <button className="btn btn-secondary btn-sm" onClick={() => clearPin(student)} disabled={saving}>清除 PIN</button>}
-                <button className="btn btn-danger btn-sm" onClick={() => removeStudent(student)} disabled={saving}>删除</button>
+                <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(student)} disabled={saving}>删除</button>
               </div>
             </article>
           ))}
           {!students.length && !loading && <div className="empty-state"><p className="empty-state-title">还没有学生档案</p></div>}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="删除学生"
+        danger
+        confirmText="删除"
+        confirmByText={deleteTarget?.name}
+        description={deleteTarget ? `确认删除学生「${deleteTarget.name}」？为防止误删，请在下方输入学生姓名确认。历史练习记录会保留，但该学生将不再显示。` : ''}
+        onConfirm={confirmDeleteStudent}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

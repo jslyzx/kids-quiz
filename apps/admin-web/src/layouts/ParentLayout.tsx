@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clearAdminSession, clearStudentSession, getAdminUser } from '../api/client';
 import { createStudentSessionFromAdmin, listManagedStudents, type ManagedStudent } from '../api/student';
 import { getSelectedStudentId, setSelectedStudentId, subscribeStudentsChange } from '../utils/selectedStudent';
+import { Breadcrumb } from '../components/Breadcrumb';
 
 const NAV_ITEMS = [
   { label: '管理', section: true },
@@ -20,13 +21,47 @@ const NAV_ITEMS = [
   { to: '/parent/rewards', icon: '⭐', label: '奖励中心' },
 ];
 
+// 路径 → 面包屑映射（用于自动生成）
+function buildBreadcrumb(pathname: string): { label: string; to?: string }[] {
+  const crumbs: { label: string; to?: string }[] = [{ label: '家长中心', to: '/parent' }];
+  if (pathname === '/parent') return crumbs;
+  // 匹配最长前缀的导航项
+  const match = NAV_ITEMS.filter((item) => !item.section && pathname.startsWith(item.to!))
+    .sort((a, b) => b.to!.length - a.to!.length)[0];
+  if (match) crumbs.push({ label: match.label!, to: match.to });
+  // 子页（edit/:id, import-batches/:id, papers/edit/:id 等）
+  if (/\/questions\/edit\//.test(pathname)) crumbs.push({ label: '编辑题目' });
+  else if (/\/questions\/import-batches\//.test(pathname)) crumbs.push({ label: '批次详情' });
+  else if (/\/questions\/import-json/.test(pathname)) crumbs.push({ label: '导入 JSON' });
+  else if (/\/questions\/batch-fill/.test(pathname)) crumbs.push({ label: '批量填空' });
+  else if (/\/papers\/edit\//.test(pathname)) crumbs.push({ label: '编辑试卷' });
+  else if (/\/papers\/preview\//.test(pathname)) crumbs.push({ label: '预览试卷' });
+  else if (/\/papers\/print\//.test(pathname)) crumbs.push({ label: '打印试卷' });
+  else if (/\/papers\/records\//.test(pathname)) crumbs.push({ label: '练习记录' });
+  return crumbs;
+}
+
 export function ParentLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // PC 桌面端侧栏折叠状态，持久化到 localStorage
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('kidsQuiz.sidebarCollapsed') === '1'; } catch { return false; }
+  });
   const [students, setStudents] = useState<ManagedStudent[]>([]);
   const [selectedStudentId, setSelectedStudentIdState] = useState(getSelectedStudentId);
   const [studentLoadState, setStudentLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
   const navigate = useNavigate();
+  const location = useLocation();
+  const breadcrumbItems = buildBreadcrumb(location.pathname);
   const user = getAdminUser();
+
+  const toggleCollapse = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('kidsQuiz.sidebarCollapsed', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   function loadStudents() {
     setStudentLoadState('loading');
@@ -67,7 +102,7 @@ export function ParentLayout() {
   }
 
   return (
-    <div className="parent-layout">
+    <div className={`parent-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`parent-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
@@ -84,18 +119,19 @@ export function ParentLayout() {
                 to={item.to!}
                 end={item.to === '/parent'}
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                title={item.label}
                 onClick={() => setSidebarOpen(false)}
               >
                 <span className="sidebar-link-icon">{item.icon}</span>
-                {item.label}
+                <span className="sidebar-link-text">{item.label}</span>
               </NavLink>
             )
           )}
         </nav>
         <div className="sidebar-footer">
-          <button className="sidebar-link" onClick={() => { setSidebarOpen(false); void switchToKidHome(); }}>
+          <button className="sidebar-link" title="切换到孩子端" onClick={() => { setSidebarOpen(false); void switchToKidHome(); }}>
             <span className="sidebar-link-icon">👦</span>
-            切换到孩子端
+            <span className="sidebar-link-text">切换到孩子端</span>
           </button>
         </div>
       </aside>
@@ -103,7 +139,10 @@ export function ParentLayout() {
       <div className="parent-main">
         <header className="parent-topbar">
           <div className="parent-topbar-left">
-            <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+            <button className="sidebar-toggle mobile-only" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="打开菜单">☰</button>
+            <button className="sidebar-toggle desktop-only" onClick={toggleCollapse} aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'} title={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}>
+              {sidebarCollapsed ? '☰' : '◂'}
+            </button>
           </div>
           <div className="parent-topbar-right">
             {!!students.length && (
@@ -119,6 +158,7 @@ export function ParentLayout() {
           </div>
         </header>
         <div className="parent-content">
+          <Breadcrumb items={breadcrumbItems} />
           <Outlet />
         </div>
       </div>

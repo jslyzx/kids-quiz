@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createPaper, deletePaper, listPapers, smartGeneratePaper } from '../api/papers';
 import { listPaperStats } from '../api/submissions';
+import { useToast } from '../components/ToastProvider';
+import { ConfirmDialog } from '../components/Modal';
+import { formatRelative, formatDateTime } from '../utils/formatTime';
 
 type Props = {
   onBackQuestions: () => void;
@@ -11,6 +14,7 @@ type Props = {
 };
 
 export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, onPrintPaper, onOpenRecords }: Props) {
+  const { toast } = useToast();
   const [papers, setPapers] = useState<any[]>([]);
   const [title, setTitle] = useState('数学练习卷');
   const [description, setDescription] = useState('');
@@ -19,10 +23,11 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
   const [smartTag, setSmartTag] = useState('');
   const [smartCount, setSmartCount] = useState(10);
   const [smartDifficulty, setSmartDifficulty] = useState(5);
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [statsMap, setStatsMap] = useState<Record<string, any>>({});
   const [createMode, setCreateMode] = useState<'normal' | 'smart'>('normal');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
 
   const refresh = async () => {
     try {
@@ -30,9 +35,8 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
       const [data, stats] = await Promise.all([listPapers(), listPaperStats()]);
       setPapers(data);
       setStatsMap(Object.fromEntries(stats.map((item) => [String(item.paperId), item])));
-      setMessage(`已加载 ${data.length} 套试卷`);
     } catch (error) {
-      setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -44,9 +48,9 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
     try {
       const paper = await createPaper({ title, description });
       setPapers((prev) => [paper, ...prev]);
-      setMessage(`已新建试卷：${paper.title}`);
+      toast.success(`已新建试卷：${paper.title}`);
     } catch (error) {
-      setMessage(`新建失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`新建失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -62,34 +66,38 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
         maxDifficulty: smartDifficulty,
       });
       setPapers((prev) => [paper, ...prev]);
-      setMessage(`已智能生成试卷：${paper.title}`);
+      toast.success(`已智能生成试卷：${paper.title}`);
     } catch (error) {
-      setMessage(`智能组卷失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`智能组卷失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm(`确认删除试卷 ID：${id}？`)) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
     try {
       await deletePaper(id);
       setPapers((prev) => prev.filter((item) => String(item.id) !== id));
-      setMessage(`已删除试卷 ID：${id}`);
+      toast.success(`已删除试卷 ID：${id}`);
     } catch (error) {
-      setMessage(`删除失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`删除失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
   const isCheckPaper = (paper: any) => String(paper.title ?? '').startsWith('JSON导入验收试卷') || String(paper.description ?? '').includes('JSON 导入页自动生成');
   const checkPapers = papers.filter(isCheckPaper);
-  const cleanupCheckPapers = async () => {
-    if (!checkPapers.length) { setMessage('当前列表中没有 JSON 导入验收试卷。'); return; }
-    if (!confirm(`确认删除 ${checkPapers.length} 套 JSON 导入验收试卷？题库中的题目不会删除。`)) return;
+  const confirmCleanup = async () => {
+    if (!checkPapers.length) { toast.info('当前列表中没有 JSON 导入验收试卷。'); return; }
     try {
       for (const paper of checkPapers) await deletePaper(String(paper.id));
       setPapers((prev) => prev.filter((paper) => !isCheckPaper(paper)));
-      setMessage(`已清理 ${checkPapers.length} 套验收试卷`);
+      toast.success(`已清理 ${checkPapers.length} 套验收试卷`);
     } catch (error) {
-      setMessage(`清理验收试卷失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`清理验收试卷失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setCleanupOpen(false);
     }
   };
 
@@ -110,14 +118,11 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
           <button className="btn btn-soft btn-sm" onClick={refresh}>
             {loading ? '刷新中...' : '刷新'}
           </button>
-          <button className="btn btn-warning btn-sm" onClick={cleanupCheckPapers} disabled={!checkPapers.length}>
+          <button className="btn btn-warning btn-sm" onClick={() => setCleanupOpen(true)} disabled={!checkPapers.length}>
             清理验收卷{checkPapers.length ? `(${checkPapers.length})` : ''}
           </button>
         </div>
       </header>
-
-      {/* 消息提示 */}
-      {message && <div className="message-banner success" style={{ marginBottom: 'var(--space-4)' }}>{message}</div>}
 
       {/* 核心双栏布局 */}
       <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 'var(--space-5)', alignItems: 'start' }}>
@@ -272,15 +277,15 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
                       <span style={{ color: 'var(--text-muted)' }}>暂无练习</span>
                     )}
                   </div>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                    {paper.updatedAt ? new Date(paper.updatedAt).toLocaleDateString() : '-'}
+                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }} title={paper.updatedAt ? formatDateTime(paper.updatedAt) : ''}>
+                    {paper.updatedAt ? formatRelative(paper.updatedAt) : '-'}
                   </span>
                   <div className="table-actions" style={{ justifyContent: 'flex-end', gap: '6px' }}>
                     <button className="btn btn-soft btn-sm" style={{ padding: '4px 8px' }} onClick={() => onEditPaper(String(paper.id))}>编辑</button>
                     <button className="btn btn-outline btn-sm" style={{ padding: '4px 8px' }} onClick={() => onPreviewPaper(String(paper.id))}>预览</button>
                     <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} onClick={() => onPrintPaper(String(paper.id))}>打印</button>
                     <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px', fontSize: 'var(--text-xs)' }} onClick={() => onOpenRecords(String(paper.id))}>记录</button>
-                    <button className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} onClick={() => remove(String(paper.id))}>删除</button>
+                    <button className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} onClick={() => setDeleteTarget({ id: String(paper.id), title: paper.title })}>删除</button>
                   </div>
                 </div>
               );
@@ -296,6 +301,28 @@ export function PaperListPage({ onBackQuestions, onEditPaper, onPreviewPaper, on
           </div>
         </div>
       </div>
+
+      {/* 删除确认 */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="删除试卷"
+        danger
+        confirmText="删除"
+        description={deleteTarget ? `确认删除试卷「${deleteTarget.title}」？删除后无法恢复。` : ''}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* 清理验收卷确认 */}
+      <ConfirmDialog
+        open={cleanupOpen}
+        title="清理验收试卷"
+        danger
+        confirmText={`清理 ${checkPapers.length} 套`}
+        description={`将删除 ${checkPapers.length} 套 JSON 导入验收试卷。题库中的题目不会被删除，仅清理用于验收的临时试卷。`}
+        onConfirm={confirmCleanup}
+        onCancel={() => setCleanupOpen(false)}
+      />
     </div>
   );
 }

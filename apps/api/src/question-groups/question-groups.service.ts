@@ -29,6 +29,7 @@ function mapQuestionType(value: string): string {
     true_false: 'TRUE_FALSE',
     matching: 'MATCHING',
     ordering: 'ORDERING',
+    sentence_build: 'SENTENCE_BUILD',
     word_problem: 'WORD_PROBLEM',
   };
   return map[value] ?? 'FILL_BLANK';
@@ -597,12 +598,21 @@ export class QuestionGroupsService {
       });
     }
     await this.createQuestionKnowledgePointLinks(tx, q.id, meta?.knowledgePointIds ?? []);
+    // 选择题：从 answer_slots.choice 提取正确选项 key，写入 is_correct
+    const correctOptionKeys = new Set<string>();
+    for (const slot of (question.answer_slots ?? [])) {
+      if (mapSlotType(slot.slot_type) === 'CHOICE') {
+        const answers = Array.isArray(slot.correct_answer) ? slot.correct_answer : [slot.correct_answer];
+        for (const a of answers) correctOptionKeys.add(String(a).trim());
+      }
+    }
     for (const option of normalizeQuestionOptions(question)) {
       await tx.questionOption.create({
         data: {
           questionId: q.id,
           optionKey: option.optionKey,
           content: option.content,
+          isCorrect: correctOptionKeys.has(option.optionKey),
           sortOrder: option.sortOrder,
         },
       });

@@ -292,6 +292,66 @@ matching
 
 后端 `mapQuestionType` 虽然还映射了 `true_false`、`word_problem`，但当前 JSON 导入页前端校验未放行它们。
 
+### 4.3 拍照识别录入（OCR）
+
+录题工作台「📷 拍照识别」Tab 支持两个 OCR provider，**优先使用 PaddleOCR-VL**（若已配置），否则回退百度试卷切题。
+
+| | PaddleOCR-VL（推荐） | 百度试卷切题 |
+|---|---|---|
+| 服务 | AI Studio `paddleocr.aistudio-app.com` | 百度智能云 `paper_cut_edu` |
+| 鉴权 | 单一 bearer token | API Key + Secret Key → access_token |
+| 调用 | 异步 job（提交→轮询→取 JSONL） | 同步 |
+| 输出 | **整页 markdown**（需自研解析器切题） | 结构化题目（`qus_type` + stem/options/answer） |
+| 优势 | VLM 模型强、公式识别好 | 返回已切题，解析准确 |
+| 配置 | `PADDLEOCR_TOKEN` | `BAIDU_OCR_API_KEY` + `BAIDU_OCR_SECRET_KEY` |
+
+**接入流程：**
+
+1. 任选一个 provider，在 [AI Studio](https://aistudio.baidu.com/) 或 [百度智能云](https://console.bce.baidu.com/ai/#/ai/ocr/overview/index) 获取凭证。
+2. 写入根目录 `.env`（至少配一组）：
+   ```env
+   # PaddleOCR-VL（推荐）
+   PADDLEOCR_TOKEN=你的AIStudioToken
+   # 或百度试卷切题
+   BAIDU_OCR_API_KEY=你的APIKey
+   BAIDU_OCR_SECRET_KEY=你的SecretKey
+   ```
+3. 重启 API 服务。「📷 拍照识别」Tab 会显示当前激活的 provider 和两个 provider 的开关状态。
+
+**使用方式：**
+
+- 上传/拖拽多张试卷图片 → 点击「识别全部」→ 逐张识别（PaddleOCR 每张约 15-40s）。
+- 识别结果转换为 draft 后，点击「发送到 JSON 导入页」进入既有校验/编辑/批量保存流程。
+
+**后端实现（`apps/api/src/ocr/`）：**
+
+- `ocr-helpers.ts`：两个 provider 共用的文本处理工具（`cleanText`/`parseOptions`/`injectBlankPlaceholders`/`parseJudgeAnswer`/`makeTitle`）。
+- `baidu-ocr.service.ts`：百度 access_token 缓存 + 同步调用 `paper_cut_edu`。
+- `ocr-to-draft.ts`：百度 `qus_result[]` → draft（按 `qus_type` 映射题型）。
+- `paddle-ocr.service.ts`：PaddleOCR 异步 job（提交 multipart / JSON → 轮询 state → 下载 JSONL）。
+- `paddle-to-draft.ts`：**markdown 题目解析器**（核心）。按行扫描 → `#` 标题检测题型分区 → `^\d+[.、)]` 切分题目 → 块内提取选项/答案/判断题型。
+- `ocr.controller.ts`：
+  - `GET /admin/ocr/status`：返回 `{ providers, activeProvider, configured }`
+  - `POST /admin/ocr/paper-cut`：百度同步识别
+  - `POST /admin/ocr/paddle/submit`：PaddleOCR 提交 job → `{ jobId }`
+  - `GET /admin/ocr/paddle/status/:jobId`：查询状态，done 时附 `{ drafts }`
+  - `POST /admin/ocr/paddle/recognize`：同步封装（提交+轮询，最多 120s）
+
+**前端实现：**
+
+- `OcrEntryPanel.tsx`：`recognizeImage()` 根据 `activeProvider` 选择百度（同步）或 PaddleOCR（提交+前端轮询 status）。
+- 识别结果通过 `sessionStorage`（key `kids-quiz-ocr-prefill-drafts`）传递给 JSON 导入页。
+
+**PaddleOCR markdown 解析策略（`paddle-to-draft.ts`）：**
+
+PaddleOCR-VL 输出整页 markdown，不含题目语义，解析器按以下规则切分：
+1. `#`/`##` 标题含「选择/填空/判断」→ 记录当前题型提示
+2. 行首 `数字 + . 、 ） :` → 新题目块（排除年份「2024年」）
+3. 块内：`A.xxx` 行或内联 `A.4 B.7` → 选项；`____`/`○○` → 填空位；`（ ）` → 判断题；`答案：B` → 提取答案
+4. 题型判定优先级：有选项 > 判断标记 > 填空标记 > 默认问答
+
+**注意：** OCR 结果需人工校对，尤其填空题空位、选择题选项字母可能不完美。全部走 JSON 导入页的 `validateQuestion` + 人工编辑后再保存。
+
 ## 5. 通用文本规则
 
 ### 5.1 数学公式
@@ -763,4 +823,101 @@ matching
 2. 当前系统内部 draft 格式，例如 `question`、`composite_group`、`answer_slots`。
 
 从代码看，导入页和保存 API 最稳定支持的是内部 draft 格式。后续如果希望严格按文档前半段导入，需要补一层转换逻辑，把大写题型和驼峰字段转换成内部格式。
+
+## 8. 录题体系改造（2026-06）
+
+录题体验做了系统性改造，目标是消除"手写 DSL"和"题干/答案割裂"。改造向下兼容，历史数据零迁移。
+
+### 8.1 数据库层
+
+- `question_options` 表新增 `is_correct` 字段（`prisma/manual_migrations/20260617_option_is_correct.sql`）。
+  选择题保存时（`question-groups.service.ts` 的 `createQuestionWithSlots`）会根据 `answer_slots.choice` 的 `correct_answer` 自动标记正确选项。历史选项已回填。
+- `QuestionType` 枚举的 `TRUE_FALSE`、`WORD_PROBLEM` 标注为"仅导入兼容"——录入侧不再产生，渲染复用 `single_choice`/`fill_blank`。
+- `QuestionGroup.knowledgePointId` / `Question.knowledgePointId` 标注为冗余缓存，以多对多链接表（`QuestionGroupKnowledgePoint` / `QuestionKnowledgePoint`）为准。
+
+### 8.2 录入层（家长端 `QuestionEditorPage`）
+
+录入入口统一为顶部 3 个 Tab（仅新建时显示）：
+
+```text
+[ 单题录入 ]  [ 批量粘贴 ]  [ JSON 导入 ]
+```
+
+- **单题录入**：可视化编辑器，按题型分流（见下）。
+- **批量粘贴**：把原本藏在 `<details>` 里的批量工具提升为独立 Tab，按题型分组（填空/单选/多选/口算），统一语法提示。
+- **JSON 导入**：跳转到 `QuestionJsonImportPage`。
+
+#### 8.2.1 填空题（`FillBlankEditor`）
+
+- 题干区有"插入空位"按钮，**在光标位置插入** `{{blank:n}}`（非追加末尾）。
+- 实时预览：题干里的 `{{blank:n}}` 渲染为可视化下划线占位。
+- 答案区与题干**严格联动**：题干增删空位，答案区自动增删对应行；答案区也可点 ✕ 删除空位（同步从题干移除）。
+
+#### 8.2.2 选择题（`ChoiceEditor`）
+
+- 选项为**动态列表**：每行一个 input + ✓ toggle（标记正确）+ ↑↓ 调序 + ✕ 删除。
+- **答案永远从 ✓ 推导**，不可能与选项不一致（消除"改选项忘改答案"）。
+- 保留批量录入工具（`ChoiceBatchImporter`），支持 `A.选项` + `答案：A,C` 整段解析。
+
+#### 8.2.3 排序题（`OrderingEditor`）
+
+- 待排序项为**可拖拽列表**（HTML5 drag）+ ↑↓ 按钮。
+- 列表当前顺序即正确答案，答案从顺序自动推导。
+
+#### 8.2.4 连线题（`MatchingEditor`）
+
+- 左右两列分别输入项，**点左侧再点右侧**自动建立连线（复用孩子端交互心智）。
+- 已连线项再次点击可断开；删除项时自动清理涉及它的连线。
+- 底部"已建立的连线"列表可视化呈现所有配对。
+
+### 8.3 渲染层
+
+渲染层（`question-render`）**零改动**——新录入产生的数据结构与旧数据完全一致，只是录入路径不同。
+
+### 8.4 相关文件
+
+- 后端：`prisma/schema.prisma`、`prisma/manual_migrations/20260617_option_is_correct.sql`、`apps/api/src/question-groups/question-groups.service.ts`
+- 前端编辑器：`apps/admin-web/src/components/editors/`（`FillBlankEditor`、`BasicEditors`、`BatchEntryPanel`）
+- 前端页面：`apps/admin-web/src/pages/QuestionEditorPage.tsx`
+- 工具：`apps/admin-web/src/utils/blanks.ts`（`blankKeysOrdered`、`nextBlankNumber`）
+
+### 8.5 连词成句题型（sentence_build）
+
+新增题型，适用于语文/英语的"连词成句"练习。标点作为独立词块参与排列。
+
+**数据结构**（slot_type 复用 `order`，判分逻辑零改动）：
+
+```json
+{
+  "type": "question",
+  "title": "连词成句",
+  "question": {
+    "question_type": "sentence_build",
+    "stem": "把下面的词连成一句话。",
+    "content": {
+      "tokens": [
+        { "key": "1", "text": "I", "isPunct": false },
+        { "key": "2", "text": "am", "isPunct": false },
+        { "key": "3", "text": "a", "isPunct": false },
+        { "key": "4", "text": "boy", "isPunct": false },
+        { "key": "5", "text": ".", "isPunct": true }
+      ]
+    },
+    "answer_slots": [
+      { "slot_key": "answer", "slot_type": "order", "correct_answer": ["1","2","3","4","5"] }
+    ]
+  }
+}
+```
+
+**录入**（`SentenceBuildEditor`）：词块列表拖拽排序（当前顺序即正确语序），每个词块可切换「标点」属性；支持粘贴整句自动拆词（末尾标点独立成块）。
+
+**作答**（孩子端 `SentenceBuildQuestion`）：上方打乱词块池，点击词块进入下方句子槽，再点移出；标点块视觉区分（更小、灰色）；要求所有词块都排完才算答完。
+
+**判分**：复用 `order` slot 的 key 序列逐位比对，标点位置错误即判错（严格判定）。
+
+**迁移**：`prisma/manual_migrations/20260617_sentence_build_type.sql` 扩展 `question_type` ENUM。
+
+**相关文件**：`SentenceBuildEditor.tsx`、`StudentPracticePlayerPage.tsx`（`SentenceBuildQuestion`）、`question-render/index.tsx`（`SentenceBuildPreview`）、`questionDraft.ts`、`dbPreview.ts`、`QuestionJsonImportPage.tsx`、`validate-question-json.mjs`、`PaperPreviewPage.tsx`、`PaperPrintPage.tsx`。
+
 

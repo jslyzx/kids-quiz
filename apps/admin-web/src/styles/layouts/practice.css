@@ -1,17 +1,17 @@
 /* ========================================
    答题播放器布局
-   全屏沉浸式答题体验
+   全屏沉浸式答题体�?
    ======================================== */
 
 .practice-layout {
-  min-height: 100vh;
+  min-height: var(--app-vh);
   background: linear-gradient(135deg, #eef6ff, #f8fafc 48%, #fff7ed);
   display: flex;
   flex-direction: column;
   color: var(--text-primary);
 }
 
-/* ---- 顶部进度栏 ---- */
+/* ---- 顶部进度�?---- */
 .practice-topbar {
   position: sticky;
   top: 0;
@@ -83,7 +83,7 @@
   transition: width 0.4s var(--ease-out-expo);
 }
 
-/* ---- 答题区 ---- */
+/* ---- 答题�?---- */
 .practice-stage {
   flex: 1;
   display: flex;
@@ -363,7 +363,7 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-/* ---- 宽输入 ---- */
+/* ---- 宽输�?---- */
 .practice-wide-input {
   width: 100%;
   border: 2px solid var(--blue-200);
@@ -386,6 +386,152 @@
   border-color: var(--color-orange);
   background: var(--orange-50);
   box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
+}
+
+/* ---- 即时反馈 correct/wrong（轻量，避免打击�?---- */
+.practice-options.correct {
+  outline: 3px solid var(--color-success);
+  outline-offset: 4px;
+  border-radius: var(--radius-2xl);
+}
+
+.practice-options.wrong .practice-option.selected {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+}
+
+.practice-match.correct,
+.practice-poem.correct {
+  outline: 3px solid var(--color-success);
+  outline-offset: 4px;
+  border-radius: var(--radius-2xl);
+}
+
+.practice-match.wrong,
+.practice-poem.wrong {
+  outline: 3px dashed var(--color-warning);
+  outline-offset: 4px;
+  border-radius: var(--radius-2xl);
+}
+
+.practice-wide-input.correct {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.practice-wide-input.wrong {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.practice-column-cell.input.correct {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+  color: var(--emerald-700);
+}
+
+.practice-column-cell.input.wrong {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--amber-600);
+}
+
+/* ---- 连词成句作答 ---- */
+.practice-sentence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.practice-sentence-track {
+  min-height: 88px;
+  border: 2px dashed var(--blue-200);
+  border-radius: var(--radius-2xl);
+  background: var(--blue-50);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.practice-sentence.missing .practice-sentence-track {
+  border-color: var(--color-orange);
+  background: var(--color-orange-soft);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
+}
+
+.practice-sentence.correct .practice-sentence-track {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.practice-sentence.wrong .practice-sentence-track {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.practice-sentence-hint {
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: var(--text-base);
+}
+
+.practice-sentence-token {
+  min-height: 52px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  touch-action: manipulation;
+}
+
+.practice-sentence-token.is-punct {
+  background: var(--slate-500);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-lg);
+  margin-left: calc(-1 * var(--space-1));
+}
+
+.practice-sentence-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.practice-sentence-pool-token {
+  min-height: 56px;
+  min-width: 56px;
+  padding: var(--space-2) var(--space-5);
+  border: 2px solid var(--blue-200);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  box-shadow: var(--shadow-xs);
+  touch-action: manipulation;
+}
+
+.practice-sentence-pool-token:hover {
+  border-color: var(--color-primary);
+  background: var(--blue-50);
+}
+
+.practice-sentence-pool-token.is-punct {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-lg);
+  background: var(--slate-100);
+  color: var(--text-secondary);
+  border-color: var(--slate-300);
 }
 
 /* ---- 选择题选项 ---- */
@@ -422,8 +568,8 @@
 }
 
 .practice-option-key {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--blue-50);
   color: var(--color-primary);
@@ -452,12 +598,13 @@
   padding: var(--space-3);
 }
 
-/* ---- 连线题 ---- */
+/* ---- 连线�?---- */
 .practice-match {
   position: relative;
   display: grid;
   gap: var(--space-4);
   overflow: hidden;
+  touch-action: manipulation; /* iPad 触摸下避免滑动触发页面滚�?*/
 }
 
 .practice-match-lines {
@@ -540,7 +687,7 @@
   pointer-events: auto;
 }
 
-/* ---- 古诗题 ---- */
+/* ---- 古诗�?---- */
 .practice-poem {
   text-align: center;
 }
@@ -682,7 +829,7 @@
 .practice-material-table th:last-child,
 .practice-material-table td:last-child { border-right: 0; }
 
-/* ---- 底部导航栏 ---- */
+/* ---- 底部导航�?---- */
 .practice-bottombar {
   position: sticky;
   bottom: 0;
@@ -708,7 +855,7 @@
 
 .practice-dots {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
   padding: var(--space-2) var(--space-4);
@@ -721,8 +868,8 @@
 }
 
 .practice-dot {
-  min-width: 40px;
-  height: 40px;
+  min-width: 44px;
+  height: 44px;
   border-radius: 50%;
   padding: 0;
   background: var(--slate-200);
@@ -768,7 +915,7 @@
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
-/* ---- 结果页 ---- */
+/* ---- 结果�?---- */
 .practice-result {
   width: min(880px, 94vw);
   margin: auto;
@@ -778,7 +925,7 @@
   text-align: center;
   box-shadow: var(--shadow-xl);
   animation: bounceIn 0.5s var(--ease-spring);
-  max-height: calc(100vh - 48px);
+  max-height: calc(var(--app-vh) - 48px);
   overflow: auto;
 }
 
@@ -971,10 +1118,8 @@
 
 /* ---- 2026 practice UI polish ---- */
 .practice-layout {
-  background:
-    linear-gradient(150deg, rgba(20, 184, 166, 0.1), transparent 32%),
-    linear-gradient(210deg, rgba(249, 115, 22, 0.11), transparent 34%),
-    linear-gradient(180deg, #f8fafc 0%, #eef6ff 52%, #fffaf3 100%);
+  /* 统一蓝紫调，去掉青绿/橙色干扰 */
+  background: linear-gradient(180deg, #f5f7ff 0%, #eef2ff 52%, #f8faff 100%);
 }
 
 .practice-topbar,
@@ -997,7 +1142,7 @@
 }
 
 .practice-progress-fill {
-  background: linear-gradient(90deg, #0f766e, var(--blue-500), var(--orange-500));
+  background: linear-gradient(90deg, var(--blue-500), var(--violet-500));
 }
 
 .practice-question-card {
@@ -1050,7 +1195,7 @@
 }
 
 .practice-option.selected {
-  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
 }
 
 .practice-match-tools {
@@ -1078,7 +1223,7 @@
 }
 
 .practice-dot.active {
-  background: linear-gradient(135deg, var(--blue-600), #0f766e);
+  background: linear-gradient(135deg, var(--blue-600), var(--violet-600));
 }
 
 .practice-dot.active.missing {
@@ -1113,10 +1258,11 @@
 
 /* ========================================================
    响应式与 iPad / 手机端特定适配
+   iPad 横屏逻辑分辨�?1080-1194，旧断点 1024 会漏掉，提升�?1280
    ======================================================== */
 
 /* ---- iPad & 纵向中大平板适配断点 ---- */
-@media (max-width: 1024px) {
+@media (max-width: 1280px) {
   .practice-topbar {
     min-height: 72px;
     padding: var(--space-3) var(--space-5);
@@ -1145,13 +1291,13 @@
     line-height: 1.95;
   }
 
-  /* 在 iPad 平板上，选择题选项依然保持优雅的 2 列并排，触控体验更优 */
+  /* �?iPad 平板上，选择题选项依然保持优雅�?2 列并排，触控体验更优 */
   .practice-options {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
   }
 
-  /* 在 iPad 平板上，连线题依然以多列合理分布 */
+  /* �?iPad 平板上，连线题依然以多列合理分布 */
   .practice-match-board {
     grid-template-columns: minmax(160px, 320px) minmax(160px, 320px);
     justify-content: space-between;
@@ -1178,7 +1324,7 @@
   }
 }
 
-/* ---- 手机端/小屏特定物理断点 ---- */
+/* ---- 手机�?小屏特定物理断点 ---- */
 @media (max-width: 600px) {
   .practice-topbar {
     flex-direction: column;

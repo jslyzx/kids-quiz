@@ -4,6 +4,11 @@ import { exportQuestionBank, saveQuestionGroup } from '../api/questionGroups';
 import { addPaperQuestionGroup, createPaper } from '../api/papers';
 import { createImportBatch, finishImportBatch } from '../api/importBatches';
 import { collectMojibakeSnippets } from '../utils/textQuality';
+import { mapWithConcurrency } from '../utils/concurrency';
+import { useDebouncedValue } from '../utils/useDebouncedValue';
+import { useToast } from '../components/ToastProvider';
+import { consumeOcrPrefill } from '../components/editors/OcrEntryPanel';
+import { fillCalculationAnswers } from '../utils/solveExpression';
 
 const SAMPLE_JSON = `[
   {
@@ -34,7 +39,7 @@ type ImportItem = {
 };
 
 const allowedTypes = new Set(['question', 'calculation_group', 'composite_group']);
-const allowedQuestionTypes = new Set(['fill_blank', 'single_choice', 'multiple_choice', 'true_false', 'ordering', 'matching', 'word_problem']);
+const allowedQuestionTypes = new Set(['fill_blank', 'single_choice', 'multiple_choice', 'true_false', 'ordering', 'matching', 'sentence_build', 'word_problem']);
 
 function asArray(value: unknown) {
   return Array.isArray(value) ? value : [value];
@@ -424,6 +429,8 @@ const importTypeAliases: Record<string, string> = {
   TRUE_FALSE: 'true_false',
   ORDERING: 'ordering',
   MATCHING: 'matching',
+  SENTENCE_BUILD: 'sentence_build',
+  SENTENCE: 'sentence_build',
   WORD_PROBLEM: 'word_problem',
   ORAL_ARITHMETIC: 'calculation_group',
   MENTAL_MATH: 'calculation_group',
@@ -486,7 +493,7 @@ function normalizeOcrQuestion(q: any, inheritedType: unknown) {
   if (q.answerSlots && !q.answer_slots) {
     q.answer_slots = q.answerSlots.map((slot: any, index: number) => ({
       slot_key: normalizeSlotKey(slot.slot_key ?? slot.slotKey ?? `blank_${index + 1}`),
-      slot_type: canonicalSlotType(slot.slot_type ?? slot.slotType, rawType === 'matching' ? 'match' : rawType === 'ordering' ? 'order' : rawType?.includes?.('choice') || rawType === 'true_false' ? 'choice' : 'text'),
+      slot_type: canonicalSlotType(slot.slot_type ?? slot.slotType, rawType === 'matching' ? 'match' : rawType === 'ordering' || rawType === 'sentence_build' ? 'order' : rawType?.includes?.('choice') || rawType === 'true_false' ? 'choice' : 'text'),
       correct_answer: Array.isArray(slot.correct_answer ?? slot.correctAnswer) ? (slot.correct_answer ?? slot.correctAnswer) : asArray(slot.correct_answer ?? slot.correctAnswer),
       answer_rule: slot.answer_rule ?? slot.answerRule,
     }));
@@ -768,6 +775,18 @@ function validateQuestion(question: any) {
     const invalidMatches = matches.filter((match: any) => !leftKeys.includes(String(match?.left ?? '')) || !rightKeys.includes(String(match?.right ?? '')));
     if (invalidMatches.length) errors.push('连线题答案中存在无法匹配到左右栏 key 的连线');
   }
+  if (question.question_type === 'sentence_build') {
+    const tokens = Array.isArray(question.content?.tokens) ? question.content.tokens : [];
+    if (tokens.length < 2) errors.push('连词成句至少需要 2 个词块（含标点）');
+    const tokenKeys = tokens.map((t: any) => String(t?.key ?? '').trim()).filter(Boolean);
+    if (new Set(tokenKeys).size !== tokenKeys.length) errors.push('连词成句 content.tokens 的 key 不能重复');
+    const emptyText = tokens.filter((t: any) => !String(t?.text ?? '').trim());
+    if (emptyText.length) errors.push('连词成句存在空文本的词块');
+    const answerKeys: string[] = Array.isArray(slots[0]?.correct_answer) ? slots[0].correct_answer.map(String).filter(Boolean) : [];
+    if (answerKeys.length !== tokenKeys.length) errors.push('连词成句答案数量必须和词块数量一致');
+    const invalid = answerKeys.filter((key) => !tokenKeys.includes(key));
+    if (invalid.length) errors.push(`连词成句答案包含不存在的 key：${invalid.join('、')}`);
+  }
   if (String(question.stem ?? '').includes('\\(') || String(question.stem ?? '').includes('\\[')) warnings.push('题干里还有旧公式包裹，已尝试转换');
   return { errors, warnings };
 }
@@ -860,6 +879,7 @@ function typeLabel(item: any) {
     multiple_choice: '多选题',
     ordering: '排序题',
     matching: '连线题',
+    sentence_build: '连词成句',
   };
   return map[q] || q || '未知题型';
 }
@@ -878,14 +898,35 @@ function ImportPreview({ draft }: { draft: any }) {
 }
 
 export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOpenAudit, onOpenImportBatches }: { onBack: () => void; onOpenPaper: (paperId: string) => void; onStartPaper: (paperId: string) => void; onOpenAudit?: () => void; onOpenImportBatches?: () => void }) {
-  const [text, setText] = useState(SAMPLE_JSON);
+  const { toast } = useToast();
+  const [prefillNotice, setPrefillNotice] = useState<string>('');
+  const [text, setText] = useState(() => {
+    const prefill = consumeOcrPrefill();
+    if (prefill && prefill.length) {
+      setPrefillNotice(`已从拍照识别载入 ${prefill.length} 道题，请逐题校对后再保存`);
+      return JSON.stringify(prefill, null, 2);
+    }
+    return SAMPLE_JSON;
+  });
+  useEffect(() => {
+    if (prefillNotice) {
+      toast.info(prefillNotice);
+      setSourceType('ocr');
+      setSourceName('拍照识别');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  // 导入进度
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
   const [creatingPaper, setCreatingPaper] = useState(false);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [paperId, setPaperId] = useState('');
   const [failures, setFailures] = useState<string[]>([]);
+  // 失败的具体题目，支持「仅重试失败项」
+  const [failedValidItems, setFailedValidItems] = useState<Array<{ index: number; draft: any; errors: string[]; warnings: string[]; duplicateGroupIds?: string[] }>>([]);
   const [itemEditText, setItemEditText] = useState('');
   const [existingMap, setExistingMap] = useState<Map<string, string[]>>(() => new Map());
   const [skipDuplicates, setSkipDuplicates] = useState(true);
@@ -897,7 +938,9 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
   const [latestBatchTitle, setLatestBatchTitle] = useState('');
   const [latestBatchStatus, setLatestBatchStatus] = useState<'COMPLETED' | 'FAILED' | ''>('');
   const [latestBatchStats, setLatestBatchStats] = useState<Record<string, unknown> | null>(null);
-  const parsedBase = useMemo(() => parseImportText(text), [text]);
+  // 对大段 JSON 输入做防抖解析，避免每次按键都 JSON.parse + 逐条校验导致卡顿
+  const debouncedText = useDebouncedValue(text, 300);
+  const parsedBase = useMemo(() => parseImportText(debouncedText), [debouncedText]);
   const parsed = useMemo(() => ({
     ...parsedBase,
     items: parsedBase.items.map((item) => {
@@ -1055,12 +1098,71 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     }
   };
 
+  /** 为当前选中的计算题组一键生成答案 */
+  const fillAnswersForCurrent = () => {
+    if (!selected) { toast.warning('请先选择一道题'); return; }
+    const draft = selected.draft;
+    if (draft?.type !== 'calculation_group' || !Array.isArray(draft.items)) {
+      toast.warning('只有口算/计算题组才能自动生成答案');
+      return;
+    }
+    const { items, solved, failed, failedStems } = fillCalculationAnswers(draft.items);
+    const nextDraft = { ...draft, items };
+    const nextText = replaceItemInJsonText(text, selected.index, nextDraft);
+    setText(nextText);
+    setSourceType('ocr');
+    setSourceName('自动生成答案');
+    setSelectedIndex(selected.index);
+    resetImportOutcome();
+    if (failed === 0) {
+      toast.success(`已为 ${solved} 道计算题生成答案`);
+    } else if (solved === 0) {
+      toast.danger(`没有能自动求值的算式（${failed} 道失败）`);
+    } else {
+      toast.warning(`成功 ${solved} 道，${failed} 道无法自动求值（需手动填写）`);
+      setMessage(`无法自动求值的题干：${failedStems.slice(0, 5).join('、')}${failedStems.length > 5 ? ' …' : ''}`);
+    }
+  };
+
+  /** 为当前 JSON 里所有计算题组一键生成答案 */
+  const fillAllCalculationAnswers = () => {
+    try {
+      const json = JSON.parse(text);
+      const arr = Array.isArray(json) ? json : [json];
+      let totalSolved = 0;
+      let totalFailed = 0;
+      let groupCount = 0;
+      const next = arr.map((item: any) => {
+        if (item?.type === 'calculation_group' && Array.isArray(item.items)) {
+          const { items, solved, failed } = fillCalculationAnswers(item.items);
+          totalSolved += solved;
+          totalFailed += failed;
+          groupCount += 1;
+          return { ...item, items };
+        }
+        return item;
+      });
+      if (groupCount === 0) { toast.warning('当前没有计算题组'); return; }
+      const nextText = JSON.stringify(Array.isArray(json) ? next : next[0], null, 2);
+      setText(nextText);
+      setSourceType('ocr');
+      setSourceName('自动生成答案');
+      setSelectedIndex(-1);
+      resetImportOutcome();
+      if (totalFailed === 0) toast.success(`已为 ${groupCount} 组共 ${totalSolved} 道计算题生成答案`);
+      else toast.warning(`成功 ${totalSolved} 道，${totalFailed} 道需手动填写`);
+    } catch (error) {
+      toast.danger(`生成失败：${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   const importValid = async () => {
     if (!validItems.length) { setMessage(skipDuplicates && duplicateCount ? '没有可导入的新题：有效题都被判定为重复。你可以关闭“跳过重复题”后再导入。' : '没有可导入的题目，请先修正 JSON。'); return; }
     setSaving(true);
-    resetImportOutcome();
+    setImportProgress({ done: 0, total: validItems.length });
     const ids: string[] = [];
     const failed: string[] = [];
+    const failedItems: typeof validItems = [];
     try {
       const batchTitle = `JSON 导入 ${new Date().toLocaleString()}`;
       const batch = await createImportBatch({
@@ -1071,16 +1173,25 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       const importBatchId = String(batch.id);
       setLatestBatchId(importBatchId);
       setLatestBatchTitle(batchTitle);
-      for (const [index, item] of validItems.entries()) {
-        try {
-          const saved = await saveQuestionGroup(withImportReviewTag({ ...item.draft, importBatchId }));
-          ids.push(String(saved.id));
-          setSavedIds([...ids]);
-        } catch (error) {
-          failed.push(`第 ${index + 1} 道「${item.draft?.title || '未命名'}」：${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
+      // 并发导入（最多 5 个同时），实时更新进度
+      const { ok, failed: failedRaw } = await mapWithConcurrency(
+        validItems,
+        5,
+        async (item) => saveQuestionGroup(withImportReviewTag({ ...item.draft, importBatchId })),
+        (done, total) => {
+          setImportProgress({ done, total });
+          // 同步更新已保存 id 列表（顺序可能乱，但只用于计数和跳转，无妨）
+        },
+      );
+      ok.forEach(({ result }) => ids.push(String(result.id)));
+      // 收集失败项，便于「仅重试失败项」
+      failedRaw.forEach(({ item, error }) => {
+        failed.push(`第 ${item.index + 1} 道「${item.draft?.title || '未命名'}」：${error instanceof Error ? error.message : String(error)}`);
+        failedItems.push(item);
+      });
+      setSavedIds([...ids]);
       setFailures(failed);
+      setFailedValidItems(failedItems);
       const skippedDuplicateCount = skipDuplicates ? duplicateCount : 0;
       const batchStatus = failed.length ? 'FAILED' : 'COMPLETED';
       const batchStats = {
@@ -1100,9 +1211,27 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
       });
       setMessage(`导入完成：成功 ${ids.length} 道，保存失败 ${failed.length} 道，跳过 ${invalidItems.length} 道校验失败题目，跳过 ${skippedDuplicateCount} 道重复题。`);
       if (ids.length) void refreshDuplicateMap();
+      if (failed.length) toast.warning(`导入完成，${failed.length} 道失败，可点「仅重试失败项」`);
+      else toast.success(`导入完成，成功 ${ids.length} 道`);
     } finally {
       setSaving(false);
+      setImportProgress(null);
     }
+  };
+
+  /* 仅重试上次失败的题目：把失败项的 JSON 写回 textarea，让用户检视后再次导入 */
+  const retryFailed = () => {
+    if (!failedValidItems.length) {
+      toast.info('没有可重试的失败项');
+      return;
+    }
+    const jsonText = JSON.stringify(failedValidItems.map((item) => item.draft), null, 2);
+    setText(jsonText);
+    setSelectedIndex(0);
+    setFailedValidItems([]);
+    setFailures([]);
+    resetImportOutcome();
+    toast.info(`已把 ${failedValidItems.length} 道失败题载入编辑区，可检查后再次导入`);
   };
 
   const focusFirstAttentionItem = () => {
@@ -1163,6 +1292,7 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
         <button className="btn btn-outline btn-sm" onClick={downloadTemplate}>下载 JSON 模板</button>
         <button className="btn btn-soft btn-sm" onClick={restoreSample}>恢复示例</button>
         <button className="btn btn-soft btn-sm" disabled={duplicateLoading} onClick={() => void refreshDuplicateMap()}>{duplicateLoading ? '刷新中...' : '刷新去重'}</button>
+        <button className="btn btn-success btn-sm" onClick={fillAllCalculationAnswers} title="为所有口算/计算题组自动求值答案">🧮 全部生成答案</button>
         <button className="btn btn-primary btn-sm" disabled={saving || !validItems.length} onClick={() => void importValid()}>
           {saving ? '导入中...' : `导入 ${validItems.length} 道有效题`}
         </button>
@@ -1194,8 +1324,24 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
     </div>}
     {failures.length > 0 && <div className="message-banner danger" style={{ marginBottom: 'var(--space-4)', alignItems: 'flex-start' }}>
       <b>保存失败明细</b>
-      <span>{failures.join('；')}</span>
+      <span style={{ flex: 1 }}>{failures.join('；')}</span>
+      <button className="btn btn-warning btn-sm" onClick={retryFailed} disabled={saving}>仅重试失败项（{failedValidItems.length}）</button>
     </div>}
+
+    {importProgress && (
+      <div className="import-progress-bar" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="import-progress-info">
+          <b>正在导入…</b>
+          <span>{importProgress.done} / {importProgress.total}</span>
+        </div>
+        <div className="progress-bar">
+          <div
+            className="progress-fill"
+            style={{ width: `${importProgress.total ? Math.round((importProgress.done / importProgress.total) * 100) : 0}%` }}
+          />
+        </div>
+      </div>
+    )}
 
     <div className="editor-layout">
       <section className="editor-panel">
@@ -1205,7 +1351,7 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
             <button className="btn btn-outline btn-sm" onClick={() => void copyNormalizedJson()} disabled={!parsed.items.length || Boolean(parsed.parseError)}>复制规范化 JSON</button>
             <button className="btn btn-secondary btn-sm" onClick={() => { setText(''); setSourceType('json'); setSourceName('手动粘贴 JSON'); setSelectedIndex(0); resetImportOutcome(); setShowNeedsAttentionOnly(false); }}>清空</button>
           </div>
-          <textarea style={{ minHeight: 320 }} value={text} onChange={(e) => { setText(e.target.value); setSourceType('json'); setSourceName('手动编辑 JSON'); setSelectedIndex(0); resetImportOutcome(); }} />
+          <textarea style={{ minHeight: 320 }} value={text} onChange={(e) => { setText(e.target.value); setSourceType('json'); setSourceName('手动编辑 JSON'); }} aria-label="题目 JSON 输入" />
           <p className="tip">支持 JSON 对象/数组，也支持 Excel、CSV、TSV 表格上传。Excel 表头可用 title、gradeLevel、difficulty、tags、question_type、stem、answer、options、explanation。</p>
         </div>
 
@@ -1253,6 +1399,9 @@ export function QuestionJsonImportPage({ onBack, onOpenPaper, onStartPaper, onOp
             <div className="json-item-actions">
               <button className="btn btn-primary btn-sm" onClick={applyCurrentItemEdit}>应用修改并重新校验</button>
               <button className="btn btn-outline btn-sm" onClick={applyNormalizedCurrentItem}>写回规范格式</button>
+              {selected.draft?.type === 'calculation_group' && (
+                <button className="btn btn-success btn-sm" onClick={fillAnswersForCurrent}>🧮 一键生成答案</button>
+              )}
             </div>
           </details>
           <ImportPreview draft={selected.draft} />

@@ -118,9 +118,11 @@ export function WrongBookPage({ onBack, onOpenPaperRecords, onPracticePaper, onR
           <button className="btn btn-primary btn-sm" onClick={onRetryWrong} disabled={!records.length}>
             🚀 错题重练
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={onPrintWrong} disabled={!records.length}>
-            🖨️ 打印错题
-          </button>
+          {!isKidRoute && (
+            <button className="btn btn-secondary btn-sm" onClick={onPrintWrong} disabled={!records.length}>
+              🖨️ 打印错题
+            </button>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={refresh} disabled={loading}>
             {loading ? '同步中...' : '刷新'}
           </button>

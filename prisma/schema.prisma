@@ -32,9 +32,13 @@ enum QuestionType {
   FILL_BLANK
   SINGLE_CHOICE
   MULTIPLE_CHOICE
+  /// 仅导入兼容：判断题复用 SINGLE_CHOICE 渲染（两选项），录入侧不产生
   TRUE_FALSE
   MATCHING
   ORDERING
+  /// 连词成句：词块（含标点）按正确语序排列，slot_type 复用 ORDER
+  SENTENCE_BUILD
+  /// 仅导入兼容：应用题复用 FILL_BLANK 渲染，录入侧不产生
   WORD_PROBLEM
   COMPOSITE_CHILD
 }
@@ -227,6 +231,8 @@ model QuestionGroup {
   id               BigInt            @id @default(autoincrement())
   ownerId          BigInt            @map("owner_id")
   subjectId        BigInt            @map("subject_id")
+  /// 冗余缓存（= 链接表 QuestionGroupKnowledgePoint 中 sort_order 最小者）。
+  /// 写入时只维护链接表，读取时以链接表为准；本字段仅供快速过滤/展示。
   knowledgePointId BigInt?           @map("knowledge_point_id")
   importBatchId    BigInt?           @map("import_batch_id")
   title            String            @db.VarChar(255)
@@ -262,6 +268,7 @@ model Question {
   ownerId          BigInt       @map("owner_id")
   groupId          BigInt?      @map("group_id")
   subjectId        BigInt       @map("subject_id")
+  /// 冗余缓存（同 QuestionGroup.knowledgePointId），以 QuestionKnowledgePoint 链接表为准
   knowledgePointId BigInt?      @map("knowledge_point_id")
   questionType     QuestionType @map("question_type")
   stem             String       @db.Text
@@ -347,6 +354,7 @@ model QuestionOption {
   questionId BigInt @map("question_id")
   optionKey  String @map("option_key") @db.VarChar(20)
   content    String @db.Text
+  isCorrect  Boolean @default(false) @map("is_correct")
   sortOrder  Int    @default(0) @map("sort_order")
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)

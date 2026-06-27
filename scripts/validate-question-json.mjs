@@ -13,6 +13,7 @@ const questionTypes = new Set([
   'true_false',
   'ordering',
   'matching',
+  'sentence_build',
   'word_problem',
 ]);
 
@@ -26,6 +27,8 @@ const typeAliases = new Map(Object.entries({
   TRUE_FALSE: 'true_false',
   ORDERING: 'ordering',
   MATCHING: 'matching',
+  SENTENCE_BUILD: 'sentence_build',
+  SENTENCE: 'sentence_build',
   WORD_PROBLEM: 'word_problem',
   ORAL_ARITHMETIC: 'calculation_group',
   MENTAL_MATH: 'calculation_group',
@@ -154,7 +157,7 @@ function normalizeAnswerSlots(question, questionType) {
   if (Array.isArray(slots) && slots.length) {
     return slots.map((slot, index) => ({
       slot_key: normalizeSlotKey(slot.slot_key ?? slot.slotKey, `blank_${index + 1}`),
-      slot_type: canonicalSlotType(slot.slot_type ?? slot.slotType, questionType === 'matching' ? 'match' : questionType === 'ordering' ? 'order' : questionType.includes('choice') || questionType === 'true_false' ? 'choice' : 'text'),
+      slot_type: canonicalSlotType(slot.slot_type ?? slot.slotType, questionType === 'matching' ? 'match' : questionType === 'ordering' || questionType === 'sentence_build' ? 'order' : questionType.includes('choice') || questionType === 'true_false' ? 'choice' : 'text'),
       correct_answer: Array.isArray(slot.correct_answer ?? slot.correctAnswer) ? (slot.correct_answer ?? slot.correctAnswer) : asArray(slot.correct_answer ?? slot.correctAnswer),
       answer_rule: slot.answer_rule ?? slot.answerRule,
       placeholder: slot.placeholder,
@@ -332,6 +335,18 @@ function validateQuestion(question, path, errors, warnings) {
     if (!leftKeys.length || !rightKeys.length) errors.push(`${path}: matching question needs content.left and content.right`);
     const invalid = matches.filter((match) => !leftKeys.includes(text(match?.left)) || !rightKeys.includes(text(match?.right)));
     if (invalid.length) errors.push(`${path}: matching answer references missing keys`);
+  }
+
+  if (question.question_type === 'sentence_build') {
+    const tokens = asArray(question.content?.tokens);
+    if (tokens.length < 2) errors.push(`${path}: sentence_build needs at least 2 tokens`);
+    const tokenKeys = tokens.map((t) => text(t?.key)).filter(Boolean);
+    if (new Set(tokenKeys).size !== tokenKeys.length) errors.push(`${path}: sentence_build token keys must be unique`);
+    if (tokens.some((t) => !text(t?.text).trim())) errors.push(`${path}: sentence_build has empty token text`);
+    const answerKeys = asArray(slots[0]?.correct_answer).map(text).filter(Boolean);
+    if (answerKeys.length !== tokenKeys.length) errors.push(`${path}: sentence_build answer count must match tokens`);
+    const invalidAnswer = answerKeys.filter((key) => !tokenKeys.includes(key));
+    if (invalidAnswer.length) errors.push(`${path}: sentence_build answer references missing token keys ${invalidAnswer.join(', ')}`);
   }
 
   const body = JSON.stringify(question);

@@ -5,7 +5,7 @@
 
 .parent-layout {
   display: flex;
-  min-height: 100vh;
+  min-height: var(--app-vh);
   background: var(--bg-page);
 }
 
@@ -185,9 +185,45 @@
 
 .parent-content {
   padding: var(--space-6);
-  max-width: var(--content-max-width);
+  /* 放宽到 1600px，让宽屏（1920/2560）下的表格/双栏充分铺满，不再被 1200px 挤成窄长条 */
+  max-width: 1600px;
   margin: 0 auto;
   animation: fadeInUp 0.3s var(--ease-out-expo);
+}
+
+/* ---- 侧栏折叠（PC 桌面端） ---- */
+.parent-layout.sidebar-collapsed .parent-sidebar {
+  width: var(--sidebar-collapsed);
+}
+
+.parent-layout.sidebar-collapsed .parent-main {
+  margin-left: var(--sidebar-collapsed);
+}
+
+.parent-layout.sidebar-collapsed .sidebar-brand-text,
+.parent-layout.sidebar-collapsed .sidebar-link-text,
+.parent-layout.sidebar-collapsed .sidebar-section-label {
+  /* 折叠时隐藏文字，仅留图标列 */
+  display: none;
+}
+
+.parent-layout.sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding: var(--space-4) var(--space-2);
+}
+
+.parent-layout.sidebar-collapsed .sidebar-link {
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+}
+
+/* toggle 按钮显隐：默认只显示桌面折叠按钮，移动端按钮在小屏才出现 */
+.sidebar-toggle.desktop-only {
+  display: inline-flex;
+}
+
+.sidebar-toggle.mobile-only {
+  display: none;
 }
 
 /* ---- 页面头部 ---- */
@@ -314,7 +350,6 @@
 
 /* ---- 移动端侧边栏 ---- */
 .sidebar-toggle {
-  display: none;
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
@@ -355,8 +390,12 @@
     margin-left: 0;
   }
 
-  .sidebar-toggle {
-    display: flex;
+  /* 小屏下移动端菜单按钮可见，桌面折叠按钮隐藏 */
+  .sidebar-toggle.desktop-only {
+    display: none;
+  }
+  .sidebar-toggle.mobile-only {
+    display: inline-flex;
   }
 
   .parent-content {

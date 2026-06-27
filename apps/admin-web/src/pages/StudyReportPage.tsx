@@ -147,9 +147,11 @@ export function StudyReportPage({ onBack, onTaskCenter, onWrongBook, onStartPape
           <button className="btn btn-soft btn-sm" onClick={refresh}>
             {loading ? '生成中...' : '刷新报告'}
           </button>
-          <button className="btn btn-outline btn-sm" onClick={() => window.print()}>
-            打印报告
-          </button>
+          {!isKidRoute && (
+            <button className="btn btn-outline btn-sm" onClick={() => window.print()}>
+              打印报告
+            </button>
+          )}
         </div>
       </header>
 

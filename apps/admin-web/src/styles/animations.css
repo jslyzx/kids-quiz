@@ -84,9 +84,10 @@
   to { opacity: 0; transform: translateX(-50%) translateY(12px); }
 }
 
-/* ---- 进度条 ---- */
+/* ---- 进度条（transform 版本，避免重排） ---- */
 @keyframes progressGrow {
-  from { width: 0; }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 /* ---- 星星奖励 ---- */

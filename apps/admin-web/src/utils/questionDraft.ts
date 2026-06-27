@@ -23,6 +23,8 @@ export const defaultState: AppState = {
   matchingLeft: '3×4\n5×6\n8÷2',
   matchingRight: '4\n12\n30',
   matchingAnswer: '3×4=>12\n5×6=>30\n8÷2=>4',
+  sentenceTokens: 'I\nam\na\nboy\n#.',
+  sentenceAnswer: '1,2,3,4,5',
   commonStem: '根据下面材料回答问题。',
   tableText: '物品,数量\n苹果,12\n梨,8\n桃子,15\n笔,6',
   materials: [
@@ -56,6 +58,8 @@ export const emptyState: AppState = {
   matchingLeft: '',
   matchingRight: '',
   matchingAnswer: '',
+  sentenceTokens: '',
+  sentenceAnswer: '',
   commonStem: '',
   tableText: '',
   materials: [{ type: 'text', title: '', text: '' }],
@@ -187,6 +191,15 @@ export function dbGroupToAppState(group: any): AppState {
     const items = question.content?.items ?? [];
     return { ...defaultState, mode: 'ordering', title: group.title ?? '', gradeLevel: group.gradeLevel ?? defaultState.gradeLevel, difficulty: Number(group.difficulty ?? defaultState.difficulty), tagsText: Array.isArray(group.tags) ? group.tags.join(',') : '', orderingText: items.map((item: any) => `${item.label ?? item.key},${item.value ?? ''}`).join('\n'), orderingAnswer: (firstSlot?.correctAnswer ?? []).join(','), orderingSeparator: (question.content?.separator === '<' ? '<' : '>'), explanationHtml: question.content?.explanationHtml ?? '' };
   }
+  if (question?.questionType === 'SENTENCE_BUILD') {
+    const tokens = question.content?.tokens ?? [];
+    const answerKeys = (firstSlot?.correctAnswer ?? []).map((k: any) => String(k));
+    // 按答案顺序还原 token 文本（标点行用 # 前缀）
+    const tokenMap = new Map(tokens.map((t: any) => [String(t.key), t]));
+    const orderedTokens = answerKeys.map((k: string) => tokenMap.get(k)).filter(Boolean) as any[];
+    const fallback = orderedTokens.length ? orderedTokens : tokens;
+    return { ...defaultState, mode: 'sentence_build', title: group.title ?? '', gradeLevel: group.gradeLevel ?? defaultState.gradeLevel, difficulty: Number(group.difficulty ?? defaultState.difficulty), tagsText: Array.isArray(group.tags) ? group.tags.join(',') : '', sentenceTokens: fallback.map((t: any) => (t.isPunct && !/[，。！？；、.,!?;:]/.test(String(t.text)) ? `#${t.text}` : String(t.text))).join('\n'), sentenceAnswer: fallback.map((t: any) => String(t.key)).join(','), explanationHtml: question.content?.explanationHtml ?? '' };
+  }
   if (question?.questionType === 'MATCHING') {
     const left = question.content?.left ?? [];
     const right = question.content?.right ?? [];
@@ -233,6 +246,11 @@ function titleForDraft(input: AppState) {
   if (input.mode === 'multiple_choice') return compactText(input.choiceStem) || '多选题';
   if (input.mode === 'ordering') return '排序题';
   if (input.mode === 'matching') return '连线题';
+  if (input.mode === 'sentence_build') {
+    // title 优先用第一个词，否则用"连词成句"
+    const firstToken = input.sentenceTokens.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))[0];
+    return compactText(firstToken || '') ? `连词成句：${firstToken}` : '连词成句';
+  }
   return compactText(input.stem) || '填空题';
 }
 
@@ -277,6 +295,15 @@ export function buildDraft(input: AppState) {
   if (input.mode === 'single_choice' || input.mode === 'multiple_choice') { const options = parseChoiceOptions(input.choiceOptionsText); return { ...meta, type: 'question', title, question: withExplanation({ question_type: input.mode as QuestionType, stem: input.choiceStem, content: { options }, answer_slots: [{ slot_key: 'answer', slot_type: 'choice', correct_answer: input.choiceAnswer.split(',').map((sx) => sx.trim()).filter(Boolean) }] }, input.explanationHtml) }; }
   if (input.mode === 'ordering') { const items = input.orderingText.split('\n').filter(Boolean).map((line, i) => { const [label, value] = line.split(','); return { key: label?.trim() || String(i + 1), label: label?.trim() || String(i + 1), value: value?.trim() || '' }; }); return { ...meta, type: 'question', title, question: withExplanation({ question_type: 'ordering' as QuestionType, stem: questionStemTitle(input, '排序题'), content: { items, separator: input.orderingSeparator }, answer_slots: [{ slot_key: 'answer', slot_type: 'order', correct_answer: input.orderingAnswer.split(',').map((sx) => sx.trim()) }] }, input.explanationHtml) }; }
   if (input.mode === 'matching') { const left = input.matchingLeft.split('\n').filter(Boolean).map((text, i) => ({ key: 'L' + (i + 1), text })); const right = input.matchingRight.split('\n').filter(Boolean).map((text, i) => ({ key: 'R' + (i + 1), text })); const matches = input.matchingAnswer.split('\n').filter(Boolean).map((line) => { const [l, r] = line.split('=>').map((sx) => sx.trim()); return { left: left.find((x) => x.text === l)?.key ?? l, right: right.find((x) => x.text === r)?.key ?? r }; }); return { ...meta, type: 'question', title, question: withExplanation({ question_type: 'matching' as QuestionType, stem: questionStemTitle(input, '连线题'), content: { left, right }, answer_slots: [{ slot_key: 'answer', slot_type: 'match', correct_answer: matches }] }, input.explanationHtml) }; }
+  if (input.mode === 'sentence_build') {
+    const tokens = input.sentenceTokens.split('\n').map((l) => l.trim()).filter(Boolean).map((line, i) => {
+      if (line.startsWith('#')) return { key: String(i + 1), text: line.slice(1).trim(), isPunct: true };
+      const autoPunct = line.length === 1 && /[，。！？；、.,!?;:]/.test(line);
+      return { key: String(i + 1), text: line, isPunct: autoPunct };
+    });
+    const answerKeys = (input.sentenceAnswer || tokens.map((t) => t.key).join(',')).split(',').map((s) => s.trim()).filter(Boolean);
+    return { ...meta, type: 'question', title, question: withExplanation({ question_type: 'sentence_build' as QuestionType, stem: compactText(input.stem) && input.stem !== '____' ? input.stem : '把下面的词连成一句话，注意标点也要排到正确位置。', content: { tokens }, answer_slots: [{ slot_key: 'answer', slot_type: 'order', correct_answer: answerKeys }] }, input.explanationHtml) };
+  }
   if (input.mode === 'composite') { const materials = normalizeMaterials(input.materials); const firstText = materials.find((item) => item.type === 'text') as any; const firstTable = materials.find((item) => item.type === 'table') as any; return { ...meta, type: 'composite_group', title, commonStem: firstText?.text ?? input.commonStem, table: firstTable?.table ?? parseTable(input.tableText), materials, children: input.children.map(childToQuestion) }; }
   return { ...meta, type: 'question', title, question: withExplanation({ question_type: 'fill_blank' as QuestionType, stem: input.stem, answer_slots: makeBlankSlots(input.stem, 'number', input.answers) }, input.explanationHtml) };
 }

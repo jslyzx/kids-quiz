@@ -93,7 +93,8 @@
   /* ---- 文字 ---- */
   --text-primary: var(--slate-900);
   --text-secondary: var(--slate-600);
-  --text-muted: var(--slate-400);
+  --text-muted: var(--slate-500); /* 提升至 #64748b，对比度 4.6:1，满足 WCAG AA 正文 */
+  --text-faint: var(--slate-400); /* 仅用于装饰性/非必要文字 */
   --text-inverse: #ffffff;
 
   /* ---- 边框 ---- */
@@ -177,6 +178,20 @@
   --header-height: 64px;
   --bottom-tab-height: 76px;
   --content-max-width: 1200px;
+
+  /* ---- 视口高度（兼容 iPad Safari 地址栏伸缩） ---- */
+  --vh: 1vh; /* 默认回退 */
+  --app-vh: 100vh; /* 动态视口高度，优先 dvh */
+  --app-svh: 100vh; /* 最小视口高度（地址栏展开） */
+  --app-lvh: 100vh; /* 最大视口高度（地址栏收起） */
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-vh: 100dvh;
+    --app-svh: 100svh;
+    --app-lvh: 100lvh;
+  }
 }
 
 /* ---- 孩子端主题 ---- */
@@ -189,4 +204,13 @@
   --radius-3xl: 38px;
   --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.10);
+}
+
+/* ---- 孩子端统一渐变背景（首页/练习/任务/娱乐/报告共用） ---- */
+:root {
+  --bg-kid-gradient: linear-gradient(180deg, #f8fafc 0%, #eef6ff 52%, #fffaf3 100%);
+  --bg-kid-gradient-rich:
+    linear-gradient(150deg, rgba(20, 184, 166, 0.10), transparent 32%),
+    linear-gradient(210deg, rgba(249, 115, 22, 0.11), transparent 34%),
+    linear-gradient(180deg, #f8fafc 0%, #eef6ff 52%, #fffaf3 100%);
 }

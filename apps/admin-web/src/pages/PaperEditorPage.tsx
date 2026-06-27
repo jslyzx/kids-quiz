@@ -3,6 +3,8 @@ import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kid
 import { addPaperQuestionGroup, getPaper, removePaperItem, reorderPaperItems, updatePaper } from '../api/papers';
 import { listQuestionGroups } from '../api/questionGroups';
 import { dbGroupToPreviewDraft } from '../utils/dbPreview';
+import { useToast } from '../components/ToastProvider';
+import { ConfirmDialog, Modal } from '../components/Modal';
 
 type Props = {
   paperId: string;
@@ -41,6 +43,7 @@ function groupTags(group: any): string[] {
 }
 
 export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
+  const { toast } = useToast();
   const [paper, setPaper] = useState<any>(null);
   const [groups, setGroups] = useState<any[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -48,9 +51,9 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
   const [pickerType, setPickerType] = useState('ALL');
   const [pickerGrade, setPickerGrade] = useState('');
   const [pickerTag, setPickerTag] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [previewGroup, setPreviewGroup] = useState<any>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; title: string } | null>(null);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const refreshSeqRef = useRef(0);
@@ -93,9 +96,8 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
       setMetaTitle(paperData.title || '');
       setMetaDescription(paperData.description || '');
       setSelectedGroupId(groupData.find((group) => !new Set((paperData.items || []).map((item: any) => String(item.groupId))).has(String(group.id)))?.id?.toString() || '');
-      setMessage(`已加载试卷：${paperData.title}`);
     } catch (error) {
-      if (seq === refreshSeqRef.current) setMessage(`加载失败：${error instanceof Error ? error.message : String(error)}`);
+      if (seq === refreshSeqRef.current) toast.danger(`加载失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       if (seq === refreshSeqRef.current) setLoading(false);
     }
@@ -109,26 +111,28 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
 
   const addSelected = async (groupId = selectedGroupId) => {
     if (!groupId) {
-      setMessage('请先选择一道题目');
+      toast.warning('请先选择一道题目');
       return;
     }
     try {
       const updated = await addPaperQuestionGroup(paperId, groupId);
       setPaper(updated);
-      setMessage('已加入试卷');
+      toast.success('已加入试卷');
     } catch (error) {
-      setMessage(`加入失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`加入失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
-  const remove = async (itemId: string) => {
-    if (!confirm(`确认从试卷中移除题目项 ID：${itemId}？`)) return;
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
     try {
-      const updated = await removePaperItem(paperId, itemId);
+      const updated = await removePaperItem(paperId, removeTarget.id);
       setPaper(updated);
-      setMessage('已从试卷移除');
+      toast.success('已从试卷移除');
     } catch (error) {
-      setMessage(`移除失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`移除失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setRemoveTarget(null);
     }
   };
 
@@ -136,9 +140,9 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
     try {
       const updated = await updatePaper(paperId, { title: metaTitle, description: metaDescription });
       setPaper(updated);
-      setMessage('已保存试卷信息');
+      toast.success('已保存试卷信息');
     } catch (error) {
-      setMessage(`保存失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`保存失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -151,9 +155,8 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
     try {
       const updated = await reorderPaperItems(paperId, nextItems.map((item: any) => String(item.id)));
       setPaper(updated);
-      setMessage('已调整题目顺序');
     } catch (error) {
-      setMessage(`排序失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`排序失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -171,7 +174,6 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
           <button className="btn btn-outline btn-sm" onClick={onPreview}>学生预览</button>
           <button className="btn btn-outline btn-sm" onClick={refresh}>{loading ? '加载中...' : '刷新'}</button>
         </div>
-        {message && <p className="message">{message}</p>}
         <div className="paper-meta-box">
           <h2>试卷信息</h2>
           <label>试卷标题</label>
@@ -232,7 +234,7 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
               <div className="rowActions">
                 <button className="btn btn-secondary btn-sm" disabled={index === 0} onClick={() => moveItem(index, -1)}>上移</button>
                 <button className="btn btn-secondary btn-sm" disabled={index === (paper?.items?.length ?? 0) - 1} onClick={() => moveItem(index, 1)}>下移</button>
-                <button className="btn btn-danger btn-sm" onClick={() => remove(String(item.id))}>移除</button>
+                <button className="btn btn-danger btn-sm" onClick={() => setRemoveTarget({ id: String(item.id), title: item.group?.title || item.question?.stem || '未命名题目' })}>移除</button>
               </div>
             </div>
             {item.group && renderGroupPreview(item.group)}
@@ -242,14 +244,26 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
       </section>
     </div>
 
-    {previewGroup && <div className="modal-overlay" onClick={() => setPreviewGroup(null)}>
-      <div className="modal-panel" onClick={(event) => event.stopPropagation()}>
-        <div className="modal-header">
-          <div><h2>{previewGroup.title}</h2><p>ID：{previewGroup.id} / 类型：{previewGroup.groupType}</p></div>
-          <button className="btn btn-secondary btn-sm" onClick={() => setPreviewGroup(null)}>关闭</button>
-        </div>
-        <div className="modal-body">{renderGroupPreview(previewGroup)}</div>
-      </div>
-    </div>}
+    {previewGroup && (
+      <Modal
+        open={!!previewGroup}
+        onClose={() => setPreviewGroup(null)}
+        title={previewGroup.title}
+        description={`ID：${previewGroup.id} / 类型：${previewGroup.groupType}`}
+        width={1100}
+      >
+        {renderGroupPreview(previewGroup)}
+      </Modal>
+    )}
+
+    <ConfirmDialog
+      open={!!removeTarget}
+      title="从试卷移除题目"
+      danger
+      confirmText="移除"
+      description={removeTarget ? `确认从试卷中移除「${removeTarget.title}」？题目本身在题库中不会被删除，可随时再次加入。` : ''}
+      onConfirm={confirmRemove}
+      onCancel={() => setRemoveTarget(null)}
+    />
   </div>;
 }

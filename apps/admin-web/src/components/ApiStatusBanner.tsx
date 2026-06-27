@@ -13,12 +13,37 @@ export function ApiStatusBanner() {
 
   useEffect(() => {
     void refresh();
-    const timer = window.setInterval(() => void refresh(), 15000);
-    const onFocus = () => void refresh();
-    window.addEventListener('focus', onFocus);
-    return () => {
+    let timer: number | null = null;
+    const start = () => {
+      if (timer !== null) return;
+      timer = window.setInterval(() => void refresh(), 15000);
+    };
+    const stop = () => {
+      if (timer === null) return;
       window.clearInterval(timer);
+      timer = null;
+    };
+    const onVisibility = () => {
+      // 页面隐藏时停止轮询，避免后台无谓请求；可见时立即刷新并恢复轮询
+      if (document.hidden) {
+        stop();
+      } else {
+        void refresh();
+        start();
+      }
+    };
+    const onFocus = () => { void refresh(); start(); };
+    const onBlur = () => stop();
+
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
     };
   }, []);
 

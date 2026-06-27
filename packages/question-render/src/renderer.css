@@ -9,3 +9,6 @@
 .kq-column-cell.empty{visibility:hidden}
 .kq-column-cell.fixed{background:#fff;color:#111827}
 .kq-column-slot{border:2px solid #60a5fa;background:#eff6ff}
+.kq-sentence-pills{align-items:baseline;gap:0}
+.kq-sentence-pills .kq-pill{margin-right:8px}
+.kq-sentence-pills .kq-pill-punct{background:#f1f5f9;border-color:#cbd5e1;color:#64748b;padding:4px 10px;font-size:16px;margin-right:4px;margin-left:-4px}

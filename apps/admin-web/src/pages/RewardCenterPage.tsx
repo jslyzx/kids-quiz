@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { confirmRewardRedemption, getChildRewards, getRewards, requestRewardRedemption, saveRewardCatalog, type RewardCatalogItem, type RewardRedemption } from '../api/student';
 import { badgeLabels, readRewardState, type RewardState } from '../utils/rewards';
 import { useSelectedStudentId } from '../utils/useSelectedStudent';
+import { useToast } from '../components/ToastProvider';
+import { ConfirmDialog } from '../components/Modal';
 
 type Props = {
   onBack: () => void;
@@ -37,12 +39,14 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
   const location = useLocation();
   const isKidRoute = location.pathname.startsWith('/kid');
   const selectedStudentId = useSelectedStudentId();
+  const { toast } = useToast();
   const [reward, setReward] = useState<RewardState>(() => readRewardState());
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [catalogDraft, setCatalogDraft] = useState({ title: '', cost: '20', description: '' });
   const [redemptionStatusFilter, setRedemptionStatusFilter] = useState<'ALL' | RewardRedemption['status']>('ALL');
   const [redemptionKeyword, setRedemptionKeyword] = useState('');
+  const [redeemTarget, setRedeemTarget] = useState<RewardCatalogItem | null>(null);
   const refreshSeqRef = useRef(0);
 
   const refresh = () => {
@@ -113,12 +117,18 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
     setSaving(true);
     try {
       applyRewardData(await requestRewardRedemption(item.id));
-      setMessage(`已提交兑换申请：${item.title}`);
+      toast.success(`已提交兑换申请：${item.title}`);
     } catch (error) {
-      setMessage(`兑换失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`兑换失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSaving(false);
     }
+  };
+
+  const confirmRedeem = async () => {
+    if (!redeemTarget) return;
+    await redeem(redeemTarget);
+    setRedeemTarget(null);
   };
 
   const confirm = async (id: string, status: 'APPROVED' | 'REJECTED') => {
@@ -182,7 +192,7 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
       <header className="page-header reward-page-header">
         <div className="page-header-left">
           <h1 className="page-title">奖励与成就中心</h1>
-          <p className="page-subtitle">回看你的每一颗星星和荣誉徽章，见证你的坚持与每一步成长！</p>
+          <p className="page-subtitle">回看你的每一颗星星和徽章，看看自己有多棒！</p>
         </div>
         <div className="page-actions reward-page-actions">
           <button className="btn btn-secondary btn-sm" onClick={onBack}>返回首页</button>
@@ -204,7 +214,7 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
             已收集 <span>{reward.stars}</span> 颗星星
           </h2>
           <p>
-            🔥 连续练习达到 <b>{reward.streakDays}</b> 天！已获得 <b>{reward.badges.length}</b> / <b>{allBadges.length}</b> 枚至尊荣誉徽章。
+            🔥 已经连续练习 <b>{reward.streakDays}</b> 天！获得了 <b>{reward.badges.length}</b> / <b>{allBadges.length}</b> 枚专属徽章。
           </p>
           
           <div className="reward-achievement-progress">
@@ -231,7 +241,7 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
                   <span>{item.description || '家长确认后完成兑换'}</span>
                 </div>
                 <strong>{item.cost} 星</strong>
-                {isKidRoute ? <button className="btn btn-primary btn-sm" disabled={disabled} onClick={() => void redeem(item)}>
+                {isKidRoute ? <button className="btn btn-primary btn-sm" disabled={disabled} onClick={() => setRedeemTarget(item)}>
                   {reward.stars < item.cost ? '星星不足' : '申请兑换'}
                 </button> : <button className="btn btn-soft btn-sm" disabled={saving} onClick={() => void saveCatalog(catalog.map((row) => row.id === item.id ? { ...row, enabled: !row.enabled } : row))}>
                   {item.enabled ? '停用' : '启用'}
@@ -313,10 +323,19 @@ export function RewardCenterPage({ onBack, onTaskCenter }: Props) {
         <ul>
           <li>完成一次<b>试卷练习</b>或<b>错题重练</b>，即可收获海量星星。</li>
           <li><b>答对的题数越多</b>，累积获得的星星就越多。</li>
-          <li>单次练习正确率达到 <b>90%</b> 或 <b>100%</b>，会触发连胜暴击，收获额外惊喜星礼！</li>
-          <li><b>每天坚持练习</b>是真正的强者印记，可以解锁专属的连续活跃荣誉徽章。</li>
+          <li>单次练习正确率达到 <b>90%</b> 或 <b>100%</b>，会获得额外的星星奖励！</li>
+          <li><b>每天坚持练习</b>，可以解锁专属的连续练习徽章。</li>
         </ul>
       </div>
+
+      <ConfirmDialog
+        open={!!redeemTarget}
+        title="确认兑换"
+        confirmText={`花 ${redeemTarget?.cost ?? 0} 星兑换`}
+        description={redeemTarget ? `要花 ${redeemTarget.cost} 颗星星兑换「${redeemTarget.title}」吗？兑换后会提交给家长确认，星星会在家长批准后扣除。` : ''}
+        onConfirm={confirmRedeem}
+        onCancel={() => setRedeemTarget(null)}
+      />
     </div>
   );
 }

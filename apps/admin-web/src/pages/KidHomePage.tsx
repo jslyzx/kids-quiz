@@ -123,6 +123,26 @@ function groupSearchText(group: any) {
   return `${group.title || ''}\u3001${group.commonStem || ''}\u3001${groupTags(group).join('\u3001')}`;
 }
 
+/** 推断题组的题型图标和名称，用于孩子端卡片直观展示 */
+function inferQuestionType(group: any): { icon: string; label: string } {
+  const tags = groupTags(group);
+  const tagText = tags.join('/');
+  const title = String(group.title || '');
+  // 按标签/标题优先匹配具体题型
+  if (tagText.includes('连词成句') || title.includes('连词成句')) return { icon: '🔤', label: '连词成句' };
+  if (tagText.includes('古诗')) return { icon: '📜', label: '古诗' };
+  if (tagText.includes('连线')) return { icon: '🔗', label: '连线题' };
+  if (tagText.includes('排序')) return { icon: '🔢', label: '排序题' };
+  if (tagText.includes('选择')) return { icon: '☑️', label: '选择题' };
+  if (tagText.includes('填空')) return { icon: '✏️', label: '填空题' };
+  // 按 groupType 兜底
+  switch (group.groupType) {
+    case 'MENTAL_MATH': return { icon: '⚡', label: '口算' };
+    case 'COMPOSITE': return { icon: '📚', label: '复合题' };
+    default: return { icon: '📝', label: '练习题' };
+  }
+}
+
 export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, onOpenWrongBook, onRetryWrong, onOpenTaskCenter, onOpenReport, onOpenRewards, onOpenRecords, onOpenGames, onSwitchStudent }: Props) {
   const [activeTab, setActiveTab] = useState<KidTab>('home');
   const [papers, setPapers] = useState<any[]>([]);
@@ -337,53 +357,33 @@ export function KidHomePage({ onBackAdmin, onStartPaper, onStartQuestionGroup, o
           <button className={practiceMode === 'question' ? 'active' : ''} onClick={() => setPracticeMode('question')}>{'\u9898\u76ee\u7ec3\u4e60'}</button>
         </div>
         {practiceMode === 'paper' ? <div className="card-grid card-grid-auto">{papers.map(renderPaperCard)}{!papers.length && <div className="empty-state"><span className="empty-state-icon">📄</span><p className="empty-state-title">{TXT.noPaper}</p></div>}</div> : <>
-          <div className="stat-grid stat-grid-3 kid-question-stats">
-            <div className="stat-card"><span className="stat-value">{questionGroups.length}</span><span className="stat-label">{'\u9898\u5e93\u9898\u7ec4'}</span></div>
-            <div className="stat-card"><span className="stat-value accent">{filteredQuestionGroups.length}</span><span className="stat-label">{'\u7b5b\u9009\u7ed3\u679c'}</span></div>
-            <div className="stat-card"><span className="stat-value">{gradeOptions.length || '-'}</span><span className="stat-label">{'\u5e74\u7ea7'}</span></div>
-          </div>
-          <div className="questionSubjectCardsV2">
+          {/* 孩子端题目练习：精简为单行学科筛选 + 卡片列表，去掉统计卡/主题卡/题型chips/select */}
+          <div className="kid-question-simple-filter">
             {([
-              ['ALL', '\u2728', '\u5168\u90e8\u9898\u76ee', '\u6309\u81ea\u5df1\u60f3\u7ec3\u7684\u5185\u5bb9\u6311', questionGroups.length],
-              ['\u6570\u5b66', '\u{1F522}', '\u6570\u5b66', '\u53e3\u7b97\u3001\u5e94\u7528\u9898\u3001\u6570\u611f', subjectCounts['\u6570\u5b66'] || 0],
-              ['\u8bed\u6587', '\u{1F4D6}', '\u8bed\u6587', '\u53e4\u8bd7\u3001\u8bcd\u8bed\u3001\u8fde\u7ebf', subjectCounts['\u8bed\u6587'] || 0],
-              ['\u82f1\u8bed', '\u{1F3A7}', '\u82f1\u8bed', '\u5355\u8bcd\u3001\u8bed\u6cd5\u3001\u9009\u62e9', subjectCounts['\u82f1\u8bed'] || 0],
-            ] as Array<[string, string, string, string, number]>).map(([key, icon, title, desc, count]) => <button key={key} className={subjectFilter === key ? 'active' : ''} onClick={() => { setSubjectFilter(key); setTagFilter(''); }}>
-              <span>{icon}</span><b>{title}</b><small>{desc}</small><em>{count} {'\u9053'}</em>
+              ['ALL', '✨', '全部'],
+              ['数学', '🔢', '数学'],
+              ['语文', '📖', '语文'],
+              ['英语', '🎧', '英语'],
+            ] as Array<[string, string, string]>).map(([key, icon, label]) => <button key={key} className={subjectFilter === key ? 'active' : ''} onClick={() => { setSubjectFilter(subjectFilter === key ? 'ALL' : key); setTagFilter(''); }}>
+              <span aria-hidden="true">{icon}</span>{label}
             </button>)}
           </div>
-          <div className="questionTopicCardsV2">
-            {([
-              ['\u6613\u9519\u9898', '\u{1F525}', keywordCount('\u6613\u9519\u9898')],
-              ['\u53e4\u8bd7', '\u{1F4DC}', keywordCount('\u53e4\u8bd7')],
-              ['\u586b\u7a7a\u9898', '\u270D\uFE0F', keywordCount('\u586b\u7a7a\u9898')],
-              ['\u9009\u62e9\u9898', '\u2705', keywordCount('\u9009\u62e9\u9898')],
-              ['\u8fde\u7ebf\u9898', '\u{1F517}', keywordCount('\u8fde\u7ebf\u9898')],
-            ] as Array<[string, string, number]>).map(([label, icon, count]) => <button key={label} className={tagFilter === label ? 'active' : ''} onClick={() => setTagFilter(tagFilter === label ? '' : label)}>
-              <span>{icon}</span><b>{label}</b><em>{count}</em>
-            </button>)}
-          </div>
-          <div className="questionTypeChipsV2">
-            {([
-              ['ALL', '\u5168\u90e8', questionTypeCounts.ALL],
-              ['CALCULATION', '\u53e3\u7b97', questionTypeCounts.CALCULATION],
-              ['COMPOSITE', '\u590d\u5408\u9898', questionTypeCounts.COMPOSITE],
-              ['SINGLE', '\u5355\u9898', questionTypeCounts.SINGLE],
-            ] as Array<[string, string, number]>).map(([key, label, count]) => <button key={key} className={typeFilter === key ? 'active' : ''} onClick={() => setTypeFilter(key)}><b>{label}</b><span>{count}</span></button>)}
-          </div>
-          <div className="filter-bar kid-question-filter-bar">
-            <select value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)}><option value="ALL">{'\u5168\u90e8\u79d1\u76ee'}</option><option value={'\u6570\u5b66'}>{'\u6570\u5b66'}</option><option value={'\u8bed\u6587'}>{'\u8bed\u6587'}</option><option value={'\u82f1\u8bed'}>{'\u82f1\u8bed'}</option><option value={'\u5176\u4ed6'}>{'\u5176\u4ed6'}</option></select>
-            <select value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)}><option value="">{'\u5168\u90e8\u5e74\u7ea7'}</option>{gradeOptions.map((grade) => <option key={grade} value={grade}>{grade}</option>)}</select>
-            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="ALL">{'\u5168\u90e8\u9898\u578b'}</option><option value="CALCULATION">{'\u53e3\u7b97\u9898\u7ec4'}</option><option value="COMPOSITE">{'\u590d\u5408\u9898'}</option><option value="SINGLE">{'\u5355\u9898'}</option></select>
-            <input value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} placeholder={'\u6309\u79d1\u76ee/\u6807\u7b7e/\u6807\u9898\u641c\u7d22\uff0c\u4f8b\u5982\uff1a\u6570\u5b66'} />
-          </div>
-          <div className="card-grid card-grid-auto">
-            {filteredQuestionGroups.map((group) => <button className="kid-practice-card" key={group.id} onClick={() => startQuestionGroup(String(group.id))}>
-              <span className="kid-practice-card-top"><b>{group.title || '\u672a\u547d\u540d\u9898\u76ee'}</b><em>{'\u5f00\u59cb'}</em></span>
-              <small>{group.gradeLevel || '\u672a\u8bbe\u7f6e\u5e74\u7ea7'} {'\u00b7'} {typeLabels[group.groupType] || group.groupType || '\u9898\u76ee'} {'\u00b7'} {'\u96be\u5ea6'} {group.difficulty ?? '-'}</small>
-              <span>{Array.isArray(group.tags) && group.tags.length ? group.tags.join('\u3001') : '\u6682\u65e0\u6807\u7b7e'}</span>
-            </button>)}
-            {!filteredQuestionGroups.length && <div className="empty-state"><span className="empty-state-icon">🔍</span><p className="empty-state-title">{'\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u9898\u76ee\u3002'}</p></div>}
+          <div className="card-grid card-grid-auto kid-question-grid">
+            {filteredQuestionGroups.map((group) => {
+              const qType = inferQuestionType(group);
+              return <button className="kid-practice-card kid-question-card" key={group.id} onClick={() => startQuestionGroup(String(group.id))}>
+                <span className="kid-practice-card-top">
+                  <b>{group.title || '未命名题目'}</b>
+                  <em className="kid-card-type-badge">{qType.icon} {qType.label}</em>
+                </span>
+                <small>{group.gradeLevel || ''}{group.gradeLevel ? ' · ' : ''}难度 {'⭐'.repeat(Math.min(5, Number(group.difficulty) || 1))}</small>
+                {Array.isArray(group.tags) && group.tags.length > 0 && (
+                  <span className="kid-card-tags">{group.tags.slice(0, 3).map((tag: string) => <span key={tag} className="badge badge-muted">{tag}</span>)}</span>
+                )}
+                <span className="kid-card-start-btn">开始 →</span>
+              </button>;
+            })}
+            {!filteredQuestionGroups.length && <div className="empty-state"><span className="empty-state-icon">🔍</span><p className="empty-state-title">没有符合条件的题目</p></div>}
           </div>
         </>}
       </section>}

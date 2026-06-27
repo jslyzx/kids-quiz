@@ -100,6 +100,16 @@ function PrintQuestion({ question, index }: { question: QuestionDraft; index?: n
     </div>;
   }
 
+  if (question.question_type === 'sentence_build') {
+    const tokens = (question.content?.tokens ?? []) as Array<{ key: string; text: string; isPunct?: boolean }>;
+    return <div className="printQuestion">
+      {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}
+      <div className="printStem">{prefix}{renderMathText(question.stem)}</div>
+      <div className="printOptions printSentenceTokens">{tokens.map((token) => <span key={token.key} className={token.isPunct ? 'printPunct' : ''}>{token.text}</span>)}</div>
+      <div className="printSentenceLine" />
+    </div>;
+  }
+
   if (question.question_type === 'matching') {
     return <div className="printQuestion">
       {Array.isArray(materials) && materials.length > 0 && <PrintMaterials draft={{ materials }} />}

@@ -53,9 +53,10 @@ function renderRetryStem(stem: string, record: any, answers: RetryAnswers, resul
     const slotKey = `blank_${match[1]}`;
     const detail = details.find((item: any) => item.slotKey === slotKey);
     const key = retryKey(String(record.id), slotKey);
+    // 用柔和的 warning 色而非 rose 红色，降低挫败感
     const resultClass = results ? (results[key] ? 'correct' : 'wrong') : '';
     parts.push(<input key={key} className={`studentBlank ${resultClass}`} value={answers[key] || ''} onChange={(event) => setAnswer(key, event.target.value)} placeholder="再答一次" />);
-    if (detail && results && !results[key]) parts.push(<span className="retryCorrectTip" key={`${key}-tip`}>正确答案：{displayValue(detail.correctValue)}</span>);
+    if (detail && results && !results[key]) parts.push(<span className="retryCorrectTip" key={`${key}-tip`}>没关系，正确答案是 <b>{displayValue(detail.correctValue)}</b></span>);
     last = re.lastIndex;
   }
   if (last < stem.length) parts.push(...renderMathText(stem.slice(last)));

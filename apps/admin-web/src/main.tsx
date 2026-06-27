@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ParentLayout } from './layouts/ParentLayout';
 import { ApiStatusBanner } from './components/ApiStatusBanner';
+import { ToastProvider } from './components/ToastProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { clearStudentSession, isAdminLoggedIn, isStudentLoggedIn } from './api/client';
 import './index.css';
 
@@ -322,8 +324,9 @@ function AppRoutes() {
   return (
     <>
       <ApiStatusBanner />
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/student-login" element={<StudentLoginPage />} />
 
@@ -367,16 +370,19 @@ function AppRoutes() {
         {/* 兜底重定向 */}
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Suspense>
+        </Suspense>
+      </ErrorBoundary>
     </>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

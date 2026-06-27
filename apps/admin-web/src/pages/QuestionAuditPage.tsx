@@ -2,6 +2,8 @@
 import { bulkAddQuestionGroupTags, bulkApplyQuestionGroupDefaults, bulkNormalizeLegacyQuestionGroups, bulkRemoveQuestionGroupTags, bulkUpdateQuestionGroupStatus, exportQuestionBank } from '../api/questionGroups';
 import { addPaperQuestionGroup, createPaper } from '../api/papers';
 import { looksLikeMojibake } from '../utils/textQuality';
+import { useToast } from '../components/ToastProvider';
+import { ConfirmDialog } from '../components/Modal';
 
 type Severity = 'critical' | 'warning' | 'info';
 
@@ -510,12 +512,15 @@ type Recommendation = {
 };
 
 export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenImportBatches, onOpenPaper, onStartPaper }: Props) {
+  const { toast } = useToast();
   const [bank, setBank] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [severity, setSeverity] = useState<'ALL' | Severity>('ALL');
   const [category, setCategory] = useState('ALL');
   const [keyword, setKeyword] = useState('');
+  // 危险批量操作确认
+  const [bulkConfirm, setBulkConfirm] = useState<{ count: number; label: string; run: () => void | Promise<void> } | null>(null);
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
   const [bulkTagsText, setBulkTagsText] = useState('');
   const [creatingPaper, setCreatingPaper] = useState(false);
@@ -903,6 +908,15 @@ export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenImportBa
     setMessage('已复制体检摘要，可以直接粘贴到笔记或发给其他 AI 分析。');
   };
 
+  // 危险批量操作（停用、清理）超过阈值时弹二次确认
+  const confirmBulk = (run: () => void | Promise<void>, count: number, label: string) => {
+    if (count >= 10) {
+      setBulkConfirm({ count, label, run });
+    } else {
+      void run();
+    }
+  };
+
   return (
     <div className="question-audit-page animate-fadeIn">
       <header className="page-header" style={{ marginBottom: 'var(--space-5)' }}>
@@ -1014,27 +1028,47 @@ export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenImportBa
       </section>
 
       <section className="audit-bulk-card">
-        <div>
+        <div className="audit-bulk-head">
           <b>批量处理</b>
           <p>当前筛选涉及 {visibleGroupIds.length} 个题组，已选择 {selectedGroupIds.length} 个题组。待验收 {pendingGroupIds.length} 个，需修复 {repairGroupIds.length} 个，疑似重复 {duplicateGroupIds.length} 个。</p>
+          <div className="audit-bulk-quick">
+            <button className="btn btn-outline btn-sm" onClick={selectVisibleGroups} disabled={!visibleGroupIds.length}>选择当前筛选题组</button>
+            <button className="btn btn-soft btn-sm" onClick={clearSelection} disabled={!selectedGroupIds.length}>清空选择</button>
+          </div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={selectVisibleGroups} disabled={!visibleGroupIds.length}>选择当前筛选题组</button>
-        <button className="btn btn-primary btn-sm" onClick={() => void bulkEnable()} disabled={!selectedGroupIds.length}>批量启用</button>
-        <button className="btn btn-warning btn-sm" onClick={() => void bulkDisable()} disabled={!selectedGroupIds.length}>批量停用</button>
-        <button className="btn btn-outline btn-sm" onClick={() => void createReviewPaper('pending')} disabled={creatingPaper || !pendingGroupIds.length}>{creatingPaper ? '生成中...' : `生成待验收卷(${pendingGroupIds.length})`}</button>
-        <button className="btn btn-outline btn-sm" onClick={() => void createReviewPaper('selected')} disabled={creatingPaper || !selectedGroupIds.length}>按已选生成验收卷</button>
-        <button className="btn btn-primary btn-sm" onClick={() => void autoFixSimpleIssues()} disabled={!filteredIssues.some((issue) => issue.category === '标签' || issue.category === '年级')}>一键修复建议</button>
-        <button className="btn btn-primary btn-sm" onClick={() => void autoNormalizeLegacyFormat()} disabled={!filteredIssues.some((issue) => issue.category === '格式')}>转换旧格式</button>
-        <button className="btn btn-warning btn-sm" onClick={() => void disableDuplicateGroups('newest')} disabled={!duplicateGroupIds.length}>停用重复旧题</button>
-        <button className="btn btn-outline btn-sm" onClick={() => void disableDuplicateGroups('oldest')} disabled={!duplicateGroupIds.length}>停用重复新题</button>
-        <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkReviewed('pending')} disabled={!pendingGroupIds.length}>全部待验收通过</button>
-        <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkReviewed('selected')} disabled={!selectedGroupIds.length}>已选验收通过</button>
-        <button className="btn btn-warning btn-sm" onClick={() => void bulkMarkNeedRepair()} disabled={!selectedGroupIds.length}>标记需修复</button>
-        <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkRepaired('selected')} disabled={!selectedGroupIds.length}>已选修复完成</button>
-        <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkRepaired('repair')} disabled={!repairGroupIds.length}>全部修复完成({repairGroupIds.length})</button>
-        <input value={bulkTagsText} onChange={(event) => setBulkTagsText(event.target.value)} placeholder="追加标签，多个用逗号或换行" />
-        <button className="btn btn-primary btn-sm" onClick={() => void bulkAddTags()} disabled={!selectedGroupIds.length}>追加标签</button>
-        <button className="btn btn-soft btn-sm" onClick={clearSelection} disabled={!selectedGroupIds.length}>清空选择</button>
+
+        <div className="audit-bulk-groups">
+          <fieldset className="audit-bulk-group">
+            <legend>状态</legend>
+            <button className="btn btn-primary btn-sm" onClick={() => void bulkEnable()} disabled={!selectedGroupIds.length}>批量启用</button>
+            <button className="btn btn-warning btn-sm" onClick={() => confirmBulk(() => bulkDisable(), selectedGroupIds.length, '批量停用')} disabled={!selectedGroupIds.length}>批量停用</button>
+            <input value={bulkTagsText} onChange={(event) => setBulkTagsText(event.target.value)} placeholder="追加标签，逗号或换行" />
+            <button className="btn btn-primary btn-sm" onClick={() => void bulkAddTags()} disabled={!selectedGroupIds.length}>追加标签</button>
+          </fieldset>
+
+          <fieldset className="audit-bulk-group">
+            <legend>验收</legend>
+            <button className="btn btn-outline btn-sm" onClick={() => void createReviewPaper('pending')} disabled={creatingPaper || !pendingGroupIds.length}>{creatingPaper ? '生成中...' : `待验收卷(${pendingGroupIds.length})`}</button>
+            <button className="btn btn-outline btn-sm" onClick={() => void createReviewPaper('selected')} disabled={creatingPaper || !selectedGroupIds.length}>按已选生成验收卷</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkReviewed('pending')} disabled={!pendingGroupIds.length}>全部待验收通过</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkReviewed('selected')} disabled={!selectedGroupIds.length}>已选验收通过</button>
+          </fieldset>
+
+          <fieldset className="audit-bulk-group">
+            <legend>修复</legend>
+            <button className="btn btn-primary btn-sm" onClick={() => void autoFixSimpleIssues()} disabled={!filteredIssues.some((issue) => issue.category === '标签' || issue.category === '年级')}>一键修复建议</button>
+            <button className="btn btn-primary btn-sm" onClick={() => void autoNormalizeLegacyFormat()} disabled={!filteredIssues.some((issue) => issue.category === '格式')}>转换旧格式</button>
+            <button className="btn btn-warning btn-sm" onClick={() => void bulkMarkNeedRepair()} disabled={!selectedGroupIds.length}>标记需修复</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkRepaired('selected')} disabled={!selectedGroupIds.length}>已选修复完成</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => void bulkMarkRepaired('repair')} disabled={!repairGroupIds.length}>全部修复完成({repairGroupIds.length})</button>
+          </fieldset>
+
+          <fieldset className="audit-bulk-group">
+            <legend>清理（危险）</legend>
+            <button className="btn btn-warning btn-sm" onClick={() => confirmBulk(() => disableDuplicateGroups('newest'), duplicateGroupIds.length, '停用重复旧题')} disabled={!duplicateGroupIds.length}>停用重复旧题</button>
+            <button className="btn btn-outline btn-sm" onClick={() => confirmBulk(() => disableDuplicateGroups('oldest'), duplicateGroupIds.length, '停用重复新题')} disabled={!duplicateGroupIds.length}>停用重复新题</button>
+          </fieldset>
+        </div>
       </section>
 
       {repairGroupIds.length > 0 && (
@@ -1090,6 +1124,20 @@ export function QuestionAuditPage({ onBack, onEdit, onImportJson, onOpenImportBa
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!bulkConfirm}
+        title="确认批量操作"
+        danger
+        confirmText={`确认${bulkConfirm?.label ?? ''}`}
+        description={bulkConfirm ? `本次${bulkConfirm.label}将影响 ${bulkConfirm.count} 个题组，数量较多，请确认是否继续。` : ''}
+        onConfirm={async () => {
+          const run = bulkConfirm?.run;
+          setBulkConfirm(null);
+          if (run) await run();
+        }}
+        onCancel={() => setBulkConfirm(null)}
+      />
     </div>
   );
 }

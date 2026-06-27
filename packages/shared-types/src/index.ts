@@ -4,9 +4,13 @@ export type QuestionType =
   | 'fill_blank'
   | 'single_choice'
   | 'multiple_choice'
-  | 'true_false'
   | 'ordering'
   | 'matching'
+  | 'sentence_build'
+  // 以下两类仅用于导入兼容，录入侧不再产生新数据：
+  // - true_false 复用 single_choice 渲染（两选项：对/错）
+  // - word_problem 复用 fill_blank 渲染
+  | 'true_false'
   | 'word_problem';
 
 export type SlotType =
@@ -37,6 +41,14 @@ export interface OrderingItem {
   key: string;
   label: string;
   value: string;
+}
+
+/** 连词成句的词块（标点作为独立词块参与排列） */
+export interface SentenceToken {
+  key: string;
+  text: string;
+  /** 是否为标点（仅影响渲染样式，不参与判分） */
+  isPunct?: boolean;
 }
 
 export interface MatchingItem {

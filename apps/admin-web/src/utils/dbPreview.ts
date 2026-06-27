@@ -22,6 +22,7 @@ function dbQuestionTypeToFront(value: string) {
     TRUE_FALSE: 'true_false',
     MATCHING: 'matching',
     ORDERING: 'ordering',
+    SENTENCE_BUILD: 'sentence_build',
     WORD_PROBLEM: 'word_problem',
   };
   return map[value] ?? 'fill_blank';

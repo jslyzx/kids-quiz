@@ -1,18 +1,22 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listLoginStudents, loginStudent, type LoginStudent } from '../api/student';
+
+const PIN_LENGTH = 4;
 
 export function StudentLoginPage() {
   const [ownerUsername, setOwnerUsername] = useState('admin');
   const [students, setStudents] = useState<LoginStudent[]>([]);
   const [selectedId, setSelectedId] = useState('');
-  const [pin, setPin] = useState('');
+  const [pinDigits, setPinDigits] = useState<string[]>(Array(PIN_LENGTH).fill(''));
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const pinRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const selected = students.find((student) => String(student.id) === String(selectedId));
+  const pin = pinDigits.join('');
 
   async function loadStudents(nextOwner = ownerUsername) {
     setMessage('');
@@ -21,7 +25,7 @@ export function StudentLoginPage() {
       const rows = await listLoginStudents(nextOwner);
       setStudents(rows);
       setSelectedId(String(rows[0]?.id ?? ''));
-      setPin('');
+      setPinDigits(Array(PIN_LENGTH).fill(''));
     } catch (error) {
       setStudents([]);
       setSelectedId('');
@@ -35,8 +39,50 @@ export function StudentLoginPage() {
     void loadStudents('admin');
   }, []);
 
-  async function submit(event: FormEvent) {
+  // 选中需要 PIN 的学生时，自动聚焦第一个 PIN 格
+  useEffect(() => {
+    if (selected?.pinEnabled) {
+      setPinDigits(Array(PIN_LENGTH).fill(''));
+      const t = window.setTimeout(() => pinRefs.current[0]?.focus(), 50);
+      return () => window.clearTimeout(t);
+    }
+  }, [selectedId, selected?.pinEnabled]);
+
+  const setPinAt = (index: number, raw: string) => {
+    const digit = raw.replace(/\D/g, '').slice(-1); // 只取一个数字
+    const next = [...pinDigits];
+    next[index] = digit;
+    setPinDigits(next);
+    setMessage('');
+    // 自动跳到下一格
+    if (digit && index < PIN_LENGTH - 1) {
+      pinRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePinKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !pinDigits[index] && index > 0) {
+      // 当前格为空时按退格，回到上一格
+      pinRefs.current[index - 1]?.focus();
+      const next = [...pinDigits];
+      next[index - 1] = '';
+      setPinDigits(next);
+    }
+  };
+
+  const handlePinPaste = (event: React.ClipboardEvent) => {
+    const text = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, PIN_LENGTH);
+    if (!text) return;
     event.preventDefault();
+    const next = Array(PIN_LENGTH).fill('');
+    for (let i = 0; i < text.length; i += 1) next[i] = text[i];
+    setPinDigits(next);
+    const focusIndex = Math.min(text.length, PIN_LENGTH - 1);
+    pinRefs.current[focusIndex]?.focus();
+  };
+
+  async function submit(event?: FormEvent) {
+    event?.preventDefault();
     if (!selectedId) return;
     setMessage('');
     setSubmitting(true);
@@ -45,10 +91,20 @@ export function StudentLoginPage() {
       navigate('/', { replace: true });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
+      // 失败后清空 PIN 并聚焦首格
+      setPinDigits(Array(PIN_LENGTH).fill(''));
+      pinRefs.current[0]?.focus();
     } finally {
       setSubmitting(false);
     }
   }
+
+  // PIN 输满自动提交
+  useEffect(() => {
+    if (selected?.pinEnabled && pinDigits.every((d) => d) && pinDigits.length === PIN_LENGTH && !submitting) {
+      void submit();
+    }
+  }, [pinDigits, selected?.pinEnabled, submitting]);
 
   return (
     <main className="loginPage">
@@ -77,7 +133,7 @@ export function StudentLoginPage() {
               type="button"
               onClick={() => {
                 setSelectedId(String(student.id));
-                setPin('');
+                setPinDigits(Array(PIN_LENGTH).fill(''));
               }}
             >
               <span className="studentLoginAvatar">{student.avatarUrl ? <img src={student.avatarUrl} alt={student.name} /> : student.name.slice(0, 1)}</span>
@@ -92,15 +148,31 @@ export function StudentLoginPage() {
         </div>
 
         {selected?.pinEnabled && (
-          <label className="studentPinField">
-            PIN
-            <input value={pin} onChange={(event) => setPin(event.target.value)} type="password" inputMode="numeric" autoFocus />
-            <small>请输入家长设置的数字 PIN</small>
-          </label>
+          <div className="studentPinField">
+            <label>PIN（{PIN_LENGTH} 位数字）</label>
+            <div className="studentPinDigits" onPaste={handlePinPaste}>
+              {pinDigits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => { pinRefs.current[index] = el; }}
+                  className="studentPinDigit"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={1}
+                  autoComplete="one-time-code"
+                  value={digit}
+                  onChange={(event) => setPinAt(index, event.target.value)}
+                  onKeyDown={(event) => handlePinKeyDown(index, event)}
+                  aria-label={`PIN 第 ${index + 1} 位`}
+                />
+              ))}
+            </div>
+            <small>请输入家长设置的 {PIN_LENGTH} 位数字 PIN</small>
+          </div>
         )}
 
         {message && <p className="loginError">{message}</p>}
-        <button className="btn btn-primary" disabled={submitting || !selectedId || Boolean(selected?.pinEnabled && !pin)}>
+        <button className="btn btn-primary" disabled={submitting || !selectedId || Boolean(selected?.pinEnabled && pin.length < PIN_LENGTH)}>
           {submitting ? '进入中...' : '进入孩子端'}
         </button>
       </form>

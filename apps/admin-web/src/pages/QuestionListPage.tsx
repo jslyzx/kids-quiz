@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { bulkAddQuestionGroupTags, bulkUpdateQuestionGroupStatus, exportQuestionBank, getQuestionGroup, listQuestionGroups, updateQuestionGroupStatus } from '../api/questionGroups';
 import { QuestionGroupPreviewModal } from '../components/QuestionGroupPreviewModal';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../utils/usePagination';
+import { useHotkeys } from '../utils/useHotkeys';
+import { useUrlState } from '../utils/useUrlState';
 
 type Props = {
   onCreate: () => void;
@@ -48,13 +52,18 @@ function downloadJson(filename: string, data: unknown) {
 
 export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBook, onOpenKidHome, onOpenTaskSettings, onBatchFillBlank, onImportJson, onOpenImportBatches }: Props) {
   const [groups, setGroups] = useState<any[]>([]);
-  const [keyword, setKeyword] = useState('');
+  // 关键词同步到 URL，刷新/分享可恢复
+  const [keyword, setKeyword] = useUrlState('q', '');
   const [type, setType] = useState('ALL');
   const [grade, setGrade] = useState('');
   const [tag, setTag] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [explanationFilter, setExplanationFilter] = useState('ALL');
+  const [sortKey, setSortKey] = useState<'updatedAt' | 'title' | 'difficulty'>('updatedAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [message, setMessage] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastSelectedIndexRef = useRef<number>(-1);
   const [loading, setLoading] = useState(false);
   const [previewGroup, setPreviewGroup] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
@@ -95,6 +104,60 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
     const matchExplanation = explanationFilter === 'ALL' || (explanationFilter === 'YES' ? hasExplanation : !hasExplanation);
     return matchKeyword && matchType && matchGrade && matchTag && matchStatus && matchExplanation;
   }), [groups, keyword, type, grade, tag, statusFilter, explanationFilter, detailMeta]);
+
+  // 排序
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (sortKey === 'difficulty' || sortKey === 'updatedAt') {
+        return ((Number(av) || 0) - (Number(bv) || 0)) * dir;
+      }
+      return String(av ?? '').localeCompare(String(bv ?? ''), 'zh') * dir;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  const pagination = usePagination(sortedFiltered, 50);
+
+  // Shift + click 范围多选：基于当前页可视列表的索引
+  const toggleSelectedWithShift = (id: string, checked: boolean, currentIndex: number, shiftKey: boolean) => {
+    if (shiftKey && lastSelectedIndexRef.current >= 0 && currentIndex !== lastSelectedIndexRef.current) {
+      const from = Math.min(lastSelectedIndexRef.current, currentIndex);
+      const to = Math.max(lastSelectedIndexRef.current, currentIndex);
+      setSelectedIds((prev) => {
+        const next = { ...prev };
+        for (let i = from; i <= to; i += 1) {
+          const group = pagination.pagedItems[i];
+          if (group) next[String(group.id)] = checked;
+        }
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => ({ ...prev, [id]: checked }));
+    }
+    lastSelectedIndexRef.current = currentIndex;
+  };
+
+  // / 聚焦搜索框
+  useHotkeys({
+    '/': (event) => {
+      event.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    },
+  });
+
+  const toggleSort = (key: 'updatedAt' | 'title' | 'difficulty') => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
 
   const preview = async (id: string) => {
     try {
@@ -199,7 +262,7 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
 
       {/* 过滤筛选栏 */}
       <div className="filter-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(120px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-        <input placeholder="按标题或 ID 搜索..." value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+        <input ref={searchInputRef} placeholder="按标题或 ID 搜索…（按 / 聚焦）" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
         <input placeholder="年级筛选（如：二年级）" value={grade} onChange={(e) => setGrade(e.target.value)} />
         <input placeholder="标签/知识点筛选..." value={tag} onChange={(e) => setTag(e.target.value)} />
         <select value={type} onChange={(e) => setType(e.target.value)}>
@@ -243,15 +306,15 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
         <div className="table-row table-head" style={{ gridTemplateColumns: gridTemplate }}>
           <span><input type="checkbox" checked={filtered.length > 0 && filtered.every((group) => selectedIds[String(group.id)])} onChange={(e) => toggleAllFiltered(e.target.checked)} aria-label="全选当前筛选结果" /></span>
           <span>ID</span>
-          <span>标题</span>
+          <button type="button" className="th-sort" onClick={() => toggleSort('title')}>标题{sortKey === 'title' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}</button>
           <span>题干内容</span>
-          <span>元数据</span>
-          <span style={{ textAlign: 'right', paddingRight: 'var(--space-4)' }}>操作</span>
+          <span>元数据 <button type="button" className="th-sort th-sort-inline" onClick={() => toggleSort('difficulty')}>难度{sortKey === 'difficulty' ? (sortDir === 'asc' ? '↑' : '↓') : ''}</button></span>
+          <span style={{ textAlign: 'right', paddingRight: 'var(--space-4)' }}>操作 <button type="button" className="th-sort th-sort-inline" onClick={() => toggleSort('updatedAt')}>更新时间{sortKey === 'updatedAt' ? (sortDir === 'asc' ? '↑' : '↓') : ''}</button></span>
         </div>
         
-        {filtered.map((group) => (
+        {pagination.pagedItems.map((group, rowIndex) => (
           <div className="table-row" style={{ gridTemplateColumns: gridTemplate, opacity: group.status === 'DISABLED' ? 0.68 : 1 }} key={group.id}>
-            <span><input type="checkbox" checked={Boolean(selectedIds[String(group.id)])} onChange={(e) => toggleSelected(String(group.id), e.target.checked)} aria-label={`选择题组 ${group.id}`} /></span>
+            <span><input type="checkbox" checked={Boolean(selectedIds[String(group.id)])} onChange={(e) => toggleSelectedWithShift(String(group.id), e.target.checked, rowIndex, (e.nativeEvent as MouseEvent).shiftKey)} aria-label={`选择题组 ${group.id}`} /></span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{group.id}</span>
             <b style={{ color: 'var(--text-primary)', fontSize: 'var(--text-base)' }}>{group.title || '未命名'}</b>
             <span title={stemPreview(group)} style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any }}>
@@ -287,6 +350,17 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
           </div>
         )}
       </div>
+
+      {filtered.length > 0 && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+        />
+      )}
 
       {previewGroup && (
         <QuestionGroupPreviewModal 

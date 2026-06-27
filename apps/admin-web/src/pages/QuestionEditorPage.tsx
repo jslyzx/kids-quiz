@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kids-quiz/question-render';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bulkRemoveQuestionGroupTags, getQuestionGroup, listQuestionGroups, saveQuestionGroup, updateQuestionGroup } from '../api/questionGroups';
@@ -6,9 +6,16 @@ import { uploadImage } from '../api/uploads';
 import type { AppState, EditorMode, SavedDraft } from '../types/editor';
 import { blankKeys } from '../utils/blanks';
 import { buildDraft, dbGroupToAppState, defaultState, emptyState } from '../utils/questionDraft';
-import { AnswerSlotEditor, CalculationEditor, ChoiceEditor, MatchingEditor, OrderingEditor } from '../components/editors/BasicEditors';
+import { CalculationEditor, ChoiceEditor, MatchingEditor, OrderingEditor } from '../components/editors/BasicEditors';
+import { FillBlankEditor } from '../components/editors/FillBlankEditor';
+import { SentenceBuildEditor } from '../components/editors/SentenceBuildEditor';
+import { BatchEntryPanel } from '../components/editors/BatchEntryPanel';
+import { OcrEntryPanel } from '../components/editors/OcrEntryPanel';
 import { CompositeEditor } from '../components/editors/CompositeEditor';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { useBlockNavigation } from '../utils/useBlockNavigation';
+import { useToast } from '../components/ToastProvider';
+import { useHotkeys } from '../utils/useHotkeys';
 
 const STORAGE_KEY = 'kids-quiz-admin-question-draft-v1';
 const DRAFT_LIST_KEY = 'kids-quiz-admin-question-draft-list-v1';
@@ -34,6 +41,10 @@ function safeFileName(name: string) {
 export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, onOpenPapers }: { initialEditGroupId?: string | null; isNew?: boolean; onBack?: () => void; onOpenPapers?: () => void }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { setDirty } = useBlockNavigation();
+  const { toast } = useToast();
+  const lastSavedStateRef = useRef<string>('');
+  const [entryMode, setEntryMode] = useState<'single' | 'batch' | 'json' | 'ocr'>('single');
   const [state, setState] = useState<AppState>(() => {
     if (isNew) return emptyState;
     try {
@@ -59,13 +70,29 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
   const set = <K extends keyof AppState>(key: K, value: AppState[K]) => setState((prev) => ({ ...prev, [key]: value }));
   const draft = useMemo(() => buildDraft(state), [state]);
 
+  // 自动跟踪 dirty 状态：state 变化且与上次保存点不同时标记为脏
+  useEffect(() => {
+    const serialized = JSON.stringify(state);
+    if (lastSavedStateRef.current && lastSavedStateRef.current !== serialized) {
+      setDirty(true);
+      // 防抖自动存草稿到 localStorage（仅本地，不进草稿列表，避免刷屏）
+      const t = window.setTimeout(() => {
+        try { localStorage.setItem(STORAGE_KEY, serialized); } catch { /* ignore */ }
+      }, 800);
+      return () => window.clearTimeout(t);
+    }
+    if (!lastSavedStateRef.current) lastSavedStateRef.current = serialized;
+  }, [state, setDirty]);
+
   const saveDraft = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    lastSavedStateRef.current = JSON.stringify(state);
     const item: SavedDraft = { id: crypto.randomUUID(), name: state.title || '未命名题目', updatedAt: new Date().toLocaleString(), state };
     const next = [item, ...drafts].slice(0, 30);
     localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(next));
     setDrafts(next);
-    setMessage('已保存到草稿列表');
+    setDirty(false);
+    toast.success('已保存到草稿列表');
   };
   const loadSavedDraft = (item: SavedDraft) => {
     setEditingGroupId(null);
@@ -134,6 +161,11 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         if (!right.includes(r)) return `连线题答案右侧“${r}”不在右侧内容中`;
       }
     }
+    if (state.mode === 'sentence_build') {
+      const tokenLines = state.sentenceTokens.split('\n').map((l) => l.trim()).filter(Boolean);
+      if (tokenLines.length < 2) return '连词成句至少需要 2 个词块';
+      if (tokenLines.some((l) => !l.replace(/^#/, '').trim())) return '连词成句存在空词块';
+    }
     if (state.mode === 'composite') {
       if (!state.materials.some((item) => item.text.trim() || item.title?.trim())) return '复合题至少需要一段通用材料';
       if (!state.children.length) return '复合题至少需要一个小题';
@@ -147,17 +179,52 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
     }
     return '';
   };
+  // 把校验错误归类到具体字段 key，用于字段级高亮（aria-invalid + 红框）
+  const validationErrorField = useMemo<{ field: string; message: string } | null>(() => {
+    const msg = validateBeforeSave();
+    if (!msg) return null;
+    if (msg.includes('标题')) return { field: 'title', message: msg };
+    if (msg.includes('口算')) return { field: 'calcText', message: msg };
+    if (msg.includes('题干') && state.mode === 'composite') return { field: 'materials', message: msg };
+    if (state.mode === 'single_choice' || state.mode === 'multiple_choice') {
+      if (msg.includes('题干')) return { field: 'choiceStem', message: msg };
+      if (msg.includes('选项')) return { field: 'choiceOptionsText', message: msg };
+      if (msg.includes('答案')) return { field: 'choiceAnswer', message: msg };
+    }
+    if (state.mode === 'ordering') {
+      if (msg.includes('项目')) return { field: 'orderingText', message: msg };
+      if (msg.includes('答案')) return { field: 'orderingAnswer', message: msg };
+    }
+    if (state.mode === 'matching') {
+      if (msg.includes('左')) return { field: 'matchingLeft', message: msg };
+      if (msg.includes('右')) return { field: 'matchingRight', message: msg };
+      if (msg.includes('答案') || msg.includes('连线')) return { field: 'matchingAnswer', message: msg };
+    }
+    if (state.mode === 'sentence_build') {
+      return { field: 'sentenceTokens', message: msg };
+    }
+    if (state.mode === 'fill_blank' || state.mode === 'compare') {
+      if (msg.includes('空位')) return { field: 'stem', message: msg };
+      if (msg.includes('答案')) return { field: 'answers', message: msg };
+    }
+    return { field: '', message: msg };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, draft]);
+  const errorField = validationErrorField?.field || '';
+  const errorFields = useMemo(() => new Set(errorField ? [errorField] : []), [errorField]);
   const saveToApi = async (options?: { markRepaired?: boolean; goNextRepair?: boolean }) => {
     try {
       const validationError = validateBeforeSave();
       if (validationError) {
-        setMessage(`保存前校验失败：${validationError}`);
+        toast.warning(`保存前校验失败：${validationError}`);
         return;
       }
       const isEdit = Boolean(editingGroupId);
       const data = isEdit ? await updateQuestionGroup(editingGroupId!, draft) : await saveQuestionGroup(draft);
       setEditingGroupId(String(data.id));
       setSelectedDbGroup(data);
+      lastSavedStateRef.current = JSON.stringify(state);
+      setDirty(false);
       let nextMessage = `${isEdit ? '已更新' : '已保存'}到后端，题组 ID：${data.id}`;
       if (options?.markRepaired) {
         await bulkRemoveQuestionGroupTags([String(data.id)], ['需修复']);
@@ -173,11 +240,18 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         }
         nextMessage += '，修复队列已处理完';
       }
-      setMessage(nextMessage);
+      toast.success(nextMessage);
     } catch (error) {
-      setMessage(`保存到后端失败：${error instanceof Error ? error.message : String(error)}`);
+      toast.danger(`保存到后端失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
+  // Ctrl+S / Cmd+S 触发保存到后端
+  useHotkeys({
+    'ctrl+s': (event) => {
+      event.preventDefault();
+      if (!previewValidation) void saveToApi();
+    },
+  });
   const skipCurrentRepair = () => {
     if (!editingGroupId || !repairQueue.length) return;
     const queue = repairQueue.filter((id) => id !== editingGroupId);
@@ -243,6 +317,54 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         <p className="page-subtitle">表单录入 → 自动生成结构化题目 → 右侧实时预览学生端效果</p>
       </div>
     </header>
+
+    {/* 录入方式 Tab（仅新建时显示，编辑现有题强制单题录入） */}
+    {isNew && !editingGroupId && (
+      <div className="entry-mode-tabs" role="tablist" style={{ marginBottom: 'var(--space-4)' }}>
+        <button
+          role="tab"
+          aria-selected={entryMode === 'single'}
+          className={`entry-mode-tab ${entryMode === 'single' ? 'active' : ''}`}
+          onClick={() => setEntryMode('single')}
+        >📝 单题录入</button>
+        <button
+          role="tab"
+          aria-selected={entryMode === 'batch'}
+          className={`entry-mode-tab ${entryMode === 'batch' ? 'active' : ''}`}
+          onClick={() => setEntryMode('batch')}
+        >📋 批量粘贴</button>
+        <button
+          role="tab"
+          aria-selected={entryMode === 'json'}
+          className={`entry-mode-tab ${entryMode === 'json' ? 'active' : ''}`}
+          onClick={() => setEntryMode('json')}
+        >⚡ JSON 导入</button>
+        <button
+          role="tab"
+          aria-selected={entryMode === 'ocr'}
+          className={`entry-mode-tab ${entryMode === 'ocr' ? 'active' : ''}`}
+          onClick={() => setEntryMode('ocr')}
+        >📷 拍照识别</button>
+      </div>
+    )}
+
+    {entryMode === 'json' && isNew && !editingGroupId ? (
+      <div className="card json-redirect-card">
+        <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>JSON 批量导入</h2>
+        <p className="tip" style={{ marginBottom: 'var(--space-4)' }}>
+          JSON 导入支持一次性粘贴整批题目，适合从 AI/OCR 工具生成的结构化数据快速入库。
+          支持题型：填空、选择、排序、连线、口算、复合题、表格填空、竖式数字谜、古诗选字。
+        </p>
+        <div className="rowActions">
+          <button className="btn btn-primary" onClick={() => navigate('/parent/questions/import-json')}>前往 JSON 导入页</button>
+          <button className="btn btn-secondary" onClick={() => setEntryMode('single')}>返回单题录入</button>
+        </div>
+      </div>
+    ) : entryMode === 'ocr' && isNew && !editingGroupId ? (
+      <OcrEntryPanel />
+    ) : entryMode === 'batch' && isNew && !editingGroupId ? (
+      <BatchEntryPanel state={state} set={set} onApplied={() => setEntryMode('single')} />
+    ) : (
     <div className="editor-layout">
       <section className="editor-panel">
         {(editingGroupId || message) && <div className="editor-status">
@@ -275,6 +397,7 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
                 <option value="multiple_choice">多选题</option>
                 <option value="ordering">排序题</option>
                 <option value="matching">连线题</option>
+                <option value="sentence_build">连词成句</option>
                 <option value="composite">复合题/通用题干</option>
               </select>
             </div>
@@ -296,15 +419,17 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
           <h2 style={{ fontSize: 'var(--text-lg)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>2. 题目内容编辑</h2>
           {state.mode === 'calculation' && <CalculationEditor value={state.calcText} columns={state.calcColumns} onColumnsChange={(value) => set('calcColumns', value)} onChange={(value) => set('calcText', value)} />}
-          {(state.mode === 'fill_blank' || state.mode === 'compare') && <>
-            <label>题干配置（使用“插入空”插入填空位置）</label>
-            <textarea value={state.stem} onChange={(e) => set('stem', e.target.value)} placeholder="例：树上有 5 只小鸟，飞走了 {{blank:1}} 只，还剩 3 只。" />
-            <button className="btn btn-outline btn-sm" style={{ alignSelf: 'flex-start', marginTop: 'var(--space-2)', marginBottom: 'var(--space-3)' }} onClick={() => set('stem', state.stem + '{{blank:' + (blankKeys(state.stem).length + 1) + '}}')}>插入空位</button>
-            <AnswerSlotEditor stem={state.stem} slotType={state.mode === 'compare' ? 'compare_symbol' : 'number'} answers={state.answers} onChange={(answers) => set('answers', answers)} />
-          </>}
+          {(state.mode === 'fill_blank' || state.mode === 'compare') && <FillBlankEditor
+            stem={state.stem}
+            slotType={state.mode === 'compare' ? 'compare_symbol' : 'number'}
+            answers={state.answers}
+            onStemChange={(value) => set('stem', value)}
+            onAnswersChange={(value) => set('answers', value)}
+          />}
           {(state.mode === 'single_choice' || state.mode === 'multiple_choice') && <ChoiceEditor state={state} set={set} multiple={state.mode === 'multiple_choice'} />}
           {state.mode === 'ordering' && <OrderingEditor state={state} set={set} />}
           {state.mode === 'matching' && <MatchingEditor state={state} set={set} />}
+          {state.mode === 'sentence_build' && <SentenceBuildEditor state={state} set={set} />}
           {state.mode !== 'calculation' && state.mode !== 'composite' && (
             <div style={{ marginTop: 'var(--space-4)' }}>
               <label>解题解析（可选，孩子做错后查看）</label>
@@ -319,6 +444,9 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         <div className={previewValidation ? 'editor-check-card warning' : 'editor-check-card success'}>
           <b>{previewValidation ? '保存前还需要处理' : '当前题目可以保存'}</b>
           <span>{previewValidation || '题型、答案和结构校验通过。建议再看一眼右侧预览效果。'}</span>
+          {validationErrorField?.field && (
+            <small className="editor-check-field">需检查字段：{validationErrorField.field}</small>
+          )}
         </div>
         <Preview draft={draft} explicitTitle={state.title.trim()} />
         <div className="editor-save-bar">
@@ -338,6 +466,7 @@ export function QuestionEditorPage({ initialEditGroupId, isNew = false, onBack, 
         </div>
       </section>
     </div>
+    )}
   </div>;
 }
 
