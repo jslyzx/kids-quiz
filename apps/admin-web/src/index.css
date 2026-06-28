@@ -2,13 +2,6 @@
    Kids Quiz — 主样式入口
    ======================================== */
 
-/* 强制亮色模式：禁用系统的暗色模式，避免暗色变量覆盖导致白底白字 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="kid"]):not([data-theme="light"]) {
-    color-scheme: light;
-  }
-}
-
 /* 基础设施 */
 @import './styles/tokens.css';
 @import './styles/reset.css';
