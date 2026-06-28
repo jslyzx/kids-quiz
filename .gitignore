@@ -2,7 +2,11 @@ node_modules
 .pnpm-store/
 .dist
 dist
+# 环境变量文件（含真实密码/密钥，严禁提交）
 .env
+.env.*
+!.env.example
+!.env.production.example
 .DS_Store
 backups/
 .tmp/
