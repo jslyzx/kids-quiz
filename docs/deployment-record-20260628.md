@@ -313,6 +313,52 @@ mysqldump -uroot -p'密码' quiz > /www/wwwroot/kids-quiz-data/backups/quiz-$(da
 # Cloudflare → Caching → Configuration → Purge Everything
 ```
 
+### 七、清空答题记录
+
+```bash
+
+cd /www/wwwroot/kids-quiz
+
+# 1. 先做即时备份（保险）
+mysqldump -uroot -p'Jslyzx19910107!' quiz > /www/wwwroot/kids-quiz-data/backups/quiz-before-clean-$(date +%Y%m%d-%H%M).sql 2>/dev/null
+echo "备份完成: $(ls -lh /www/wwwroot/kids-quiz-data/backups/quiz-before-clean-*.sql | tail -1 | awk '{print $9, $5}')"
+
+# 2. 用 Node + Prisma 事务清理答题 + 重置学生统计
+node << 'EOF'
+const { PrismaClient } = require('@prisma/client');
+const p = new PrismaClient();
+(async () => {
+  const before = {
+    details: await p.studentAnswerDetail.count(),
+    answers: await p.studentAnswer.count(),
+    attempts: await p.practiceAttempt.count(),
+  };
+  console.log('清理前: 答题明细='+before.details, '答题='+before.answers, '练习汇总='+before.attempts);
+
+  const result = await p.$transaction([
+    // 按外键依赖顺序删（子→父）
+    p.studentAnswerDetail.deleteMany({}),
+    p.studentAnswer.deleteMany({}),
+    p.practiceAttempt.deleteMany({}),
+    // 重置学生累计统计（保留学生记录）
+    p.student.updateMany({
+      data: { totalStars: 0, streakDays: 0, lastPracticeDate: null }
+    }),
+  ]);
+
+  const after = {
+    details: await p.studentAnswerDetail.count(),
+    answers: await p.studentAnswer.count(),
+    attempts: await p.practiceAttempt.count(),
+  };
+  console.log('清理后: 答题明细='+after.details, '答题='+after.answers, '练习汇总='+after.attempts);
+  console.log('学生统计已重置（影响行数='+result[3].count+'）');
+  console.log('✅ 答题记录清空完成，学生账号保留');
+})().catch(e=>{console.error('❌ 清理失败，已回滚:', e.message); process.exit(1);}).finally(()=>p.$disconnect());
+EOF
+
+```
+
 ---
 
 **报告生成时间**：2026-06-28
