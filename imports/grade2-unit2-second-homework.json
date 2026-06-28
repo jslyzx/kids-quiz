@@ -1,0 +1,374 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "二年级下数学第二次单元作业 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级下", "第二次单元作业", "口算", "表内除法", "整十整百数乘法", "待验收"],
+    "columns": 5,
+    "items": [
+      { "stem": "20×3=", "answer": "60" },
+      { "stem": "48÷6=", "answer": "8" },
+      { "stem": "300×2=", "answer": "600" },
+      { "stem": "56÷7=", "answer": "8" },
+      { "stem": "11×4=", "answer": "44" },
+      { "stem": "72÷8=", "answer": "9" },
+      { "stem": "74-17=", "answer": "57" },
+      { "stem": "63÷9=", "answer": "7" },
+      { "stem": "40×5=", "answer": "200" },
+      { "stem": "81-9=", "answer": "72" },
+      { "stem": "21×4=", "answer": "84" },
+      { "stem": "50÷5=", "answer": "10" },
+      { "stem": "16+54=", "answer": "70" },
+      { "stem": "36÷4=", "answer": "9" },
+      { "stem": "55+12=", "answer": "67" },
+      { "stem": "45÷5=", "answer": "9" },
+      { "stem": "80×3=", "answer": "240" },
+      { "stem": "23×3=", "answer": "69" },
+      { "stem": "90÷3=", "answer": "30" },
+      { "stem": "6×6=", "answer": "36" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第二次单元作业 - 二、填空题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第二次单元作业", "填空题", "万以内数", "有余数除法", "比较大小", "待验收"],
+    "commonStem": "二、填空题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "一个四位数，从右边起第一位是{{blank:1}}位，第三位是{{blank:2}}位；最大的四位数是{{blank:3}}，最小的四位数是{{blank:4}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["个", "个位"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["百", "百位"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["9999"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["1000"] }
+        ],
+        "explanation": "从右往左依次是个位、十位、百位、千位。最大的四位数是9999，最小的四位数是1000。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "由5个千、3个百和6个一组成的数是{{blank:1}}，读作{{blank:2}}；7080里面有{{blank:3}}个千和{{blank:4}}个十。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5306"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["五千三百零六"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["7"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "5个千、3个百和6个一组成5306。7080可以看作7个千和8个十。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在括号里填合适的数：1200里面有{{blank:1}}个百；8个千是{{blank:2}}；60÷{{blank:3}}=8……4；{{blank:4}}×7=42；3×{{blank:5}}=150。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["8000"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["7"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["50"] }
+        ],
+        "explanation": "1200里有12个百，8个千是8000；60=7×8+4，6×7=42，3×50=150。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "估一估，填“多一些”“少一些”“多得多”“少得多”。\n（1）1200比1180{{blank:1}}\n（2）1200比300{{blank:2}}\n（3）500比1200{{blank:3}}\n（4）1190比1200{{blank:4}}",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["多一些"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["多得多"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["少得多"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["少一些"] }
+        ],
+        "explanation": "相差很小时用“多一些”或“少一些”，相差很大时用“多得多”或“少得多”。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "把下面的数按从大到小的顺序排一排。（填序号）①1200 ②980 ③1000 ④1500 ⑤890\n{{blank:1}}>{{blank:2}}>{{blank:3}}>{{blank:4}}>{{blank:5}}",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["④", "4"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["①", "1"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["③", "3"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["②", "2"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["⑤", "5"] }
+        ],
+        "explanation": "1500>1200>1000>980>890，所以顺序是④①③②⑤。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在圆里填上“>”“<”或“=”。\n30×5{{blank:1}}150    72÷8{{blank:2}}10    1200{{blank:3}}1020    45÷9{{blank:4}}5\n24×3{{blank:5}}70    800×2{{blank:6}}1600    56÷7{{blank:7}}9    999{{blank:8}}1000",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_2", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_3", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_4", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_5", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_6", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_7", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } },
+          { "slot_key": "blank_8", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "先计算左右两边的值，再比较大小。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一本练习本8元，买6本需要{{blank:1}}元；45元能买{{blank:2}}本练习本，还剩{{blank:3}}元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["48"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "8×6=48元；45÷8=5本……5元。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一个三位数乘一位数，积可能是{{blank:1}}位数，也可能是{{blank:2}}位数。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["三", "三位"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["四", "四位"] }
+        ],
+        "explanation": "例如100×1=100，是三位数；999×9=8991，是四位数。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "有36块巧克力，平均分给7个小朋友，每个小朋友分4块，还剩{{blank:1}}块；如果每个小朋友分6块，至少还要再添{{blank:2}}块巧克力。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] }
+        ],
+        "explanation": "7个小朋友每人4块需要28块，36-28=8块；每人6块需要42块，42-36=6块。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "数一数，填一填：一个一个地数，998、{{blank:1}}、{{blank:2}}、{{blank:3}}、{{blank:4}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["999"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1000"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["1001"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["1002"] }
+        ],
+        "explanation": "从998开始每次加1，依次是999、1000、1001、1002。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "学校图书馆有1200本图书，借给学生300本，还剩{{blank:1}}本；又买来200本，现在有{{blank:2}}本。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["900"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1100"] }
+        ],
+        "explanation": "1200-300=900本，900+200=1100本。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第二次单元作业 - 三、选择题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第二次单元作业", "选择题", "万以内数", "分类", "待验收"],
+    "commonStem": "三、选择题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "single_choice",
+        "stem": "下面各数中，只读一个“零”的是（ ）。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "3005" },
+            { "key": "②", "text": "4500" },
+            { "key": "③", "text": "2340" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["①"] }
+        ],
+        "explanation": "3005读作三千零五，只读一个零；4500和2340末尾的0不读。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "下面四位数中最接近3000的是（ ）。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "2706" },
+            { "key": "②", "text": "3007" },
+            { "key": "③", "text": "1984" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["②"] }
+        ],
+        "explanation": "2706与3000相差294，3007与3000相差7，1984与3000相差1016，所以3007最接近3000。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "关于1200，说法错误的是（ ）。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "1200里面有12个百" },
+            { "key": "②", "text": "1200比10个百多2个百" },
+            { "key": "③", "text": "1200比2000多得多" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["③"] }
+        ],
+        "explanation": "1200比2000少，不是多得多。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "三年级有4个班，每班40人，三年级一共有多少人？列式正确的是（ ）。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "40÷4" },
+            { "key": "②", "text": "40×4" },
+            { "key": "③", "text": "40+4" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["②"] }
+        ],
+        "explanation": "4个班，每班40人，求一共有多少人，用40×4。"
+      },
+      {
+        "question_type": "single_choice",
+        "stem": "小明把班级同学的身高分成“120厘米以下”“120-130厘米”“130厘米以上”三类，这是按（ ）分类的。",
+        "content": {
+          "options": [
+            { "key": "①", "text": "颜色" },
+            { "key": "②", "text": "高度" },
+            { "key": "③", "text": "种类" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "choice", "slot_type": "choice", "correct_answer": ["②"] }
+        ],
+        "explanation": "分类依据是同学的身高，也就是高度。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第二次单元作业 - 四、操作题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第二次单元作业", "操作题", "统计表", "数的组成", "待验收"],
+    "commonStem": "四、操作题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "统计下面的水果数量，完成统计表并填空。\n苹果：○○○○○○○○\n香蕉：○○○○\n橙子：○○○○○○\n梨：○○\n{{blank:5}}的数量最多，{{blank:6}}的数量最少。",
+        "content": {
+          "tableFill": {
+            "headers": ["水果", "苹果", "香蕉", "橙子", "梨"],
+            "rows": [
+              ["数量(个)", "{{blank:1}}", "{{blank:2}}", "{{blank:3}}", "{{blank:4}}"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["2"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["苹果"] },
+          { "slot_key": "blank_6", "slot_type": "text", "correct_answer": ["梨"] }
+        ],
+        "explanation": "苹果8个，香蕉4个，橙子6个，梨2个，所以苹果最多，梨最少。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "写出下面数的组成。\n（1）在计数器上表示350：{{blank:1}}个{{blank:2}}。\n（2）在算盘上拨珠表示6025：一共有{{blank:3}}个上珠，{{blank:4}}个下珠。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["35"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["十", "十位"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["2"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "350可以看作35个十。6025中6用1个上珠和1个下珠，2用2个下珠，5用1个上珠，所以共有2个上珠、3个下珠。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第二次单元作业 - 五、解答题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级下", "第二次单元作业", "解答题", "有余数除法", "乘法应用题", "统计表", "待验收"],
+    "commonStem": "五、解答题。",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "学校买来40本故事书，平均分给6个班，每个班分{{blank:1}}本，还剩{{blank:2}}本。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "40÷6=6本……4本。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一个书架有4层，每层放90本书，这个书架一共能放{{blank:1}}本书。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["360"] }
+        ],
+        "explanation": "90×4=360本。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "二年级同学去植树，男生有25人，女生有20人，每5人分成一组，一共可以分成{{blank:1}}组。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "男生和女生一共25+20=45人，45÷5=9组。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "下面是二年级（1）班同学喜欢的课外书类型统计表。\n（1）喜欢漫画书的比喜欢科技书的多{{blank:2}}人。\n（2）二（1）班一共有50人，喜欢故事书和绘本的一共有{{blank:3}}人。（完成表内填空）",
+        "content": {
+          "tableFill": {
+            "headers": ["类型", "漫画书", "故事书", "科技书", "绘本"],
+            "rows": [
+              ["人数", "24", "8", "8", "{{blank:1}}"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["10"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["16"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["18"] }
+        ],
+        "explanation": "绘本人数为50-24-8-8=10人；漫画书比科技书多24-8=16人；故事书和绘本一共8+10=18人。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "二年级下数学第二次单元作业 - 附加题：智慧屋",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级下", "第二次单元作业", "附加题", "乘法", "间隔问题", "待验收"],
+    "commonStem": "附加题：智慧屋。（每题奖励一颗☆）",
+    "materials": [],
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "一个数乘10，积是三位数，这个数最小是{{blank:1}}，最大是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["10"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["99"] }
+        ],
+        "explanation": "积是三位数，乘10前的数最小是10，最大是99。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "学校要在通往教学楼的一条长96米的道路两侧每隔3米挂一盏彩灯（起点和终点都挂）。一共要挂{{blank:1}}盏彩灯。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["66"] }
+        ],
+        "explanation": "一侧有96÷3+1=33盏，两侧共有33×2=66盏。"
+      }
+    ]
+  }
+]

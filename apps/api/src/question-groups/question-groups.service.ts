@@ -298,7 +298,8 @@ export class QuestionGroupsService {
     return this.get(ownerId, id);
   }
 
-  async list(ownerId: bigint, includeDisabled = false) {
+  async list(ownerId: bigint, includeDisabled = false, limit?: string | number) {
+    const take = Math.min(5000, Math.max(1, Number(limit) || 50));
     const rows = await this.prisma.questionGroup.findMany({
       where: { ownerId, ...(includeDisabled ? { status: { not: 'DELETED' } } : { status: 'ENABLED' }) },
       orderBy: { createdAt: 'desc' },
@@ -306,7 +307,7 @@ export class QuestionGroupsService {
         _count: { select: { questions: true } },
         questions: { orderBy: { sortOrder: 'asc' }, take: 1, select: { stem: true } },
       },
-      take: 50,
+      take,
     });
     return jsonSafe(rows);
   }

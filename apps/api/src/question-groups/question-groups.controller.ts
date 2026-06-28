@@ -19,8 +19,8 @@ export class QuestionGroupsController {
   }
 
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query('includeDisabled') includeDisabled?: string) {
-    return this.service.list(user.id, includeDisabled === '1' || includeDisabled === 'true');
+  list(@CurrentUser() user: AuthUser, @Query('includeDisabled') includeDisabled?: string, @Query('limit') limit?: string) {
+    return this.service.list(user.id, includeDisabled === '1' || includeDisabled === 'true', limit);
   }
 
   @Get('export/all')

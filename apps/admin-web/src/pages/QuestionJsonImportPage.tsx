@@ -291,6 +291,21 @@ function columnArithmeticSlotKeys(question: any) {
   return Array.from(new Set([...cellKeys, ...validationKeys].filter((key) => slotKeySet.has(key))));
 }
 
+function columnDivisionSlotKeys(question: any) {
+  const config = question?.content?.columnDivision;
+  if (!config || typeof config !== 'object') return [];
+  const cellsToKeys = (cells: any) => Array.isArray(cells) ? cells.flatMap((cell: any) => cell?.slot ? [String(cell.slot)] : []) : [];
+  const keys = [
+    ...cellsToKeys(config.quotient),
+    ...cellsToKeys(config.divisor),
+    ...cellsToKeys(config.dividend),
+    ...cellsToKeys(config.remainder),
+    ...(Array.isArray(config.steps) ? config.steps.flatMap((step: any) => [...cellsToKeys(step?.product), ...cellsToKeys(step?.remainder)]) : []),
+  ];
+  const slotKeySet = new Set((question?.answer_slots ?? []).map((slot: any) => String(slot?.slot_key ?? '')));
+  return Array.from(new Set(keys.filter((key) => slotKeySet.has(key))));
+}
+
 function looksLikePlainTextTable(question: any) {
   const stem = String(question?.stem ?? '');
   if (question?.question_type !== 'fill_blank' || question?.content?.tableFill) return false;
@@ -689,11 +704,13 @@ function validateQuestion(question: any) {
   const keys = questionBlankKeys(question);
   const isPoemPicker = question.content?.interaction === 'poem_char_fill';
   const isColumnArithmetic = question.content?.interaction === 'column_arithmetic' || Boolean(question.content?.columnArithmetic);
+  const isColumnDivision = question.content?.interaction === 'column_division' || Boolean(question.content?.columnDivision);
   const columnSlotKeys = columnArithmeticSlotKeys(question);
+  const divisionSlotKeys = columnDivisionSlotKeys(question);
   const slotKeys = slots.map((slot: any) => normalizeSlotKey(slot.slot_key));
   const duplicateKeys = slotKeys.filter((key: string, index: number) => key && slotKeys.indexOf(key) !== index);
   if (duplicateKeys.length) errors.push(`answer_slots 存在重复 slot_key：${Array.from(new Set(duplicateKeys)).join('、')}`);
-  if (question.question_type === 'fill_blank' && !isPoemPicker && !isColumnArithmetic) {
+  if (question.question_type === 'fill_blank' && !isPoemPicker && !isColumnArithmetic && !isColumnDivision) {
     if (!keys.length) errors.push('填空题题干里没有 {{blank:1}} 这类空位');
     const missing = keys.filter((key) => !slotKeys.includes(key));
     if (missing.length) errors.push(`这些空位没有答案：${missing.join('、')}`);
@@ -733,11 +750,23 @@ function validateQuestion(question: any) {
     if (extra.length) warnings.push(`这些 answer_slots 未出现在竖式方框中：${Array.from(new Set(extra)).join('、')}`);
     if (!config.validation && !rows.some((row: any) => row?.role === 'result')) warnings.push('竖式题建议提供 validation 或 role=result 的结果行，便于稳定判分');
   }
+  if (isColumnDivision) {
+    const config = question.content?.columnDivision ?? {};
+    if (!Array.isArray(config.dividend) || !config.dividend.length) errors.push('除法竖式题缺少 content.columnDivision.dividend');
+    if (!Array.isArray(config.divisor) || !config.divisor.length) errors.push('除法竖式题缺少 content.columnDivision.divisor');
+    if (!Array.isArray(config.quotient) || !config.quotient.length) errors.push('除法竖式题缺少 content.columnDivision.quotient');
+    if (!Array.isArray(config.remainder)) warnings.push('除法竖式题建议提供 content.columnDivision.remainder（整除时填 [0]）');
+    if (!divisionSlotKeys.length) errors.push('除法竖式题缺少可填写方框 slot');
+    const missing = divisionSlotKeys.filter((key) => !slotKeys.includes(key));
+    if (missing.length) errors.push(`除法竖式方框缺少 answer_slots：${missing.join('、')}`);
+    const extra = slotKeys.filter((key: string) => key && !divisionSlotKeys.includes(key));
+    if (extra.length) warnings.push(`这些 answer_slots 未出现在除法竖式方框中：${Array.from(new Set(extra)).join('、')}`);
+  }
   for (const slot of slots) {
     if (!slot.slot_key) errors.push('answer_slots 中存在空 slot_key');
     if (!slot.slot_type) errors.push(`空位 ${slot.slot_key || '-'} 缺少 slot_type`);
     const answer = slot.correct_answer;
-    if (!isColumnArithmetic && (!Array.isArray(answer) || !answer.some((item) => String(item ?? '').trim()))) {
+    if (!isColumnArithmetic && !isColumnDivision && (!Array.isArray(answer) || !answer.some((item) => String(item ?? '').trim()))) {
       errors.push(`空位 ${slot.slot_key || '-'} 缺少 correct_answer`);
     }
   }

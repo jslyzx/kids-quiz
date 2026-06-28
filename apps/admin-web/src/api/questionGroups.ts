@@ -1,7 +1,10 @@
 import { request, studentOrAdminRequest } from './client';
 
-export function listQuestionGroups(options?: { includeDisabled?: boolean }): Promise<any[]> {
-  const qs = options?.includeDisabled ? '?includeDisabled=1' : '';
+export function listQuestionGroups(options?: { includeDisabled?: boolean; limit?: number }): Promise<any[]> {
+  const params = new URLSearchParams();
+  if (options?.includeDisabled) params.set('includeDisabled', '1');
+  if (options?.limit) params.set('limit', String(options.limit));
+  const qs = params.toString() ? `?${params.toString()}` : '';
   return request<any[]>(`/admin/question-groups${qs}`);
 }
 

@@ -1,0 +1,156 @@
+[
+  {
+    "type": "composite_group",
+    "title": "数海探索 第二单元简单的数量关系（二） - 一、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "简单的数量关系", "倍数关系", "填空题", "数海探索", "第二单元"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "5×6={{blank:1}}，表示{{blank:2}}个{{blank:3}}相加是{{blank:4}}；还表示{{blank:5}}的{{blank:6}}倍是{{blank:7}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["30"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["30"] },
+          { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_6", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_7", "slot_type": "number", "correct_answer": ["30"] }
+        ],
+        "explanation": "5×6=30，可以表示6个5相加，也可以表示5的6倍是30。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "李大爷家养了9只白兔，养的灰兔比白兔的2倍多，但比3倍少，李大爷家最多养了{{blank:1}}只灰兔，最少养了{{blank:2}}只灰兔。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["26"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["19"] }
+        ],
+        "explanation": "9的2倍是18，9的3倍是27。灰兔比18多、比27少，所以最少19只，最多26只。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "有9个☆和4个△。\n（1）△添上{{blank:1}}个，△就是☆的1倍；添上{{blank:2}}个是☆的2倍。\n（2）☆去掉{{blank:3}}个正好是△的1倍；添上{{blank:4}}个是△的3倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["14"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "☆有9个，△有4个。△补到9个要添5个，补到18个要添14个；☆变成4个要去掉5个，变成12个要添3个。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小峰今年8岁，外公的年龄是他的8倍。外公今年{{blank:1}}岁。去年，外公的年龄是小峰的{{blank:2}}倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["64"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "外公今年8×8=64岁。去年小峰7岁，外公63岁，63÷7=9。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "梦梦有7颗黄珠子和54颗红珠子。她想做一串项链，这串项链上红珠子的数量是黄珠子的6倍。\n（1）若黄珠子的数量不变，需要减少{{blank:1}}颗红珠子。\n（2）若红珠子的数量不变，需要增加{{blank:2}}颗黄珠子。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["2"] }
+        ],
+        "explanation": "黄珠子7颗时，红珠子应为7×6=42颗，要减少54-42=12颗。红珠子54颗时，黄珠子应为54÷6=9颗，要增加9-7=2颗。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第二单元简单的数量关系（二） - 二、看图列式计算",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "简单的数量关系", "倍数关系", "看图列式", "数海探索", "第二单元"],
+    "commonStem": "看图列式计算。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "（1）列式：{{blank:1}}×{{blank:2}}={{blank:3}}（盆）",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "第（1）题线段图", "url": "/uploads/shuhai-unit2-diagram-1.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["24"] }
+        ],
+        "explanation": "月季花是茉莉花的4倍，茉莉花有6盆，所以月季花有6×4=24盆。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "（2）列式：{{blank:1}}÷{{blank:2}}={{blank:3}}",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "第（2）题线段图", "url": "/uploads/shuhai-unit2-diagram-2.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["32"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "狗有32只，猫有8只，狗的只数是猫的32÷8=4倍。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第二单元简单的数量关系（二） - 三、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "简单的数量关系", "倍数应用题", "解决问题", "数海探索", "第二单元"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "春雨后，春笋会以惊人的速度生长，最开始时春笋高4厘米，3天后长到最开始时的5倍。春笋长高了{{blank:1}}厘米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["16"] }
+        ],
+        "explanation": "3天后春笋高4×5=20厘米，比开始时长高20-4=16厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "运动会颁奖。银奖杯的数量是金奖杯的2倍，铜奖杯的数量是银奖杯的4倍，铜奖杯的数量是金奖杯的{{blank:1}}倍。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "银奖杯是金奖杯的2倍，铜奖杯是银奖杯的4倍，所以铜奖杯是金奖杯的2×4=8倍。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "海海、乐乐和园园周末一起去采摘草莓。海海采摘了9颗，乐乐采摘的数量是海海的3倍，园园采摘的数量比他们两个人采摘的数量和少5颗。他们三人一共采摘了{{blank:1}}颗。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["67"] }
+        ],
+        "explanation": "乐乐采摘9×3=27颗。海海和乐乐一共9+27=36颗，园园采摘36-5=31颗，三人一共36+31=67颗。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第二单元简单的数量关系（二） - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "简单的数量关系", "倍数应用题", "思维题", "数海探索", "第二单元"],
+    "commonStem": "智慧加油站。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "妹妹原来有6张卡片，姐姐送给妹妹2张后，姐姐的卡片张数是妹妹的3倍，姐姐原来有{{blank:1}}张卡片。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["26"] }
+        ],
+        "explanation": "妹妹收到2张后有6+2=8张。姐姐送出2张后有8×3=24张，所以姐姐原来有24+2=26张。"
+      }
+    ]
+  }
+]

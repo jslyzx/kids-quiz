@@ -1,0 +1,37 @@
+[
+  {
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "用竖式计算：936 ÷ 4",
+      "content": {
+        "interaction": "column_division",
+        "columnDivision": {
+          "dividend": [{ "text": "9" }, { "text": "3" }, { "text": "6" }],
+          "divisor": [{ "text": "4" }],
+          "quotient": [{ "slot": "q1" }, { "slot": "q2" }, { "slot": "q3" }],
+          "remainder": [{ "slot": "rem" }],
+          "steps": [
+            { "product": [{ "slot": "s1" }], "remainder": [{ "slot": "r1" }, { "text": "3" }] },
+            { "product": [{ "slot": "s2" }, { "slot": "s2b" }], "remainder": [{ "slot": "r2" }, { "text": "6" }] },
+            { "product": [{ "slot": "s3" }, { "slot": "s3b" }], "remainder": [{ "slot": "r3" }] }
+          ]
+        }
+      },
+      "answer_slots": [
+        { "slot_key": "q1", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "q2", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "q3", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "rem", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "s1", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "r1", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "s2", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "s2b", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "r2", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "s3", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "s3b", "slot_type": "number", "correct_answer": [] },
+        { "slot_key": "r3", "slot_type": "number", "correct_answer": [] }
+      ],
+      "explanation": "936 ÷ 4 = 234。9÷4=2余1，13÷4=3余1，16÷4=4，余数为0。"
+    }
+  }
+]

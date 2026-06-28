@@ -187,7 +187,7 @@
         "stem": "用下面这把尺子，量一次不能直接量出的长度是（ ）厘米。",
         "content": {
           "materials": [
-            { "type": "image", "title": "尺子刻度图", "url": "http://localhost:3000/uploads/unit1_choice_q2_ruler.jpg" }
+            { "type": "image", "title": "尺子刻度图", "url": "/uploads/unit1_choice_q2_ruler.jpg" }
           ],
           "options": [
             { "key": "①", "text": "2" },
@@ -220,7 +220,7 @@
         "stem": "根据下面的线段图，下列说法错误的是（ ）。",
         "content": {
           "materials": [
-            { "type": "image", "title": "线段图", "url": "http://localhost:3000/uploads/unit1_choice_q4_line.jpg" }
+            { "type": "image", "title": "线段图", "url": "/uploads/unit1_choice_q4_line.jpg" }
           ],
           "options": [
             { "key": "①", "text": "甲比乙的3倍多3" },
@@ -272,7 +272,7 @@
         "stem": "写出下面三个钟面所表示的时刻：第1个{{blank:1}}，第2个{{blank:2}}，第3个{{blank:3}}。",
         "content": {
           "materials": [
-            { "type": "image", "title": "三个钟面", "url": "http://localhost:3000/uploads/unit1_operation_clocks.jpg" }
+            { "type": "image", "title": "三个钟面", "url": "/uploads/unit1_operation_clocks.jpg" }
           ]
         },
         "answer_slots": [
@@ -322,7 +322,7 @@
         "stem": "妈妈带小宇（身高1.15米）和小雪（身高1.32米）一起去科技馆参观。妈妈拿30元去买门票，够吗？{{blank:1}}",
         "content": {
           "materials": [
-            { "type": "image", "title": "科技馆门票价格", "url": "http://localhost:3000/uploads/unit1_answer_q4_ticket.jpg" }
+            { "type": "image", "title": "科技馆门票价格", "url": "/uploads/unit1_answer_q4_ticket.jpg" }
           ]
         },
         "answer_slots": [

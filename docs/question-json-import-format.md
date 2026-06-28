@@ -30,7 +30,7 @@
 | `grade` | 否 | 年级，例如 `二年级`。 |
 | `difficulty` | 否 | 难度，建议 `1` 到 `5`。 |
 | `tags` | 否 | 标签/知识点数组。 |
-| `material` / `materials` | 否 | 公共材料，复合题使用。图片建议使用 `/uploads/xxx.jpg` 或 `http://localhost:3000/uploads/xxx.jpg`。 |
+| `material` / `materials` | 否 | 公共材料，复合题使用。图片建议使用 `/uploads/xxx.jpg`，避免写死本机 `localhost`。 |
 | `questions` | 是 | 小题数组。 |
 
 内部规范字段对照：
@@ -336,7 +336,7 @@
           {
             "type": "image",
             "title": "第（1）题线段图",
-            "url": "http://localhost:3000/uploads/example-q1.jpg"
+            "url": "/uploads/example-q1.jpg"
           }
         ]
       },
@@ -361,7 +361,7 @@
           {
             "type": "image",
             "title": "第（2）题线段图",
-            "url": "http://localhost:3000/uploads/example-q2.jpg"
+            "url": "/uploads/example-q2.jpg"
           }
         ]
       },
@@ -392,7 +392,19 @@
 
 ### 竖式算谜题
 
-低年级常见的“把数字填入竖式方框，使算式成立”推荐使用 `fill_blank + content.columnArithmetic`。这种题不需要列出所有正确答案，系统会按规则判分。
+竖式题统一用 `fill_blank + content.columnArithmetic`（加减乘）或 `content.columnDivision`（除法），系统按规则判分，不需要穷举所有正确答案。`content.columnArithmetic` 共有 **三种形态**，按题目需要选用：
+
+| 形态 | 竖式格子里是什么 | 学生答在哪 | 判分方式 |
+|---|---|---|---|
+| ① 方框填数 | 数字方框（slot） | 在竖式格子里填 | `validation` 拼算式 |
+| ② 汉字数字谜 | 固定汉字（不设 slot） | 题干的填空 | 普通填空判分 |
+| ③ 普通竖式 | 数字方框（slot） | 在竖式格子里填 | `validation` 拼算式 |
+
+---
+
+#### 形态 ①：方框填数（把数字填进竖式）
+
+“把 2、3、4、6、7、8 填入方框，使算式成立”这类题。竖式格里用 `{ "slot": "xxx" }` 表示可填方框，判分靠 `validation` 拼出的真实算式，`correct_answer` 一律留空数组。
 
 ```json
 {
@@ -435,13 +447,112 @@
 }
 ```
 
-字段说明：
+#### 形态 ②：汉字数字谜（竖式展示汉字，题干填空）
 
-- `rows[].cells` 从左到右描述每一格；`null` 是空白占位，`{ "text": "1" }` 是固定数字，`{ "slot": "a_h" }` 是可填写方框。
-- `operator` 放在当前行左侧，支持 `+`、`-`、`×`。
-- `allowedDigits` 限制可填数字；`uniqueDigits: true` 表示每个数字只能使用一次。
-- `validation.operands` 和 `validation.result` 用 slot key 或固定数字组成真实算式。结果中也可以写 slot key，因此结果位同样可以设空。
-- 进位、退位可以放在 `carryRows` 中，格式和 `rows` 一样。
+“兴大国 + 大国兴 = 大国大兴，每个汉字代表数字几”这类题。竖式格里**全部用 `{ "text": "字" }` 固定显示汉字**（不设 slot），保证对齐；学生答在题干的填空里（`兴={{blank:1}} 大={{blank:2}} …`）。判分走普通填空，**不填 `validation`**。
+
+```json
+{
+  "type": "question",
+  "title": "智慧加油站：汉字数字谜",
+  "gradeLevel": "二年级",
+  "difficulty": 3,
+  "tags": ["竖式", "数字谜", "汉字代数"],
+  "question": {
+    "question_type": "fill_blank",
+    "stem": "下面的汉字图代表数字几？\n兴={{blank:1}}  大={{blank:2}}  国={{blank:3}}",
+    "content": {
+      "interaction": "column_arithmetic",
+      "columnArithmetic": {
+        "operation": "addition",
+        "columns": 4,
+        "rows": [
+          { "role": "operand", "cells": [null, { "text": "兴" }, { "text": "大" }, { "text": "国" }] },
+          { "role": "operand", "operator": "+", "cells": [null, { "text": "大" }, { "text": "国" }, { "text": "兴" }] },
+          { "role": "result", "cells": [{ "text": "大" }, { "text": "国" }, { "text": "大" }, { "text": "兴" }] }
+        ]
+      }
+    },
+    "answer_slots": [
+      { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9"] },
+      { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1"] },
+      { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["0"] }
+    ]
+  }
+}
+```
+
+> 判分要点：竖式格里**没有 slot** 时，系统会自动识别为“纯展示型竖式”，退回普通填空判分。所以 `answer_slots` 的 `correct_answer` 必须填标准答案（兴=9、大=1、国=0）。**不要**给纯展示型竖式配 `validation`。
+
+#### 字段说明（通用）
+
+- `rows[].cells` 从左到右描述每一格，长度按需要给，系统自动右对齐：
+  - `null` —— 空白占位（用于高位补位）
+  - `{ "text": "1" }` 或 `{ "text": "兴" }` —— 固定显示（数字或汉字）
+  - `{ "slot": "a_h" }` —— 可填写方框，学生在这里输入
+- `columns`：竖式总列数，等于最长一行（通常是结果行）的位数。
+- `operator`：放在当前行左侧，支持 `+`、`-`、`×`。只有第一个运算数行留空，后面的行写运算符。
+- `operation`：`addition` / `subtraction` / `multiplication`，用于判分。可省略（系统会从 `operator` 推断），但建议显式写。
+- `allowedDigits`：限制可填的数字集合（如 `["2","3","4"]`），仅对形态①③有意义。
+- `uniqueDigits: true`：每个数字只能用一次（数字谜常用约束），仅对形态①③有意义。
+- `validation.operands` 和 `validation.result`：用 slot key 或固定数字拼出真实算式，判分时校验“操作数运算=结果”是否成立。**只有竖式格子里有 slot 时才需要**。
+- `carryRows`：进位/退位标注行，格式和 `rows` 一样；建议每格用 `null` 占位保证对齐。
+
+#### 减法 / 乘法竖式
+
+把 `operation` 改成 `subtraction` / `multiplication`，`operator` 改成 `-` / `×`，其余结构完全一样。判分会自动按对应运算校验。
+
+#### 除法竖式（长除法）
+
+除法布局与加减乘不同（商在顶部、被除数内含除数括号、中间多步部分积），用独立的 `content.columnDivision`。判分校验：**商 × 除数 + 余数 = 被除数，且余数 < 除数**。
+
+```json
+{
+  "type": "question",
+  "question": {
+    "question_type": "fill_blank",
+    "stem": "用竖式计算：936 ÷ 4",
+    "content": {
+      "interaction": "column_division",
+      "columnDivision": {
+        "dividend": [{ "text": "9" }, { "text": "3" }, { "text": "6" }],
+        "divisor": [{ "text": "4" }],
+        "quotient": [{ "slot": "q1" }, { "slot": "q2" }, { "slot": "q3" }],
+        "remainder": [{ "slot": "rem" }],
+        "steps": [
+          { "product": [{ "slot": "s1" }], "remainder": [{ "slot": "r1" }, { "text": "3" }] },
+          { "product": [{ "slot": "s2" }, { "slot": "s2b" }], "remainder": [{ "slot": "r2" }, { "text": "6" }] },
+          { "product": [{ "slot": "s3" }, { "slot": "s3b" }], "remainder": [{ "slot": "r3" }] }
+        ]
+      }
+    },
+    "answer_slots": [
+      { "slot_key": "q1", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "q2", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "q3", "slot_type": "number", "correct_answer": [] },
+      { "slot_key": "rem", "slot_type": "number", "correct_answer": [] }
+    ]
+  }
+}
+```
+
+除法字段说明：
+
+- `dividend` / `divisor` / `quotient` / `remainder`：被除数、除数、商、余数，从高位到低位排列，每格同样是 `null` / `{text}` / `{slot}`。
+- `steps`：长除法的中间步骤（每位商一步），`product` 是“除数×当前位商”的部分积，`remainder` 是本次减法后的剩余（含落下的下一位）。可省略，省略时只显示首尾、不展示过程。
+- `remainder` 整除时填 `[{ "text": "0" }]`。
+- `correct_answer` 留空数组，判分靠算式（商×除数+余数=被除数）。
+
+#### 录入检查清单
+
+录入竖式题前，逐项核对：
+
+- [ ] `interaction` 与内容字段对应：加减乘用 `column_arithmetic` + `columnArithmetic`；除法用 `column_division` + `columnDivision`。
+- [ ] 形态②（汉字数字谜）：竖式格里**只有 `{text}` 没有 `{slot}`**；题干有 `{{blank:n}}`；`answer_slots` 填了正确答案。
+- [ ] 形态①③（方框填数）：竖式格里每个 `{slot}` 都有对应的 `answer_slots` 条目；`correct_answer` 留空数组；配了 `validation`（或结果行 `role: "result"`）。
+- [ ] `columns` 等于最长一行的位数。
+- [ ] 运算符只在第二个运算数行及之后出现，第一个运算数行的 `operator` 留空。
+- [ ] 用 `pnpm import:validate -- <文件>` 本地校验，0 error 再导入。
 
 ### 古诗选字填空
 
@@ -484,7 +595,7 @@
 ## 5. 标准导入流程
 
 1. 从 PDF 提取图片：`pnpm pdf:extract-images -- <paper.pdf> _pdf_images/<paper-name>`。
-2. 按题目裁图后放入 `apps/api/uploads/`，题目 JSON 中引用 `/uploads/xxx.jpg` 或 `http://localhost:3000/uploads/xxx.jpg`。
+2. 按题目裁图后放入 `apps/api/uploads/`，题目 JSON 中引用 `/uploads/xxx.jpg`，避免写死本机 `localhost`。
 3. 生成 JSON 后先运行：`pnpm import:validate -- <file.json> --check-assets --write-normalized=<normalized.json>`。
 4. 家长后台进入「题库管理 → 导入题目 JSON」，粘贴 JSON 或上传 `.json` 文件。
 5. 点击校验，检查预览、错误提示和疑似重复。

@@ -1,0 +1,218 @@
+[
+  {
+    "type": "composite_group",
+    "title": "数海探索 第三单元时间有多长（1） - 一、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "时间有多长", "钟面", "时间单位", "有余数除法", "数海探索", "第三单元"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "钟面上共有{{blank:1}}个大格，每个大格有{{blank:2}}个小格，钟面上一共有{{blank:3}}个小格。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["60"] }
+        ],
+        "explanation": "钟面有12个大格，每个大格有5个小格，共12×5=60个小格。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "时针走一大格的时间是{{blank:1}}，分针走一大格的时间是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["1小时", "1时"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["5分钟", "5分"] }
+        ],
+        "explanation": "时针走一大格是1小时，分针走一大格是5分钟。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "分针、时针各走了多长时间？填一填。",
+        "content": {
+          "tableFill": {
+            "headers": ["指针", "走法", "经过时间"],
+            "rows": [
+              ["分针", "从12走到3", "{{blank:1}}分"],
+              ["分针", "从2走到9", "{{blank:2}}分"],
+              ["时针", "从2走到5", "{{blank:3}}时"],
+              ["时针", "从3走到8", "{{blank:4}}时"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["15"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["35"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["3"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "分针走一个大格是5分；时针走一个大格是1时。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "括号里最大能填几？{{blank:1}}×9<44",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "4×9=36，5×9=45，所以最大填4。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "括号里最大能填几？6×{{blank:1}}<34",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "6×5=30，6×6=36，所以最大填5。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "括号里最大能填几？{{blank:1}}×8<42",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "5×8=40，6×8=48，所以最大填5。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "有38朵花，至少拿走{{blank:1}}朵，就能平均插在7个花瓶里。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "38÷7=5……3，至少拿走3朵后剩35朵，可以平均插在7个花瓶里。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "有45条金鱼放到鱼缸里，每个鱼缸里最多只能放6条，至少需要{{blank:1}}个鱼缸。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "45÷6=7……3，剩下的3条还需要1个鱼缸，所以至少需要8个。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "有35粒扣子，每件衣服钉6粒，能钉{{blank:1}}件衣服。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "35÷6=5……5，所以能钉5件衣服。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "钟面上分针指着7，时针指在8和9之间，这个时刻是{{blank:1}}:{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["35"] }
+        ],
+        "explanation": "分针指着7表示35分，时针在8和9之间，所以是8时35分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "{{blank:1}}时整时，时针和分针重合；{{blank:2}}时整时，时针和分针连成一条直线。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] }
+        ],
+        "explanation": "12时整时针和分针重合，6时整时针和分针连成一条直线。"
+      }
+    ]
+  },
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第三单元时间有多长（1） - 二、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "时间有多长", "口算", "乘法", "数海探索", "第三单元"],
+    "columns": 5,
+    "items": [
+      { "stem": "11×6=", "answer": "66" },
+      { "stem": "34×2=", "answer": "68" },
+      { "stem": "3×22=", "answer": "66" },
+      { "stem": "10×9=", "answer": "90" },
+      { "stem": "0×88=", "answer": "0" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第三单元时间有多长（1） - 三、写出钟面时刻",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "时间有多长", "钟面", "读钟表", "数海探索", "第三单元"],
+    "commonStem": "写出下面的每个钟面所表示的时刻。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "第1个钟面是{{blank:1}}，第2个钟面是{{blank:2}}，第3个钟面是{{blank:3}}。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "三个钟面", "url": "/uploads/shuhai-unit3-clocks.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["5时55分", "5:55"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["7时05分", "7时5分", "7:05"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["7时55分", "7:55"] }
+        ],
+        "explanation": "三个钟面依次是5时55分、7时05分、7时55分。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第三单元时间有多长（1） - 四、思维拓展",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "时间有多长", "时间排序", "楼梯问题", "镜中钟面", "计费问题", "数海探索", "第三单元"],
+    "commonStem": "思维拓展。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "按时间从长到短排一排：1小时40分、5分、2小时、2分、90分。",
+        "content": {
+          "tableFill": {
+            "headers": ["第1", "第2", "第3", "第4", "第5"],
+            "rows": [
+              ["{{blank:1}}", "{{blank:2}}", "{{blank:3}}", "{{blank:4}}", "{{blank:5}}"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["2小时", "2时", "120分"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["1小时40分", "1时40分", "100分"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["90分"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["5分", "5分钟"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["2分", "2分钟"] }
+        ],
+        "explanation": "2小时=120分，1小时40分=100分，所以从长到短是2小时、1小时40分、90分、5分、2分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "从一楼到二楼有11级台阶，如果从一楼到六楼，那么要走{{blank:1}}级台阶。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["55"] }
+        ],
+        "explanation": "从一楼到六楼要走5段楼梯，每段11级，共11×5=55级。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "下面是镜中看到的钟面时针和分针的位置，原来钟面的时刻是{{blank:1}}。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "镜中钟面", "url": "/uploads/shuhai-unit3-mirror-clock.jpg" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["4时40分", "4:40", "4时40"] }
+        ],
+        "explanation": "镜中左右相反，看到的钟面还原后是4时40分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "张阿姨今天早上9:15扫码借了一个充电宝，中午11:35归还，应付{{blank:1}}元。\n收费标准：3分钟内归还免费，30分钟以内收费2元；超出30分钟部分，每小时收费4元（不足1小时按1小时计算）；24小时收费32元，封顶99元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["10"] }
+        ],
+        "explanation": "9:15到11:35共2小时20分。前30分钟收费2元，超出110分钟按2小时收费8元，一共10元。"
+      }
+    ]
+  }
+]

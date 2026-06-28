@@ -73,7 +73,7 @@ export function QuestionListPage({ onCreate, onEdit, onOpenPapers, onOpenWrongBo
   const refresh = async () => {
     try {
       setLoading(true);
-      const [data, bank] = await Promise.all([listQuestionGroups({ includeDisabled: true }), exportQuestionBank().catch(() => null)]);
+      const [data, bank] = await Promise.all([listQuestionGroups({ includeDisabled: true, limit: 5000 }), exportQuestionBank().catch(() => null)]);
       setGroups(data);
       if (bank?.groups) {
         setDetailMeta(Object.fromEntries(bank.groups.map((group: any) => [

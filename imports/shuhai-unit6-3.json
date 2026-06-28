@@ -1,0 +1,133 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元（3）二下 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "两三位数加减法", "口算", "数海探索", "第六单元（3）"],
+    "columns": 4,
+    "items": [
+      { "stem": "27+38=", "answer": "65" },
+      { "stem": "42-16=", "answer": "26" },
+      { "stem": "58+19=", "answer": "77" },
+      { "stem": "860-60=", "answer": "800" },
+      { "stem": "94-78=", "answer": "16" },
+      { "stem": "56+44=", "answer": "100" },
+      { "stem": "18+75=", "answer": "93" },
+      { "stem": "70+600=", "answer": "670" },
+      { "stem": "80-63=", "answer": "17" },
+      { "stem": "46+27=", "answer": "73" },
+      { "stem": "84+16=", "answer": "100" },
+      { "stem": "5400+200=", "answer": "5600" },
+      { "stem": "61+27=", "answer": "88" },
+      { "stem": "35-17=", "answer": "18" },
+      { "stem": "77+14=", "answer": "91" },
+      { "stem": "470-60=", "answer": "410" }
+    ]
+  },
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元（3）二下 - 二、竖式计算，带※的要验算",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "三位数加减法", "竖式计算", "验算", "数海探索", "第六单元（3）"],
+    "columns": 3,
+    "items": [
+      { "stem": "※ 1000-273=", "answer": "727" },
+      { "stem": "809-234=", "answer": "575" },
+      { "stem": "268+58+64=", "answer": "390" },
+      { "stem": "※ 381+189=", "answer": "570" },
+      { "stem": "748+385=", "answer": "1133" },
+      { "stem": "507-168+35=", "answer": "374" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元（3）二下 - 三、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "三位数加减法", "填空题", "数海探索", "第六单元（3）"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "一块儿童手表248元，付出3张100元人民币，应找回{{blank:1}}元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["52"] }
+        ],
+        "explanation": "3张100元是300元，300-248=52元。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "用6、0、4这三个数字组成的三位数中，最大的是{{blank:1}}，最小的是{{blank:2}}。它们的和是{{blank:3}}，差是{{blank:4}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["640"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["406"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["1046"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["234"] }
+        ],
+        "explanation": "最大三位数是640，最小三位数是406；640+406=1046，640-406=234。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小东在做一道三位数减三位数的减法算式时，把减数134错看成143，结果算出来的差是118，正确的差应该是{{blank:1}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["127"] }
+        ],
+        "explanation": "被减数是118+143=261，正确的差是261-134=127。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小米家离图书馆350米，她从家去图书馆，走了125米时发现忘记带笔了，就原路返回拿笔。当她到图书馆时，一共走了{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["600"] }
+        ],
+        "explanation": "先走125米，再返回125米，最后从家到图书馆350米，一共125+125+350=600米。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元（3）二下 - 四、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "三位数加减法", "解决问题", "数海探索", "第六单元（3）"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "社区组织公益宣传活动，蓝蓝在社区给居民发环保宣传页，上午发了129张，上午比下午少发了26张。蓝蓝下午发了{{blank:1}}张环保宣传页，这一天一共发了{{blank:2}}张环保宣传页。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["155"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["284"] }
+        ],
+        "explanation": "下午发了129+26=155张，一天一共129+155=284张。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "森林运动会。在400米跑步比赛中，小鹿离终点120米，小猴落后小鹿74米，小猴已经跑了{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["206"] }
+        ],
+        "explanation": "小鹿已经跑了400-120=280米，小猴落后74米，所以小猴跑了280-74=206米。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "数海探索 第六单元（3）二下 - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "数字谜", "加法竖式", "数海探索", "第六单元（3）"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "下面的汉字图代表数字几？\n  兴大国\n+ 大国兴\n---------\n大国大兴\n兴={{blank:1}}，大={{blank:2}}，国={{blank:3}}",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1"] },
+        { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["0"] }
+      ],
+      "explanation": "个位上国+兴=兴，说明国=0；千位是进位得到的大，所以大=1；百位兴+大进位成10，所以兴=9。"
+    }
+  }
+]

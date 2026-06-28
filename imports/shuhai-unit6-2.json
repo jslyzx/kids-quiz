@@ -1,0 +1,145 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元（2） 二下 - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "万以内加减法", "口算", "待验收"],
+    "columns": 4,
+    "items": [
+      { "stem": "105+38=", "answer": "143" },
+      { "stem": "363-220=", "answer": "143" },
+      { "stem": "640-40=", "answer": "600" },
+      { "stem": "5010-4000=", "answer": "1010" },
+      { "stem": "60-19=", "answer": "41" },
+      { "stem": "161+39=", "answer": "200" },
+      { "stem": "410+90=", "answer": "500" },
+      { "stem": "1000-200=", "answer": "800" },
+      { "stem": "248+22=", "answer": "270" },
+      { "stem": "164-84=", "answer": "80" },
+      { "stem": "600+800=", "answer": "1400" },
+      { "stem": "1300-500=", "answer": "800" }
+    ]
+  },
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第六单元（2） 二下 - 二、竖式计算，带＊的要验算",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "万以内加减法", "竖式计算", "待验收"],
+    "columns": 3,
+    "items": [
+      { "stem": "＊236+379=", "answer": "615" },
+      { "stem": "508-86=", "answer": "422" },
+      { "stem": "718-159-278=", "answer": "281" },
+      { "stem": "＊841-96=", "answer": "745" },
+      { "stem": "415+378+489=", "answer": "1282" },
+      { "stem": "248+239-437=", "answer": "50" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元（2） 二下 - 三、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "万以内加减法", "填空题", "思维题", "待验收"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "快乐农场养的鹅比鸭少68只，鸡比鸭多129只。快乐农场养的鹅比鸡少{{blank:1}}只。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["197"] }
+        ],
+        "explanation": "鹅比鸭少68，鸡比鸭多129，鹅比鸡少 68+129=197 只。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在计算一个数减363时，丹丹将减数十位和个位上的数字互换了，结果得216。正确的差是{{blank:1}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["489"] }
+        ],
+        "explanation": "减数363十位个位互换得636，被减数=636+216=852，正确差=852-363=489。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "10枚1元硬币摞在一起大约高2厘米。照这样计算，1300枚1元硬币摞在一起大约高{{blank:1}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["2.6"] }
+        ],
+        "explanation": "1300÷10×2=260厘米=2.6米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈在直播间抢购了一套化妆品，售价899元，直播间专属折扣是每满300元减60元，付款时还使用了一张10元优惠券，妈妈实际付了{{blank:1}}元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["769"] }
+        ],
+        "explanation": "899满2个300（600），减2×60=120；再用10元券：899-120-10=769元。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在68的后面添上一个0，得到的数比原数多{{blank:1}}，得到的数与原数的和是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["612"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["748"] }
+        ],
+        "explanation": "68添0得680。比原数多 680-68=612；和 680+68=748。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元（2） 二下 - 四、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "万以内加减法", "解决问题", "待验收"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "妈妈带了800元要给糖糖和果果买六一儿童节礼物，糖糖选了362元的天文望远镜，果果选了429元的显微镜。妈妈带的钱够吗？够的话还剩下{{blank:1}}元（不够填0）。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9"] }
+        ],
+        "explanation": "362+429=791元，791<800，钱够。剩下 800-791=9元。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一辆自行车627元。独轮车比自行车便宜372元，滑板比自行车便宜48元。买一辆独轮车多少元？买一个滑板呢？独轮车{{blank:1}}元，滑板{{blank:2}}元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["255"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["579"] }
+        ],
+        "explanation": "独轮车：627-372=255元；滑板：627-48=579元。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第六单元（2） 二下 - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 4,
+    "tags": ["数学", "万以内加减法", "思维题", "待验收"],
+    "commonStem": "智慧加油站。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "一个四位数，各个数位上的数字之和是18，且各个数位上的数字都不相同，这个数最大是{{blank:1}}，最小是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9810"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["1089"] }
+        ],
+        "explanation": "和为18且各不相同。最大：9+8+1+0=18 → 9810；最小：1+0+8+9=18 → 1089。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "在计算一个三位数减三位数的算式时，把被减数百位上的5看成3，十位上的7看成1，个位上的6看成9，所得结果是81。这个算式的正确结果是{{blank:1}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["338"] }
+        ],
+        "explanation": "被减数本应是576，看成319。319-减数=81→减数=238。正确：576-238=338。"
+      }
+    ]
+  }
+]

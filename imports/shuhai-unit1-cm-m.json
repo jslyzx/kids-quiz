@@ -1,0 +1,163 @@
+[
+  {
+    "type": "composite_group",
+    "title": "数海探索 第一单元厘米和米 二下 - 一、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "厘米和米", "长度单位", "填空题", "数海探索", "第一单元"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "1. 在（　）里填上合适的长度单位。\n(1) 一张床长约 2（{{blank:1}}），一辆公共汽车长约 8（{{blank:2}}），一支蜡笔长 10（{{blank:3}}），数学书约长 26（{{blank:4}}）。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["米", "m"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["米", "m"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["厘米", "cm"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["厘米", "cm"] }
+        ],
+        "explanation": "床和公共汽车是较长物体，用米；蜡笔和数学书较短，用厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "(2) 我的身高是 138（{{blank:1}}），妹妹的身高是 1.25（{{blank:2}}）；我的食指宽约 1（{{blank:3}}），手掌宽约 8（{{blank:4}}）；我向前走一步的长度大约 40（{{blank:5}}）。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["厘米", "cm"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["米", "m"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["厘米", "cm"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["厘米", "cm"] },
+          { "slot_key": "blank_5", "slot_type": "text", "correct_answer": ["厘米", "cm"] }
+        ],
+        "explanation": "身高138用厘米，1.25带小数用米；手指、手掌、步长都用厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "2. 在○里填上“>”“<”或“=”。\n40厘米 ○{{blank:1}} 1米\n10米 ○{{blank:2}} 1厘米\n145厘米 ○{{blank:3}} 1米45厘米\n2米 ○{{blank:4}} 200厘米\n30厘米 ○{{blank:5}} 0.30米\n60厘米-35厘米 ○{{blank:6}} 1米",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="] } },
+          { "slot_key": "blank_2", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="] } },
+          { "slot_key": "blank_3", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="] } },
+          { "slot_key": "blank_4", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="] } },
+          { "slot_key": "blank_5", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="] } },
+          { "slot_key": "blank_6", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="] } }
+        ],
+        "explanation": "统一单位再比：1米=100厘米，所以40厘米<1米；10米>1厘米；145厘米=1米45厘米；2米=200厘米；30厘米=0.30米；60-35=25厘米<1米(100厘米)。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "3. 量一量，填一填。\n(1) 这把小刀长（{{blank:1}}）厘米。\n(2) 这条线段长（{{blank:2}}）厘米。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "小刀测量图", "url": "/uploads/shuhai-unit1-q3-knife.png" },
+            { "type": "image", "title": "线段测量图", "url": "/uploads/shuhai-unit1-q3-line.png" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["待校对"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["待校对"] }
+        ],
+        "explanation": "需根据图上尺子刻度读取长度（待校对）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "4. 把一条绳子对折，再对折，每段刚好 1 米，这根绳子全长（{{blank:1}}）米；教室里黑板的长比这根绳子稍短一些，黑板的长是（{{blank:2}}）米多。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "对折两次共4段，每段1米，共4米；黑板比4米稍短，是3米多。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第一单元厘米和米 二下 - 二、操作题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "厘米和米", "测量", "操作题", "数海探索", "第一单元", "需校对"],
+    "commonStem": "操作题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "1. 量出长方形长边和短边的长度，填在括号里，这两条边的长度相差（{{blank:1}}）厘米。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "长方形操作图", "url": "/uploads/shuhai-unit1-q-oper.png" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["待校对"] }
+        ],
+        "explanation": "需根据图上标注测量长方形长边和短边，再求差（待校对）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "2. 连接 AB 两点，这条线段的长度大约是（{{blank:1}}）厘米。",
+        "content": {
+          "materials": [
+            { "type": "image", "title": "AB两点图", "url": "/uploads/shuhai-unit1-q-oper.png" }
+          ]
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["待校对"] }
+        ],
+        "explanation": "需根据图上尺子测量 AB 线段长度（待校对）。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第一单元厘米和米 二下 - 三、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "厘米和米", "解决问题", "数海探索", "第一单元"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "1. 一根竹竿长 1 米，垂直插入池塘。露出水面的部分长 10 厘米，入泥部分长 20 厘米，水深多少厘米？\n水深（{{blank:1}}）厘米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["70"] }
+        ],
+        "explanation": "1米=100厘米，水深=100-10-20=70（厘米）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "2. 小明、小红家与学校在同一条笔直的街上，小明家离学校 52 米，小红家离学校 38 米，小明家到小红家可能有多少米？\n小明家到小红家可能有（{{blank:1}}）米或（{{blank:2}}）米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["90"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["14"] }
+        ],
+        "explanation": "两人在学校同侧：52-38=14（米）；两人在学校两侧：52+38=90（米）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "3. 路旁有一排树，从第一棵树到第六棵树之间的距离是 30 米，相邻两棵树间距离相等，第三棵和第四棵树的间隔是多少米？\n第三棵和第四棵树的间隔是（{{blank:1}}）米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] }
+        ],
+        "explanation": "第一到第六共5个间隔，每个间隔30÷5=6米，第三棵和第四棵相邻，间隔6米。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "数海探索 第一单元厘米和米 二下 - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "厘米和米", "智慧题", "数海探索", "第一单元", "需校对"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "智慧加油站：下面这把厘米尺上有一些刻度看不清楚了，用它最多能一次性量出哪些长度？\n（写出所有能量出的长度）",
+      "content": {
+        "materials": [
+          { "type": "image", "title": "刻度不清的厘米尺", "url": "/uploads/shuhai-unit1-q-wisdom.png" }
+        ]
+      },
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["待校对"] }
+      ],
+      "explanation": "需根据刻度尺上可见的刻度，计算任意两个刻度之差的所有可能长度（待校对）。"
+    }
+  }
+]

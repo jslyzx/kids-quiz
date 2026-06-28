@@ -133,7 +133,7 @@
             {
               "type": "image",
               "title": "第（1）题线段图",
-              "url": "http://localhost:3000/uploads/1781093310515-a0c8a217-42d1-47dd-b46c-91a4e379d6be.jpg"
+              "url": "/uploads/1781093310515-a0c8a217-42d1-47dd-b46c-91a4e379d6be.jpg"
             }
           ]
         },
@@ -158,7 +158,7 @@
             {
               "type": "image",
               "title": "第（2）题线段图",
-              "url": "http://localhost:3000/uploads/1781093310526-44a3ed02-623f-4748-b9c7-72abea64d255.jpg"
+              "url": "/uploads/1781093310526-44a3ed02-623f-4748-b9c7-72abea64d255.jpg"
             }
           ]
         },

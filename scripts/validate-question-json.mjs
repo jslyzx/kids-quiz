@@ -305,7 +305,8 @@ function validateQuestion(question, path, errors, warnings) {
   if (duplicateSlotKeys.length) errors.push(`${path}: duplicate slot_key ${Array.from(new Set(duplicateSlotKeys)).join(', ')}`);
 
   const isColumnArithmetic = question.content?.interaction === 'column_arithmetic' || question.content?.columnArithmetic;
-  if (question.question_type === 'fill_blank' && !isColumnArithmetic && question.content?.interaction !== 'poem_char_fill') {
+  const isColumnDivision = question.content?.interaction === 'column_division' || question.content?.columnDivision;
+  if (question.question_type === 'fill_blank' && !isColumnArithmetic && !isColumnDivision && question.content?.interaction !== 'poem_char_fill') {
     const missing = keys.filter((key) => !slotKeys.includes(key));
     if (keys.length && missing.length) errors.push(`${path}: blanks without answers ${missing.join(', ')}`);
     if (!keys.length && !question.content?.materials?.length) warnings.push(`${path}: fill_blank has no {{blank:n}} placeholder`);
@@ -315,7 +316,7 @@ function validateQuestion(question, path, errors, warnings) {
     if (!text(slot.slot_key).trim()) errors.push(`${path}: answer slot has empty slot_key`);
     if (!text(slot.slot_type).trim()) errors.push(`${path}: slot ${slot.slot_key || '-'} has empty slot_type`);
     const answer = asArray(slot.correct_answer);
-    if (!isColumnArithmetic && !answer.some((item) => text(item).trim())) errors.push(`${path}: slot ${slot.slot_key || '-'} has empty correct_answer`);
+    if (!isColumnArithmetic && !isColumnDivision && !answer.some((item) => text(item).trim())) errors.push(`${path}: slot ${slot.slot_key || '-'} has empty correct_answer`);
   }
 
   if (['single_choice', 'multiple_choice', 'true_false'].includes(question.question_type)) {

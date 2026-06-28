@@ -1,0 +1,236 @@
+[
+  {
+    "type": "calculation_group",
+    "title": "数海探索 第五单元认识四位数（1） - 一、直接写出得数",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "认识四位数", "口算", "数海探索", "第五单元"],
+    "columns": 4,
+    "items": [
+      { "stem": "10×5=", "answer": "50" },
+      { "stem": "7×11=", "answer": "77" },
+      { "stem": "30×2=", "answer": "60" },
+      { "stem": "42÷2+25=", "answer": "46" },
+      { "stem": "23×3=", "answer": "69" },
+      { "stem": "60÷6=", "answer": "10" },
+      { "stem": "80÷4=", "answer": "20" },
+      { "stem": "99÷3-17=", "answer": "16" },
+      { "stem": "96÷3=", "answer": "32" },
+      { "stem": "3×31=", "answer": "93" },
+      { "stem": "24÷2=", "answer": "12" },
+      { "stem": "44×2-19=", "answer": "69" }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第五单元认识四位数（1） - 二、在○里填“>”“<”或“=”",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "认识四位数", "比较大小", "单位换算", "数海探索", "第五单元"],
+    "commonStem": "在○里填“>”“<”或“=”。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "3米 {{blank:1}} 30厘米",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "3米=300厘米，300厘米>30厘米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "4米23厘米 {{blank:1}} 4.23米",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": ["="], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "4米23厘米=4.23米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "150秒 {{blank:1}} 2分",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "2分=120秒，150秒>120秒。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "10厘米 {{blank:1}} 10米",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "10米=1000厘米，10厘米<10米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "90分 {{blank:1}} 2时",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": ["<"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "2时=120分，90分<120分。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "0.76米 {{blank:1}} 60厘米",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "compare_symbol", "correct_answer": [">"], "answer_rule": { "allowed_values": [">", "<", "="], "display_shape": "circle" } }
+        ],
+        "explanation": "0.76米=76厘米，76厘米>60厘米。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第五单元认识四位数（1） - 三、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "认识四位数", "数位", "近似数", "填空题", "数海探索", "第五单元"],
+    "commonStem": "填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "数位顺序表中，从右边起第{{blank:1}}位是十位，第{{blank:2}}位是千位，第一位是{{blank:3}}位。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["二", "2"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["四", "4"] },
+          { "slot_key": "blank_3", "slot_type": "text", "correct_answer": ["个"] }
+        ],
+        "explanation": "从右往左依次是个位、十位、百位、千位。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "3965是由3个{{blank:1}}、9个{{blank:2}}、{{blank:3}}个十和{{blank:4}}个一组成。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["千"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["百"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["5"] }
+        ],
+        "explanation": "3965的千位是3，百位是9，十位是6，个位是5。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一个数由6个千，4个百和7个一组成，这个数是{{blank:1}}，读作{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6407"] },
+          { "slot_key": "blank_2", "slot_type": "text", "correct_answer": ["六千四百零七"] }
+        ],
+        "explanation": "没有十，所以十位写0，读作六千四百零七。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "个位上是5，千位上是7，其余各位上是0的数是{{blank:1}}；一个三位数，十位上的数字是百位上的数字的3倍，个位上是0，这个数可能是{{blank:2}}、{{blank:3}}或{{blank:4}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["7005"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["130"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["260"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["390"] }
+        ],
+        "explanation": "百位可能是1、2、3，对应十位是3、6、9。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "一款电脑的价格大约是6000元，百位上的数字比十位上的数字大9，千位上的数字与个位上的数字相同，这款电脑的价格是{{blank:1}}元。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5905"] }
+        ],
+        "explanation": "百位比十位大9，只能是百位9、十位0；接近6000且千位和个位相同，所以是5905。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "用0、4、5、9这4个数字组数，每个数字只用1次，最小的且一个零也不读的四位数是{{blank:1}}，最接近5000的数是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4590"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["5049"] }
+        ],
+        "explanation": "4590读作四千五百九十，不读零；5049与5000相差49，最接近5000。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "下面的数接近几千？填一填。",
+        "content": {
+          "tableFill": {
+            "headers": ["数", "接近的整千数"],
+            "rows": [
+              ["4003≈", "{{blank:1}}"],
+              ["5991≈", "{{blank:2}}"],
+              ["6543≈", "{{blank:3}}"],
+              ["1501≈", "{{blank:4}}"],
+              ["2345≈", "{{blank:5}}"],
+              ["3499≈", "{{blank:6}}"]
+            ]
+          }
+        },
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4000"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6000"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["7000"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["2000"] },
+          { "slot_key": "blank_5", "slot_type": "number", "correct_answer": ["2000"] },
+          { "slot_key": "blank_6", "slot_type": "number", "correct_answer": ["3000"] }
+        ],
+        "explanation": "按最接近的整千数填写。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "茶几的价格是212元，在计数器上表示212要用{{blank:1}}颗珠子，如果用同样数量的算珠在算盘上表示一个四位数，这个四位数最大是{{blank:2}}。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["9000"] }
+        ],
+        "explanation": "212需要2+1+2=5颗珠子；5颗算珠都用在千位上，最大可以表示9000。"
+      }
+    ]
+  },
+  {
+    "type": "composite_group",
+    "title": "数海探索 第五单元认识四位数（1） - 四、解决问题",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "认识四位数", "解决问题", "数海探索", "第五单元"],
+    "commonStem": "解决问题。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "妙妙同学参加学校举行的数学竞赛，时间为1小时，她用了35分钟后，还剩4道题没有答完，如果每道题要用5分钟，那么她{{blank:1}}在规定的时间内答完。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "text", "correct_answer": ["能", "可以"] }
+        ],
+        "explanation": "1小时=60分钟，还剩60-35=25分钟；4道题需要4×5=20分钟，能答完。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "小松鼠家、小猴家和大树在一条直线上，小松鼠家距离大树1200米，小猴家距离大树900米。小猴家距离小松鼠家可能有{{blank:1}}米或{{blank:2}}米。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["300"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["2100"] }
+        ],
+        "explanation": "在大树同侧时相差1200-900=300米；在大树两侧时相距1200+900=2100米。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "王阿姨摘了55个无花果，装在2个相同的纸袋和1个塑料盒里，正好装完。如果1个这样的纸袋装的数量是1个塑料盒的2倍，每个塑料盒装{{blank:1}}个无花果，每个纸袋装{{blank:2}}个无花果。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["11"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["22"] }
+        ],
+        "explanation": "1个塑料盒看作1份，1个纸袋是2份，2个纸袋和1个塑料盒共5份；55÷5=11，纸袋装11×2=22个。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "数海探索 第五单元认识四位数（1） - 智慧加油站",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "认识四位数", "数字推理", "数海探索", "第五单元"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "一个四位数，个位、十位和百位三个数位上的数字之和是18，百位和个位上的数字之和是12，十位上的数字比百位上的数字多1，千位上的数字是最大的一位数。这个四位数是{{blank:1}}。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["9567"] }
+      ],
+      "explanation": "千位是9。设百位是a，则十位是a+1，百位和个位之和是12；个位、十位、百位之和是18，所以12+(a+1)=18，a=5，十位6，个位7。"
+    }
+  }
+]

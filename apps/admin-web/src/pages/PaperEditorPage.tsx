@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalculationGroupPreview, CompositePreview, QuestionPreview } from '@kids-quiz/question-render';
 import { addPaperQuestionGroup, getPaper, removePaperItem, reorderPaperItems, updatePaper } from '../api/papers';
-import { listQuestionGroups } from '../api/questionGroups';
+import { getQuestionGroup, listQuestionGroups } from '../api/questionGroups';
 import { dbGroupToPreviewDraft } from '../utils/dbPreview';
 import { useToast } from '../components/ToastProvider';
 import { ConfirmDialog, Modal } from '../components/Modal';
@@ -89,7 +89,7 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
     refreshSeqRef.current = seq;
     try {
       setLoading(true);
-      const [paperData, groupData] = await Promise.all([getPaper(paperId), listQuestionGroups()]);
+      const [paperData, groupData] = await Promise.all([getPaper(paperId), listQuestionGroups({ limit: 5000 })]);
       if (seq !== refreshSeqRef.current) return;
       setPaper(paperData);
       setGroups(groupData);
@@ -120,6 +120,15 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
       toast.success('已加入试卷');
     } catch (error) {
       toast.danger(`加入失败：${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const previewAvailableGroup = async (groupId: string) => {
+    try {
+      const group = await getQuestionGroup(groupId);
+      setPreviewGroup(group);
+    } catch (error) {
+      toast.danger(`预览加载失败：${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -213,7 +222,7 @@ export function PaperEditorPage({ paperId, onBack, onPreview }: Props) {
               {groupStemPreview(group) && <small style={{ display: 'block', marginTop: 4, color: 'var(--text-muted)' }}>{groupStemPreview(group).slice(0, 80)}</small>}
             </div>
             <div className="rowActions">
-              <button className="btn btn-secondary btn-sm" onClick={() => setPreviewGroup(group)}>预览</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => void previewAvailableGroup(String(group.id))}>预览</button>
               <button className="btn btn-primary btn-sm" onClick={() => addSelected(String(group.id))}>加入</button>
             </div>
           </div>)}

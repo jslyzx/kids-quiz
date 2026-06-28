@@ -265,6 +265,7 @@ function auditBank(bank: any) {
       }
 
       const isColumnArithmetic = question.content?.interaction === 'column_arithmetic' || Boolean(question.content?.columnArithmetic);
+      const isColumnDivision = question.content?.interaction === 'column_division' || Boolean(question.content?.columnDivision);
       const seenSlotKeys = new Set<string>();
       for (const slot of answerSlots) {
         const key = textOf(slot.slotKey);
@@ -293,7 +294,7 @@ function auditBank(bank: any) {
         }
         seenSlotKeys.add(key);
 
-        if (!isColumnArithmetic && (!answers.length || answers.every((answer) => textOf(answer).trim() === ''))) {
+        if (!isColumnArithmetic && !isColumnDivision && (!answers.length || answers.every((answer) => textOf(answer).trim() === ''))) {
           addIssue({
             groupId,
             questionId,
@@ -359,7 +360,7 @@ function auditBank(bank: any) {
           category: '图片',
           title: '图片 URL 格式异常',
           detail: `检测到无法稳定访问的图片地址：${badUrls.join('、')}`,
-          suggestion: '图片建议放入 apps/api/uploads，并使用 /uploads/xxx 或 http://localhost:3000/uploads/xxx。',
+          suggestion: '图片建议放入 apps/api/uploads，并使用 /uploads/xxx，避免写死本机 localhost。',
         });
       }
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AnswerSlot, ColumnArithmeticCell, ColumnArithmeticContent, QuestionDraft, TableMaterial } from '@kids-quiz/shared-types';
+import type { AnswerSlot, ColumnArithmeticCell, ColumnArithmeticContent, ColumnDivisionContent, QuestionDraft, TableMaterial } from '@kids-quiz/shared-types';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import './renderer.css';
@@ -83,7 +83,7 @@ function TableFillPreview({ question }: { question: QuestionDraft }) {
   const rows = table.rows ?? [];
   return (
     <div className="kq-question">
-      {question.stem && <div className="kq-stem">{renderMathText(question.stem)}</div>}
+      {question.stem && <div className="kq-stem">{renderStem(question.stem, question.answer_slots)}</div>}
       <table className="kq-table kq-table-fill">
         {headers.length > 0 && <thead><tr>{headers.map((header, index) => <th key={`${header}-${index}`}>{renderMathText(header)}</th>)}</tr></thead>}
         <tbody>{rows.map((row, rowIndex) => (
@@ -103,9 +103,12 @@ function ColumnArithmeticPreview({ question }: { question: QuestionDraft }) {
   const config = question.content?.columnArithmetic as ColumnArithmeticContent | undefined;
   const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
   const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
+  // 纯展示型竖式（无方框）+ 题干含 {{blank}}：题干渲染为空位（数字谜：兴=___ 大=___）
+  const hasStemBlank = /\{\{blank(?::\d+)?\}\}/.test(question.stem ?? '');
+  const stemNode = hasStemBlank ? renderStem(question.stem ?? '', question.answer_slots) : renderMathText(question.stem ?? '');
   return (
     <div className="kq-question">
-      {question.stem && <div className="kq-stem">{renderMathText(question.stem)}</div>}
+      {question.stem && <div className="kq-stem">{stemNode}</div>}
       <div className="kq-column-arithmetic" style={{ ['--kq-columns' as string]: columns }}>
         {rows.map((row, rowIndex) => (
           <div className={`kq-column-row kq-column-row-${row.role ?? 'operand'}`} key={rowIndex}>
@@ -113,12 +116,59 @@ function ColumnArithmeticPreview({ question }: { question: QuestionDraft }) {
             {Array.from({ length: columns }).map((_, cellIndex) => {
               const offset = columns - row.cells.length;
               const cell = row.cells[cellIndex - offset] ?? null;
-              const key = cell?.slot ?? `${rowIndex}-${cellIndex}`;
+              const key = `${rowIndex}-${cellIndex}`;
               if (cell?.slot) return <span className="kq-column-cell kq-column-slot" key={key} />;
               return <span className={`kq-column-cell ${cell ? 'fixed' : 'empty'}`} key={key}>{cellText(cell)}</span>;
             })}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** 渲染长除法一行数字：右对齐到 columns 列，左侧补空 cell */
+function divisionCells(cells: ColumnArithmeticCell[], columns: number, rowKey: string) {
+  return Array.from({ length: columns }).map((_, cellIndex) => {
+    const offset = columns - cells.length;
+    const cell = cells[cellIndex - offset] ?? null;
+    const key = `${rowKey}-${cellIndex}`;
+    if (cell?.slot) return <span className="kq-column-cell kq-column-slot" key={key} />;
+    return <span className={`kq-column-cell ${cell ? 'fixed' : 'empty'}`} key={key}>{cellText(cell)}</span>;
+  });
+}
+
+function ColumnDivisionPreview({ question }: { question: QuestionDraft }) {
+  const config = question.content?.columnDivision as ColumnDivisionContent | undefined;
+  if (!config) return null;
+  const columns = config.dividend.length;
+  const steps = config.steps ?? [];
+  return (
+    <div className="kq-question">
+      {question.stem && <div className="kq-stem">{renderMathText(question.stem)}</div>}
+      <div className="kq-division" style={{ ['--kq-columns' as string]: columns }}>
+        {/* 商（顶部，右对齐到被除数列） */}
+        <div className="kq-division-row kq-division-quotient">
+          {divisionCells(config.quotient, columns, 'q')}
+        </div>
+        {/* 被除数 + 除数（除法括号） */}
+        <div className="kq-division-row kq-division-divisor">
+          <span className="kq-division-bracket">┌</span>
+          <span className="kq-division-divisor-cells">{config.divisor.map((cell, i) => <span className="kq-column-cell fixed" key={i}>{cellText(cell)}</span>)}</span>
+          <span className="kq-division-bar" />
+          <span className="kq-division-dividend">{divisionCells(config.dividend, columns, 'd')}</span>
+        </div>
+        {/* 中间步骤：部分积 + 横线 + 剩余 */}
+        {steps.map((step, stepIndex) => (
+          <div className="kq-division-step" key={stepIndex}>
+            <div className="kq-division-row kq-division-product">{divisionCells(step.product, columns, `p${stepIndex}`)}</div>
+            <div className="kq-division-line" />
+            <div className="kq-division-row kq-division-step-remainder">{divisionCells(step.remainder, columns, `r${stepIndex}`)}</div>
+          </div>
+        ))}
+        {/* 最终余数（带上方横线） */}
+        <div className="kq-division-line" />
+        <div className="kq-division-row kq-division-remainder">{divisionCells(config.remainder, columns, 'rem')}</div>
       </div>
     </div>
   );
@@ -139,6 +189,7 @@ export function QuestionPreview({ question }: { question: QuestionDraft }) {
   const materials = question.content?.materials as CompositeMaterial[] | undefined;
   const materialBlocks = Array.isArray(materials) ? materials.map((material, index) => <MaterialBlock key={index} material={material} />) : null;
   if (question.content?.interaction === 'column_arithmetic' || question.content?.columnArithmetic) return <ColumnArithmeticPreview question={question} />;
+  if (question.content?.interaction === 'column_division' || question.content?.columnDivision) return <ColumnDivisionPreview question={question} />;
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillPreview question={question} />;
   if (question.content?.tableFill) return <TableFillPreview question={question} />;
   if (question.question_type === 'ordering') return <OrderingPreview question={question} />;

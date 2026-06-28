@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, useRef, type CSSProperties, type ReactNode } from 'react';
-import type { AnswerSlot, QuestionDraft } from '@kids-quiz/shared-types';
+import type { AnswerSlot, ColumnArithmeticCell, ColumnDivisionContent, QuestionDraft } from '@kids-quiz/shared-types';
 import { getStudentPaper as getPaper } from '../api/papers';
 import { getStudentQuestionGroup as getQuestionGroup } from '../api/questionGroups';
 import { submitStudentPaperAttempt as submitPaperAttempt } from '../api/submissions';
 import { StudentDraftPad } from '../components/StudentDraftPad';
-import { evaluateColumnArithmetic, getColumnArithmetic, getColumnArithmeticSlotKeys } from '../utils/columnArithmetic';
+import { evaluateColumnArithmetic, evaluateColumnDivision, getColumnArithmetic, getColumnArithmeticSlotKeys, getColumnDivision, getColumnDivisionSlotKeys } from '../utils/columnArithmetic';
 import { dbGroupToPreviewDraft, dbQuestionToPreview } from '../utils/dbPreview';
 import { renderMathHtml, renderMathText } from '../utils/mathText';
 import { applyRewardSnapshot, grantPracticeReward, type RewardGrant } from '../utils/rewards';
@@ -113,8 +113,12 @@ function isSlotCorrect(slot: AnswerSlot, value: StudentAnswerValue | undefined) 
 }
 
 function isQuestionSlotCorrect(question: QuestionDraft, slot: AnswerSlot, itemId: string, questionIndex: number, answers: StudentAnswers) {
-  if (getColumnArithmetic(question)) {
+  // 竖式纯展示（无 slot）时退回普通填空判分；仅当竖式含可填方框才走竖式判分
+  if (getColumnArithmetic(question) && getColumnArithmeticSlotKeys(question).length) {
     return evaluateColumnArithmetic(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).ok;
+  }
+  if (getColumnDivision(question) && getColumnDivisionSlotKeys(question).length) {
+    return evaluateColumnDivision(question, (slotKey) => answers[answerKey(itemId, questionIndex, slotKey)]).ok;
   }
   return isSlotCorrect(slot, answers[answerKey(itemId, questionIndex, slot.slot_key)]);
 }
@@ -131,7 +135,7 @@ function formatAnswerValue(value: unknown): string {
 }
 
 function formatQuestionAnswer(question: QuestionDraft, value: unknown): string {
-  if (getColumnArithmetic(question)) return normalize(value) || '满足竖式规则即可';
+  if (getColumnArithmetic(question) || getColumnDivision(question)) return normalize(value) || '满足竖式规则即可';
   const options = (question.content?.options ?? []) as Array<{ key: string; text: string }>;
   if ((question.question_type === 'single_choice' || question.question_type === 'multiple_choice') && options.length) {
     const keys = Array.isArray(value) ? value.map(normalize) : normalize(value) ? [normalize(value)] : [];
@@ -333,27 +337,21 @@ function PracticeQuestionMaterial({ item }: { item: PracticeQuestion }) {
 }
 
 function BlankInput({ id, slot, value, missing, correct, wrong, setAnswer }: { id: string; slot: AnswerSlot; value: StudentAnswerValue | undefined; missing?: boolean; correct?: boolean; wrong?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
-  const shapeClass = slot.answer_rule?.display_shape === 'circle' ? 'operator-circle' : '';
   if (slot.slot_type === 'compare_symbol') {
     const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
-    if (shapeClass) {
-      const current = normalize(value);
-      const next = allowed[(Math.max(allowed.indexOf(current), -1) + 1) % allowed.length] ?? '';
-      return <button
-        type="button"
-        data-answer-id={id}
-        className={`operatorSymbolButton ${current ? 'filled' : ''} ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`}
-        aria-label={`选择运算符，当前${current || '未选择'}`}
-        title={`点击切换：${allowed.join(' ')}`}
-        onClick={() => setAnswer(id, next)}
-      >
-        {current || ''}
-      </button>;
-    }
-    return <select className={`practice-blank-input ${shapeClass} ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)}>
-      <option value="">选择</option>
-      {allowed.map((item) => <option value={item} key={item}>{item}</option>)}
-    </select>;
+    const current = normalize(value);
+    const next = allowed[(Math.max(allowed.indexOf(current), -1) + 1) % allowed.length] ?? '';
+    return <button
+      type="button"
+      data-answer-id={id}
+      className={`operatorSymbolButton ${current ? 'filled' : ''} ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`}
+      style={{ width: 38, minWidth: 38, height: 38, margin: '0 4px', padding: 0 }}
+      aria-label={`选择比较符号，当前${current || '未选择'}`}
+      title={`点击切换：${allowed.join(' ')}`}
+      onClick={() => setAnswer(id, next)}
+    >
+      {current || '○'}
+    </button>;
   }
   return <input className={`practice-blank-input ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)} inputMode="text" />;
 }
@@ -387,7 +385,7 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, missingAn
   const headers = table.headers ?? [];
   const rows = table.rows ?? [];
   return <div className="practice-table-fill">
-    {question.stem && <div className="practice-stem">{renderMathText(question.stem)}</div>}
+    {question.stem && <div className="practice-stem">{renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback)}</div>}
     <div className="practice-table-wrap">
       <table className="practice-material-table practice-fill-table">
         {headers.length > 0 && <thead><tr>{headers.map((header, index) => <th key={`${header}-${index}`}>{renderMathText(header)}</th>)}</tr></thead>}
@@ -407,8 +405,13 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
   const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
   const slotKeys = getColumnArithmeticSlotKeys(question);
   const boardStyle = { '--column-count': columns } as CSSProperties;
+  // 纯展示型竖式（无方框）：题干含 {{blank}} 时渲染为填空（如数字谜：兴=___ 大=___）
+  const hasStemBlank = /\{\{blank(?::\d+)?\}\}/.test(question.stem ?? '');
+  const stemNode = hasStemBlank && question.question_type === 'fill_blank'
+    ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback)
+    : renderMathText(question.stem ?? '');
   return <div className="practice-column-question">
-    {question.stem && <div className="practice-stem">{renderMathText(question.stem)}</div>}
+    {question.stem && <div className="practice-stem">{stemNode}</div>}
     <div className="practice-column-board" style={boardStyle}>
       {rows.map((row, rowIndex) => <div className={`practice-column-row row-${row.role ?? 'operand'}`} key={rowIndex}>
         <span className="practice-column-operator">{row.operator ?? ''}</span>
@@ -421,7 +424,7 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
             const fb = feedback?.[id];
             return <input
               className={`practice-column-cell input ${missingAnswerIds.has(id) ? 'missing' : ''} ${fb === true ? 'correct' : ''} ${fb === false ? 'wrong' : ''}`}
-              key={cell.slot}
+              key={`${rowIndex}-${cellIndex}`}
               value={normalize(answers[id])}
               onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
               inputMode="numeric"
@@ -433,6 +436,55 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
       </div>)}
     </div>
     {!!slotKeys.length && <div className="practice-column-hint">可填数字：{(config?.allowedDigits ?? []).join('、') || '按题目要求填写'}{config?.uniqueDigits ? '，每个数字只能用一次' : ''}</div>}
+  </div>;
+}
+
+function ColumnDivisionQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; feedback?: Record<string, boolean> }) {
+  const config = getColumnDivision(question) as ColumnDivisionContent | null;
+  if (!config) return null;
+  const columns = config.dividend.length;
+  const boardStyle = { '--column-count': columns } as CSSProperties;
+  const renderCells = (cells: ColumnArithmeticCell[], rowKey: string) => Array.from({ length: columns }).map((_, cellIndex) => {
+    const offset = columns - cells.length;
+    const cell = cells[cellIndex - offset] ?? null;
+    const key = `${rowKey}-${cellIndex}`;
+    if (!cell) return <span className="practice-column-cell empty" key={key} />;
+    if (cell.slot) {
+      const id = answerKey(itemId, questionIndex, cell.slot);
+      const fb = feedback?.[id];
+      return <input
+        className={`practice-column-cell input ${missingAnswerIds.has(id) ? 'missing' : ''} ${fb === true ? 'correct' : ''} ${fb === false ? 'wrong' : ''}`}
+        key={key}
+        value={normalize(answers[id])}
+        onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
+        inputMode="numeric"
+        aria-label={`竖式方框 ${cell.slot}`}
+      />;
+    }
+    return <span className="practice-column-cell fixed" key={key}>{cell.text ?? ''}</span>;
+  });
+  const steps = config.steps ?? [];
+  return <div className="practice-column-question">
+    {question.stem && <div className="practice-stem">{renderMathText(question.stem)}</div>}
+    <div className="practice-division-board" style={boardStyle}>
+      <div className="practice-division-row practice-division-quotient">{renderCells(config.quotient, 'q')}</div>
+      <div className="practice-division-row practice-division-divisor">
+        <span className="practice-division-bracket">┌</span>
+        <span className="practice-division-divisor-cells">{config.divisor.map((cell, i) => <span className="practice-column-cell fixed" key={i}>{cell?.text ?? ''}</span>)}</span>
+        <span className="practice-division-bar" />
+        <span className="practice-division-dividend">{renderCells(config.dividend, 'd')}</span>
+      </div>
+      {steps.map((step, stepIndex) => (
+        <div className="practice-division-step" key={stepIndex}>
+          <div className="practice-division-row practice-division-product">{renderCells(step.product, `p${stepIndex}`)}</div>
+          <div className="practice-division-line" />
+          <div className="practice-division-row practice-division-step-remainder">{renderCells(step.remainder, `r${stepIndex}`)}</div>
+        </div>
+      ))}
+      <div className="practice-division-line" />
+      <div className="practice-division-row practice-division-remainder">{renderCells(config.remainder, 'rem')}</div>
+    </div>
+    {!!getColumnDivisionSlotKeys(question).length && <div className="practice-column-hint">可填数字：{(config.allowedDigits ?? []).join('、') || '按题目要求填写'}{config.uniqueDigits ? '，每个数字只能用一次' : ''}</div>}
   </div>;
 }
 
@@ -719,6 +771,7 @@ function CurrentQuestion({ item, answers, missingAnswerIds, setAnswer, feedback 
   const missing = missingAnswerIds.has(id);
   const correctness = feedback?.[id];
   if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
+  if (getColumnDivision(question)) return <ColumnDivisionQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} correctness={correctness} />;
   if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
   return <>
@@ -922,7 +975,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
       const details = question.answer_slots.map((slot) => {
         const key = answerKey(itemId, questionIndex, slot.slot_key);
         const ok = isQuestionSlotCorrect(question, slot, itemId, questionIndex, answers);
-        const correctValue = getColumnArithmetic(question) ? ['满足竖式规则即可'] : slot.correct_answer;
+        const correctValue = (getColumnArithmetic(question) || getColumnDivision(question)) ? ['满足竖式规则即可'] : slot.correct_answer;
         nextResults[key] = ok;
         total += 1;
         if (ok) correct += 1;
