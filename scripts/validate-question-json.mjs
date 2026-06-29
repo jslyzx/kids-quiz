@@ -48,6 +48,8 @@ const slotTypeAliases = new Map(Object.entries({
   COMPARE_SYMBOL: 'compare_symbol',
 }));
 
+const keyboardModes = new Set(['math', 'digit', 'chinese-number', 'text']);
+
 function usage() {
   console.log([
     'Usage: pnpm import:validate -- <file.json> [--check-assets] [--api-base=http://localhost:3000] [--write-normalized=out.json]',
@@ -315,6 +317,8 @@ function validateQuestion(question, path, errors, warnings) {
   for (const slot of slots) {
     if (!text(slot.slot_key).trim()) errors.push(`${path}: answer slot has empty slot_key`);
     if (!text(slot.slot_type).trim()) errors.push(`${path}: slot ${slot.slot_key || '-'} has empty slot_type`);
+    const keyboard = text(slot.answer_rule?.keyboard).trim();
+    if (keyboard && !keyboardModes.has(keyboard)) errors.push(`${path}: slot ${slot.slot_key || '-'} has unsupported answer_rule.keyboard "${keyboard}"`);
     const answer = asArray(slot.correct_answer);
     if (!isColumnArithmetic && !isColumnDivision && !answer.some((item) => text(item).trim())) errors.push(`${path}: slot ${slot.slot_key || '-'} has empty correct_answer`);
   }

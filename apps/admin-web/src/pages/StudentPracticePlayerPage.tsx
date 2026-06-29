@@ -172,6 +172,19 @@ function progressStorageKey(sourceId: string) {
 
 type PracticeProgress = { index: number; startedAt: number };
 
+type StudentKeyboardMode = 'math' | 'digit' | 'chinese-number' | 'text';
+type CustomKeyboardMode = Exclude<StudentKeyboardMode, 'text'>;
+type KeyboardTarget = {
+  id: string;
+  mode: CustomKeyboardMode;
+  maxLength?: number;
+  allowedValues?: string[];
+};
+type KeyboardContext = {
+  activeTarget: KeyboardTarget | null;
+  setActiveTarget: (target: KeyboardTarget | null) => void;
+};
+
 function readDraftAnswers(sourceId: string): StudentAnswers {
   try {
     const raw = localStorage.getItem(draftStorageKey(sourceId));
@@ -336,7 +349,50 @@ function PracticeQuestionMaterial({ item }: { item: PracticeQuestion }) {
   </div>;
 }
 
-function BlankInput({ id, slot, value, missing, correct, wrong, setAnswer }: { id: string; slot: AnswerSlot; value: StudentAnswerValue | undefined; missing?: boolean; correct?: boolean; wrong?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void }) {
+function slotKeyboardMode(slot: AnswerSlot, question?: QuestionDraft): StudentKeyboardMode {
+  const configured = String(slot.answer_rule?.keyboard ?? '').trim();
+  if (configured === 'math' || configured === 'digit' || configured === 'chinese-number' || configured === 'text') return configured;
+  if (slot.slot_type === 'number') return 'math';
+  if (slot.slot_type === 'expression') return 'math';
+  if (slot.slot_type !== 'text') return 'text';
+  const answers = (slot.correct_answer as unknown[] | undefined)?.map((item) => normalize(item)).join('') ?? '';
+  const stem = normalize(question?.stem);
+  if (/口诀|乘法/.test(stem) || /^[一二三四五六七八九十零两得百千万]+$/.test(answers)) return 'chinese-number';
+  return 'text';
+}
+
+function AnswerKeyboard({ target, value, setAnswer, onSubmit }: { target: KeyboardTarget | null; value: StudentAnswerValue | undefined; setAnswer: (id: string, value: StudentAnswerValue) => void; onSubmit: () => void }) {
+  if (!target) return null;
+  const current = normalize(value);
+  const chars = Array.from(current);
+  const write = (next: string) => setAnswer(target.id, target.maxLength ? Array.from(next).slice(0, target.maxLength).join('') : next);
+  const append = (token: string) => {
+    if (target.allowedValues?.length && !target.allowedValues.includes(token)) return;
+    if (target.maxLength === 1) {
+      write(token);
+      return;
+    }
+    write(`${current}${token}`);
+  };
+  const rows = target.mode === 'chinese-number'
+    ? [['一', '二', '三', '四', '五'], ['六', '七', '八', '九', '十'], ['零', '两', '得', '百', '千', '万']]
+    : target.mode === 'digit'
+    ? [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0']]
+    : [['7', '8', '9', '+'], ['4', '5', '6', '-'], ['1', '2', '3', '×'], ['0', '.', '=', '÷']];
+  return <div className={`studentKeyboard studentKeyboard-${target.mode}`}>
+    <div className="studentKeyboard-preview" aria-live="polite">{current || ' '}</div>
+    <div className="studentKeyboard-keys">
+      {rows.flat().filter((key) => !target.allowedValues?.length || target.allowedValues.includes(key)).map((key) => (
+        <button type="button" className="studentKeyboard-key" key={key} onClick={() => append(key)}>{key}</button>
+      ))}
+      <button type="button" className="studentKeyboard-key tool" onClick={() => write(chars.slice(0, -1).join(''))}>删除</button>
+      <button type="button" className="studentKeyboard-key tool" onClick={() => write('')}>清空</button>
+      <button type="button" className="studentKeyboard-key primary" onClick={onSubmit}>确定</button>
+    </div>
+  </div>;
+}
+
+function BlankInput({ id, slot, question, value, missing, correct, wrong, setAnswer, keyboard }: { id: string; slot: AnswerSlot; question: QuestionDraft; value: StudentAnswerValue | undefined; missing?: boolean; correct?: boolean; wrong?: boolean; setAnswer: (id: string, value: StudentAnswerValue) => void; keyboard: KeyboardContext }) {
   if (slot.slot_type === 'compare_symbol') {
     const allowed = (slot.answer_rule?.allowed_values as string[] | undefined) ?? ['>', '<', '='];
     const current = normalize(value);
@@ -353,10 +409,21 @@ function BlankInput({ id, slot, value, missing, correct, wrong, setAnswer }: { i
       {current || '○'}
     </button>;
   }
-  return <input className={`practice-blank-input ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`} value={normalize(value)} onChange={(event) => setAnswer(id, event.target.value)} inputMode="text" />;
+  const mode = slotKeyboardMode(slot, question);
+  const useCustomKeyboard = mode !== 'text';
+  const className = `practice-blank-input ${keyboard.activeTarget?.id === id ? 'activeKeyboard' : ''} ${missing ? 'missing' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`;
+  return <input
+    className={className}
+    value={normalize(value)}
+    onChange={(event) => setAnswer(id, event.target.value)}
+    onFocus={() => useCustomKeyboard && keyboard.setActiveTarget({ id, mode })}
+    onClick={() => useCustomKeyboard && keyboard.setActiveTarget({ id, mode })}
+    inputMode={useCustomKeyboard ? 'none' : 'text'}
+    readOnly={useCustomKeyboard}
+  />;
 }
 
-function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void, feedback?: Record<string, boolean>) {
+function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void, keyboard: KeyboardContext, feedback?: Record<string, boolean>) {
   const parts: ReactNode[] = [];
   let last = 0;
   const re = /\{\{blank:(\d+)\}\}/g;
@@ -368,7 +435,7 @@ function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: str
     if (slot) {
       const id = answerKey(itemId, questionIndex, slotKey);
       const fb = feedback?.[id];
-      parts.push(<BlankInput key={`${slotKey}-${match.index}`} id={id} slot={slot} value={answers[id]} missing={missingAnswerIds.has(id)} correct={fb === true} wrong={fb === false} setAnswer={setAnswer} />);
+      parts.push(<BlankInput key={`${slotKey}-${match.index}`} id={id} slot={slot} question={question} value={answers[id]} missing={missingAnswerIds.has(id)} correct={fb === true} wrong={fb === false} setAnswer={setAnswer} keyboard={keyboard} />);
     }
     last = re.lastIndex;
   }
@@ -376,22 +443,22 @@ function renderTextWithBlanks(text: string, question: QuestionDraft, itemId: str
   return parts;
 }
 
-function renderStemWithBlanks(question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void, feedback?: Record<string, boolean>) {
-  return renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback);
+function renderStemWithBlanks(question: QuestionDraft, itemId: string, questionIndex: number, answers: StudentAnswers, missingAnswerIds: Set<string>, setAnswer: (id: string, value: StudentAnswerValue) => void, keyboard: KeyboardContext, feedback?: Record<string, boolean>) {
+  return renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback);
 }
 
-function TableFillQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; feedback?: Record<string, boolean> }) {
+function TableFillQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; keyboard: KeyboardContext; feedback?: Record<string, boolean> }) {
   const table = (question.content?.tableFill ?? {}) as { headers?: string[]; rows?: string[][] };
   const headers = table.headers ?? [];
   const rows = table.rows ?? [];
   return <div className="practice-table-fill">
-    {question.stem && <div className="practice-stem">{renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback)}</div>}
+    {question.stem && <div className="practice-stem">{renderTextWithBlanks(question.stem, question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback)}</div>}
     <div className="practice-table-wrap">
       <table className="practice-material-table practice-fill-table">
         {headers.length > 0 && <thead><tr>{headers.map((header, index) => <th key={`${header}-${index}`}>{renderMathText(header)}</th>)}</tr></thead>}
         <tbody>{rows.map((row, rowIndex) => (
           <tr key={rowIndex}>{row.map((cell, cellIndex) => (
-            <td key={`${rowIndex}-${cellIndex}`}>{renderTextWithBlanks(String(cell ?? ''), question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback)}</td>
+            <td key={`${rowIndex}-${cellIndex}`}>{renderTextWithBlanks(String(cell ?? ''), question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback)}</td>
           ))}</tr>
         ))}</tbody>
       </table>
@@ -399,7 +466,7 @@ function TableFillQuestion({ question, itemId, questionIndex, answers, missingAn
   </div>;
 }
 
-function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; feedback?: Record<string, boolean> }) {
+function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; keyboard: KeyboardContext; feedback?: Record<string, boolean> }) {
   const config = getColumnArithmetic(question);
   const rows = [...(config?.carryRows ?? []), ...(config?.rows ?? [])];
   const columns = config?.columns ?? Math.max(1, ...rows.map((row) => row.cells.length));
@@ -408,7 +475,7 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
   // 纯展示型竖式（无方框）：题干含 {{blank}} 时渲染为填空（如数字谜：兴=___ 大=___）
   const hasStemBlank = /\{\{blank(?::\d+)?\}\}/.test(question.stem ?? '');
   const stemNode = hasStemBlank && question.question_type === 'fill_blank'
-    ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback)
+    ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback)
     : renderMathText(question.stem ?? '');
   return <div className="practice-column-question">
     {question.stem && <div className="practice-stem">{stemNode}</div>}
@@ -427,7 +494,10 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
               key={`${rowIndex}-${cellIndex}`}
               value={normalize(answers[id])}
               onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
-              inputMode="numeric"
+              onFocus={() => keyboard.setActiveTarget({ id, mode: 'digit', maxLength: 1, allowedValues: config?.allowedDigits })}
+              onClick={() => keyboard.setActiveTarget({ id, mode: 'digit', maxLength: 1, allowedValues: config?.allowedDigits })}
+              inputMode="none"
+              readOnly
               aria-label={`竖式方框 ${cell.slot}`}
             />;
           }
@@ -439,7 +509,7 @@ function ColumnArithmeticQuestion({ question, itemId, questionIndex, answers, mi
   </div>;
 }
 
-function ColumnDivisionQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; feedback?: Record<string, boolean> }) {
+function ColumnDivisionQuestion({ question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback }: { question: QuestionDraft; itemId: string; questionIndex: number; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; keyboard: KeyboardContext; feedback?: Record<string, boolean> }) {
   const config = getColumnDivision(question) as ColumnDivisionContent | null;
   if (!config) return null;
   const columns = config.dividend.length;
@@ -457,7 +527,10 @@ function ColumnDivisionQuestion({ question, itemId, questionIndex, answers, miss
         key={key}
         value={normalize(answers[id])}
         onChange={(event) => setAnswer(id, event.target.value.replace(/\D/g, '').slice(0, 1))}
-        inputMode="numeric"
+        onFocus={() => keyboard.setActiveTarget({ id, mode: 'digit', maxLength: 1, allowedValues: config.allowedDigits })}
+        onClick={() => keyboard.setActiveTarget({ id, mode: 'digit', maxLength: 1, allowedValues: config.allowedDigits })}
+        inputMode="none"
+        readOnly
         aria-label={`竖式方框 ${cell.slot}`}
       />;
     }
@@ -764,18 +837,18 @@ function PoemCharFillQuestion({ question, id, answers, missing, setAnswer, corre
   </div>;
 }
 
-function CurrentQuestion({ item, answers, missingAnswerIds, setAnswer, feedback }: { item: PracticeQuestion; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; feedback?: Record<string, boolean> }) {
+function CurrentQuestion({ item, answers, missingAnswerIds, setAnswer, keyboard, feedback }: { item: PracticeQuestion; answers: StudentAnswers; missingAnswerIds: Set<string>; setAnswer: (id: string, value: StudentAnswerValue) => void; keyboard: KeyboardContext; feedback?: Record<string, boolean> }) {
   const { question, itemId, questionIndex } = item;
   const slot = question.answer_slots[0];
   const id = answerKey(itemId, questionIndex, slot?.slot_key || 'answer');
   const missing = missingAnswerIds.has(id);
   const correctness = feedback?.[id];
-  if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
-  if (getColumnDivision(question)) return <ColumnDivisionQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
+  if (getColumnArithmetic(question)) return <ColumnArithmeticQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} keyboard={keyboard} feedback={feedback} />;
+  if (getColumnDivision(question)) return <ColumnDivisionQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} keyboard={keyboard} feedback={feedback} />;
   if (question.content?.interaction === 'poem_char_fill') return <PoemCharFillQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} correctness={correctness} />;
-  if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={feedback} />;
+  if (question.content?.tableFill) return <TableFillQuestion question={question} itemId={itemId} questionIndex={questionIndex} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} keyboard={keyboard} feedback={feedback} />;
   return <>
-    <div className="practice-stem">{question.question_type === 'fill_blank' ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, feedback) : renderMathText(question.stem)}</div>
+    <div className="practice-stem">{question.question_type === 'fill_blank' ? renderStemWithBlanks(question, itemId, questionIndex, answers, missingAnswerIds, setAnswer, keyboard, feedback) : renderMathText(question.stem)}</div>
     {(question.question_type === 'single_choice' || question.question_type === 'multiple_choice') && <ChoiceQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} correctness={correctness} />}
     {question.question_type === 'ordering' && <input className={`practice-wide-input ${missing ? 'missing' : ''} ${correctness === true ? 'correct' : ''} ${correctness === false ? 'wrong' : ''}`} value={normalize(answers[id])} onChange={(event) => setAnswer(id, event.target.value)} placeholder="按顺序填写序号，例如：①,②,③" />}
     {question.question_type === 'sentence_build' && <SentenceBuildQuestion question={question} id={id} answers={answers} missing={missing} setAnswer={setAnswer} correctness={correctness} />}
@@ -820,6 +893,7 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
   const [loading, setLoading] = useState(false);
   const [saveWarning, setSaveWarning] = useState('');
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [activeKeyboardTarget, setActiveKeyboardTarget] = useState<KeyboardTarget | null>(null);
   // 即时反馈：当前题已答且判过对错的状态，slotKey -> boolean
   const [instantFeedback, setInstantFeedback] = useState<Record<string, boolean>>({});
   const hasAnsweredAnythingRef = useRef(false);
@@ -851,8 +925,13 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     setSummary(null);
     setSaveWarning('');
     setInstantFeedback({});
+    setActiveKeyboardTarget(null);
     hasAnsweredAnythingRef.current = false;
   }, [sourceId]);
+
+  useEffect(() => {
+    setActiveKeyboardTarget(null);
+  }, [index]);
 
   // 题号与开始时间持久化，支持断点续做
   useEffect(() => {
@@ -910,6 +989,11 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
     setMessage('');
     hasAnsweredAnythingRef.current = true;
   };
+
+  const keyboardContext = useMemo<KeyboardContext>(() => ({
+    activeTarget: activeKeyboardTarget,
+    setActiveTarget: setActiveKeyboardTarget,
+  }), [activeKeyboardTarget]);
 
   // 即时判对错：当当前题已答完时，给每个 slot 标 correct/wrong
   const judgeCurrentInstantly = () => {
@@ -1118,7 +1202,13 @@ export function StudentPracticePlayerPage({ paperId, questionGroupId, onHome, on
             </div>
           </div>
           <PracticeQuestionMaterial item={current} />
-          <CurrentQuestion item={current} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} feedback={instantFeedback} />
+          <CurrentQuestion item={current} answers={answers} missingAnswerIds={missingAnswerIds} setAnswer={setAnswer} keyboard={keyboardContext} feedback={instantFeedback} />
+          <AnswerKeyboard
+            target={activeKeyboardTarget}
+            value={activeKeyboardTarget ? answers[activeKeyboardTarget.id] : undefined}
+            setAnswer={setAnswer}
+            onSubmit={index >= questions.length - 1 ? finish : next}
+          />
           <div className={`practice-answer-hint ${currentAnswered ? 'done' : ''} ${currentHasMissing ? 'missing' : ''}`}>
             <b>{currentAnswered ? '这一题完成啦' : '先完成这一题'}</b>
             <span>{currentHasMissing ? '橙色标记的位置还没有填。' : currentAnswered ? (index >= questions.length - 1 ? '可以提交练习，看一看星星奖励。' : '可以点“下一题”继续。') : '填写答案后，下面的按钮会带你去下一步。'}</span>

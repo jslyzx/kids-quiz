@@ -1,0 +1,79 @@
+[
+  {
+    "type": "composite_group",
+    "title": "二上练习1 - 一、填空",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "填空题", "表内乘法", "平均分", "待验收"],
+    "commonStem": "一、填空。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "1. 3×5表示（{{blank:1}}）个（{{blank:2}}）相加，得（{{blank:3}}），口诀（{{blank:4}}）。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["3"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["15"] },
+          { "slot_key": "blank_4", "slot_type": "text", "correct_answer": ["三五十五"] }
+        ],
+        "explanation": "3×5 表示 5 个 3 相加（3+3+3+3+3=15），得数是 15，乘法口诀：三五十五。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "2. 写出算式并算出得数。\n（1）2个5相加，和是多少？{{blank:1}}\n（2）2和5相加，和是多少？{{blank:2}}\n（3）2和5相乘，积是多少？{{blank:3}}\n（4）2个5相乘，积是多少？{{blank:4}}",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["10"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["7"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["10"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["25"] }
+        ],
+        "explanation": "（1）5+5=10；（2）2+5=7；（3）2×5=10；（4）5×5=25。注意区分“相加”与“相乘”、“2个5”与“2和5”。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "3. （{{blank:1}}）只小鸭共有12条腿，（{{blank:2}}）只小青蛙共有16条腿，（{{blank:3}}）只眼睛（青蛙）。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["4"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "小鸭每只 2 条腿：12÷2=6（只）；青蛙每只 4 条腿：16÷4=4（只）。第三空问青蛙的眼睛（就近原则），每只青蛙 2 只眼睛：4×2=8（只）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "4. 有一些皮球，比20个少。如果平均分给6个小朋友，正好全部分完。这些皮球可能有（{{blank:1}}）个，也可能有（{{blank:2}}）个，还可能有（{{blank:3}}）个。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["12"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["18"] }
+        ],
+        "explanation": "平均分给 6 个小朋友正好分完，说明皮球数是 6 的倍数；又比 20 少，所以可能是 6、12、18。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "5. 用18个相同的小正方形拼一个长方形，有（{{blank:1}}）种不同的拼法。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["3"] }
+        ],
+        "explanation": "18 的因数对有 1×18、2×9、3×6，共 3 种不同的拼法。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "6. 妈妈买来8瓶酸奶，如果每天喝的瓶数一样多，那么这些酸奶最多可以喝（{{blank:1}}）天。",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] }
+        ],
+        "explanation": "要喝的天数最多，每天喝得最少，即每天喝 1 瓶：8÷1=8（天）。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "7. 把30本书平均分给乐乐和他的5个朋友，每人分得（{{blank:1}}）本。\n算式：{{blank:2}}",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["5"] },
+          { "slot_key": "blank_2", "slot_type": "expression", "correct_answer": ["30÷6=5"] }
+        ],
+        "explanation": "乐乐和他的 5 个朋友，一共 1+5=6（人）。30÷6=5（本），每人分得 5 本。"
+      }
+    ]
+  }
+]

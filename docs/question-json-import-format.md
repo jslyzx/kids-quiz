@@ -142,6 +142,28 @@
 
 要求：`stem` 里的空位数量要和 `answerSlots` 对应，`slotKey` 推荐从 `blank_1` 开始递增。历史文件里的 `{_0}`、`{{blank:blank_0}}`、`blank_0` 会在导入时自动转成 1 基序号。
 
+#### 孩子端键盘类型（可选）
+
+填空题默认会按 `slot_type` 和答案内容自动选择键盘：数字/表达式走数学键盘，乘法口诀和中文数字走中文候选键盘，普通文本走系统输入法。特殊题可以在 `answer_rule.keyboard` 显式指定。
+
+可选值：
+
+- `math`：数字和 `+ - × ÷ . =`
+- `digit`：仅 `0-9`
+- `chinese-number`：中文数字/口诀候选
+- `text`：系统输入法
+
+示例：
+
+```json
+{
+  "slot_key": "blank_1",
+  "slot_type": "text",
+  "correct_answer": ["三七二十一"],
+  "answer_rule": { "keyboard": "chinese-number" }
+}
+```
+
 ### 口算题组
 
 ```json

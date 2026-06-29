@@ -1610,3 +1610,121 @@
     margin-left: 34px;
   }
 }
+
+/* student custom keyboard */
+.practice-blank-input.activeKeyboard,
+.practice-column-cell.input:read-only:focus {
+  border-color: var(--violet-500);
+  background: #f5f3ff;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.16);
+}
+
+.studentKeyboard {
+  width: min(720px, 100%);
+  align-self: center;
+  margin: var(--space-5) auto 0;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: var(--radius-2xl);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.12);
+  padding: var(--space-4);
+}
+
+.studentKeyboard-preview {
+  min-height: 46px;
+  border: 2px solid var(--blue-100);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #f8fafc, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--text-2xl);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.studentKeyboard-keys {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.studentKeyboard-math .studentKeyboard-keys {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.studentKeyboard-digit .studentKeyboard-keys {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.studentKeyboard-key {
+  min-height: 58px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  color: var(--text-primary);
+  font-size: var(--text-xl);
+  font-weight: 900;
+  box-shadow: var(--shadow-xs);
+  touch-action: manipulation;
+}
+
+.studentKeyboard-key:hover,
+.studentKeyboard-key:focus-visible {
+  border-color: var(--blue-300);
+  background: #eff6ff;
+  color: var(--color-primary);
+}
+
+.studentKeyboard-key:active {
+  transform: scale(0.98);
+}
+
+.studentKeyboard-key.tool {
+  background: #fff7ed;
+  border-color: var(--orange-200);
+  color: var(--orange-700);
+  font-size: var(--text-base);
+}
+
+.studentKeyboard-key.primary {
+  grid-column: span 2;
+  background: linear-gradient(135deg, var(--blue-600), var(--violet-600));
+  border-color: transparent;
+  color: #fff;
+  font-size: var(--text-lg);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22);
+}
+
+.studentKeyboard-chinese-number .studentKeyboard-key {
+  min-height: 54px;
+}
+
+@media (max-width: 600px) {
+  .studentKeyboard {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-xl);
+  }
+
+  .studentKeyboard-preview {
+    min-height: 42px;
+    font-size: var(--text-xl);
+  }
+
+  .studentKeyboard-keys,
+  .studentKeyboard-math .studentKeyboard-keys,
+  .studentKeyboard-digit .studentKeyboard-keys {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .studentKeyboard-key {
+    min-height: 52px;
+    font-size: var(--text-lg);
+  }
+}
