@@ -39,7 +39,10 @@ if (!fileArg) {
 }
 
 const filePath = resolve(process.cwd(), fileArg);
-const prisma = new PrismaClient();
+// 远程数据库网络延迟大，默认交互式事务超时（5s）不够，放宽到 60s
+const prisma = new PrismaClient({
+  transactionOptions: { maxWait: 30_000, timeout: 60_000, isolationLevel: 'ReadCommitted' },
+});
 
 // 题型映射：导入格式的小写 type → Prisma enum
 const QUESTION_TYPE_MAP = {

@@ -1,0 +1,118 @@
+[
+  {
+    "type": "composite_group",
+    "title": "练习2 - 1. 找规律填数",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "找规律", "待验收"],
+    "commonStem": "1. 找规律填数。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "（1）4, 8, 12,（{{blank:1}}）,（{{blank:2}}）,（{{blank:3}}）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["16"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["20"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["24"] }
+        ],
+        "explanation": "每次加 4：12+4=16，16+4=20，20+4=24。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "（2）36,（{{blank:1}}）,（{{blank:2}}）, 9, 4",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["25"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["16"] }
+        ],
+        "explanation": "平方数倒序：6²=36，5²=25，4²=16，3²=9，2²=4。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "（3）2, 5, 4, 10, 6, 15,（{{blank:1}}）,（{{blank:2}}）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["20"] }
+        ],
+        "explanation": "奇数位 2,4,6,8 每次加 2；偶数位 5,10,15,20 每次加 5。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "练习2 - 2. 分苹果",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "平均分", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "2. 有一堆苹果，比25个多，比40个少。平均分给一些小朋友，每人分得的个数和小朋友的人数同样多。（{{blank:1}}）个小朋友，有（{{blank:2}}）个苹果。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["6"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["36"] }
+      ],
+      "explanation": "每人分得个数 = 小朋友人数，即总数 = 人数×人数。25 到 40 之间只有 6×6=36 符合，所以 6 个小朋友，36 个苹果。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习2 - 3. 分草莓",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "平均分", "有余数的除法", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "3. 19 个草莓，最少去掉（{{blank:1}}）个，就能正好平均分给 6 个小朋友；最少添上（{{blank:2}}）个，也能正好平均分给 6 个小朋友。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["1"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["5"] }
+      ],
+      "explanation": "19÷6=3……1，余数是 1，所以最少去掉 1 个剩 18（18÷6=3）；最少添上 6−1=5 个变 24（24÷6=4）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习2 - 4. 分糖",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "最小公倍数", "平均分", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "4. 一盒糖，能平均分给2人，也能平均分给3人，还能平均分给4人，这盒糖至少有（{{blank:1}}）块。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] }
+      ],
+      "explanation": "能被 2、3、4 整除，即求它们的最小公倍数。2、3、4 的最小公倍数是 12，所以至少 12 块。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习2 - 5. 幸运星",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级上", "平均分", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "5. 有3个小朋友折了红、黄两种颜色的幸运星共12个，平均每人的幸运星有（{{blank:1}}）个。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] }
+      ],
+      "explanation": "12 个幸运星平均分给 3 个小朋友：12÷3=4（个）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习2 - 6. 花盆",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "6. 玫瑰花和百合花都有两筐，玫瑰花一筐有6盆，一筐有5盆，百合花每筐都有6盆，百合花一共有（{{blank:1}}）盆，玫瑰花一共有（{{blank:2}}）盆。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["12"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["11"] }
+      ],
+      "explanation": "百合花两筐都是 6 盆：6+6=12（盆）；玫瑰花两筐分别是 6 盆和 5 盆：6+5=11（盆）。"
+    }
+  }
+]

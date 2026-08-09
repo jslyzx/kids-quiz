@@ -1,0 +1,96 @@
+[
+  {
+    "type": "question",
+    "title": "练习8 - 1. 按要求写算式",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "表内除法", "开放题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "1. 按要求写算式。\n（1）写出两道商是9的算式：{{blank:1}}，{{blank:2}}\n（2）写出两道除数和商相等的算式：{{blank:3}}，{{blank:4}}",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "expression", "correct_answer": ["18÷2=9"] },
+        { "slot_key": "blank_2", "slot_type": "expression", "correct_answer": ["27÷3=9"] },
+        { "slot_key": "blank_3", "slot_type": "expression", "correct_answer": ["4÷2=2"] },
+        { "slot_key": "blank_4", "slot_type": "expression", "correct_answer": ["9÷3=3"] }
+      ],
+      "explanation": "（1）商是 9 的算式有 9÷1=9、18÷2=9、27÷3=9、36÷4=9、45÷5=9 等，任写两道。（2）除数和商相等的算式：除数×商=被除数，即除数²=被除数，如 1÷1=1、4÷2=2、9÷3=3、16÷4=4、25÷5=5 等，任写两道。本题为开放题，此处录入示例答案。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习8 - 2. 2个9",
+    "gradeLevel": "二年级",
+    "difficulty": 1,
+    "tags": ["数学", "二年级上", "乘法", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "2. 2个9相加的和是（{{blank:1}}），2个9相乘得（{{blank:2}}）。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["18"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["81"] }
+      ],
+      "explanation": "2个9相加：9+9=18；2个9相乘：9×9=81。注意区分“相加”与“相乘”。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习8 - 3. 铁条焊接",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "3. 把两根长都是8厘米的铁条焊接为一根，焊接处长2厘米，焊接后的铁条长（{{blank:1}}）厘米。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["14"] }
+      ],
+      "explanation": "两根铁条共 8+8=16 厘米，焊接处重叠了 2 厘米，所以焊接后长 16−2=14（厘米）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习8 - 4. 哥哥弟弟玩具",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "4. 哥哥有玩具21个，给弟弟4个后，两人的玩具个数同样多，弟弟原来有玩具（{{blank:1}}）个。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["13"] }
+      ],
+      "explanation": "哥哥给弟弟 4 个后剩 21−4=17 个，此时两人一样多，弟弟现在也是 17 个，弟弟原来有 17−4=13（个）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习8 - 5. 游泳池",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "5. 游泳池长9米，明明游了两个来回，一共游了（{{blank:1}}）米。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["36"] }
+      ],
+      "explanation": "一个来回是 2 个泳池长：9×2=18（米）；两个来回是 18×2=36（米）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习8 - 6. 分发糖果",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "6. 老师给小红和她的6个好朋友分发糖果，每人分到9块，最后还剩2块。老师一共有（{{blank:1}}）块糖果。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["65"] }
+      ],
+      "explanation": "小红和 6 个好朋友共 1+6=7（人），每人 9 块：7×9=63（块），剩 2 块：63+2=65（块）。"
+    }
+  }
+]

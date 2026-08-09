@@ -1,0 +1,78 @@
+[
+  {
+    "type": "question",
+    "title": "练习9 - 1. 小狐狸跳跃",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "看图", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "1. 小狐狸每次跳3格，从3开始跳，第8次跳到的数是（{{blank:1}}）。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["27"] }
+      ],
+      "explanation": "小狐狸每次跳 3 格，从 3 开始跳，跳到的数依次是 3、6、9、12、15、18、21、24、27…… 第 8 次跳到 27。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习9 - 2. 一周学习时间",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "2. 小明每天在学校学习6小时，周末在课外辅导班每天学习2小时，他一个星期共学习（{{blank:1}}）小时。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["34"] }
+      ],
+      "explanation": "周一到周五在学校学习：5×6=30（小时）；周末在辅导班学习：2×2=4（小时）；一周共 30+4=34（小时）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习9 - 3. 分糖果",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级上", "解决问题", "公倍数", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "3. 老师有不到50块糖果，平均分给6个小朋友或者8个小朋友都多2块。最多有（{{blank:1}}）块糖果。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["26"] }
+      ],
+      "explanation": "糖果数比 6 和 8 的公倍数多 2。6 和 8 的公倍数有 24、48…… 加 2 后是 26、50。要不到 50，所以最多 26 块。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习9 - 4. 锯木头",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级上", "解决问题", "间隔问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "4. 有两根同样长的木头，木工师傅把一根木头锯成4段需要12分钟，照这样计算，木工师傅要把另一根木头锯成5段，一共需要（{{blank:1}}）分钟。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["16"] }
+      ],
+      "explanation": "锯成 4 段需要锯 3 次，每次 12÷3=4（分钟）；锯成 5 段需要锯 4 次，4×4=16（分钟）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习9 - 5. 买可乐",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "5. 超市周年大优惠，可乐买5送1，每瓶可乐8元，妈妈有32元，她最多可以买（{{blank:1}}）瓶。如果妈妈有40元，最多可以买（{{blank:2}}）瓶。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["4"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["6"] }
+      ],
+      "explanation": "32÷8=4 瓶，不足 5 瓶不赠送，所以 4 瓶。40÷8=5 瓶，买 5 送 1，所以 5+1=6 瓶。"
+    }
+  }
+]

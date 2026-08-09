@@ -1,0 +1,119 @@
+[
+  {
+    "type": "composite_group",
+    "title": "练习7 - 1. 找规律填数",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "找规律", "待验收"],
+    "commonStem": "1. 找规律填数。",
+    "children": [
+      {
+        "question_type": "fill_blank",
+        "stem": "（1）64, 56,（{{blank:1}}）,（{{blank:2}}）,（{{blank:3}}）,（{{blank:4}}）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["48"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["40"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["32"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["24"] }
+        ],
+        "explanation": "每次减 8：56−8=48，48−8=40，40−8=32，32−8=24。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "（2）80, 4, 60, 8, 40, 12,（{{blank:1}}）,（{{blank:2}}）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["20"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["16"] }
+        ],
+        "explanation": "两组交替：奇数位 80,60,40,20 每次减 20；偶数位 4,8,12,16 每次加 4。"
+      },
+      {
+        "question_type": "fill_blank",
+        "stem": "（3）（{{blank:1}}）,（{{blank:2}}）, 36, 25, 16,（{{blank:3}}）,（{{blank:4}}）",
+        "answer_slots": [
+          { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["64"] },
+          { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["49"] },
+          { "slot_key": "blank_3", "slot_type": "number", "correct_answer": ["9"] },
+          { "slot_key": "blank_4", "slot_type": "number", "correct_answer": ["4"] }
+        ],
+        "explanation": "平方数倒序：8²=64，7²=49，6²=36，5²=25，4²=16，3²=9，2²=4。"
+      }
+    ]
+  },
+  {
+    "type": "question",
+    "title": "练习7 - 2. 分邮票",
+    "gradeLevel": "二年级",
+    "difficulty": 3,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "2. 丽丽有20张邮票，送给小明6张邮票后，两人的邮票张数一样多，小明原来有（{{blank:1}}）张邮票。丽丽送给小明6张邮票后，两人的邮票张数就一样多，丽丽原来比小明多（{{blank:2}}）张邮票。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] },
+        { "slot_key": "blank_2", "slot_type": "number", "correct_answer": ["12"] }
+      ],
+      "explanation": "丽丽送出 6 张后剩 20−6=14 张，此时两人一样多，所以小明现在也是 14 张，小明原来有 14−6=8 张。丽丽原来比小明多 6×2=12 张。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习7 - 3. 绳子对折两次",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "3. 一根绳子对折再对折后，量得它的长是8厘米，这根绳子原来长（{{blank:1}}）厘米。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["32"] }
+      ],
+      "explanation": "对折再对折是折成 4 段，原来长 8×4=32（厘米）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习7 - 4. 绳子对折三次",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "4. 一根绳子对折三次，量得它的长是8厘米，这根绳子原来长（{{blank:1}}）厘米。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["64"] }
+      ],
+      "explanation": "对折三次是折成 8 段，原来长 8×8=64（厘米）。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习7 - 5. 艺术节开幕",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "看图", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "5. 【图：距离艺术节开幕还有56天】再过（{{blank:1}}）个星期艺术节就开幕了？",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["8"] }
+      ],
+      "explanation": "一个星期有 7 天，56÷7=8（个）星期。"
+    }
+  },
+  {
+    "type": "question",
+    "title": "练习7 - 6. 动物园观光车",
+    "gradeLevel": "二年级",
+    "difficulty": 2,
+    "tags": ["数学", "二年级上", "解决问题", "待验收"],
+    "question": {
+      "question_type": "fill_blank",
+      "stem": "6. 动物园观光车乘坐票每人4元，红红和7个好朋友乘坐，一共要花（{{blank:1}}）元。",
+      "answer_slots": [
+        { "slot_key": "blank_1", "slot_type": "number", "correct_answer": ["32"] }
+      ],
+      "explanation": "红红和 7 个好朋友共 1+7=8（人），8×4=32（元）。"
+    }
+  }
+]
